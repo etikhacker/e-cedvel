@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState('');
 
   const handleLogin = async () => {
     setLoading(true);
@@ -42,16 +43,26 @@ export default function LoginPage() {
   };
 
   const handleRegister = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
-    setLoading(false);
-    if (error) {
-      toast({ variant: 'destructive', title: 'Xəta', description: error.message });
-    } else {
-      toast({ title: 'Uğurlu!', description: 'Emailinizi yoxlayın, təsdiq linki göndərildi.' });
-      setMode('login');
+  if (!fullName.trim()) {
+    toast({ variant: 'destructive', title: 'Xəta', description: 'Ad Soyad daxil edin.' });
+    return;
+  }
+  setLoading(true);
+  const { error } = await supabase.auth.signUp({ 
+    email, 
+    password,
+    options: {
+      data: { full_name: fullName }
     }
-  };
+  });
+  setLoading(false);
+  if (error) {
+    toast({ variant: 'destructive', title: 'Xəta', description: error.message });
+  } else {
+    toast({ title: 'Uğurlu!', description: 'Emailinizi yoxlayın, təsdiq linki göndərildi.' });
+    setMode('login');
+  }
+};
 
   const handleForgot = async () => {
     setLoading(true);
