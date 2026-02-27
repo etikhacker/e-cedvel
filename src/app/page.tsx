@@ -6,7 +6,7 @@ import { LayoutGrid, Bell, Calculator, User, Info, Smartphone, CheckCircle2, Moo
 import { UserProfile, WeekType, GradeDetails, NotificationSettings } from '@/lib/types';
 import { DailyView, WeeklyView } from '@/components/schedule-views';
 import { Onboarding } from '@/components/onboarding';
-import { FIXED_SCHEDULE } from '@/lib/schedule-data';
+import { getSchedule } from '@/lib/schedule-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -126,11 +126,11 @@ export default function Home() {
 
   const dailyClasses = FIXED_SCHEDULE.filter(c => 
     (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
-    (c.week === 'hamisi' || c.week === currentWeek)
-  );
+  (c.week === 'hamisi' || c.week === currentWeek)
+);
 
-  const weeklyClasses = FIXED_SCHEDULE.filter(c => 
-    (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup)
+const weeklyClasses = schedule.filter(c =>
+  (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup)
   );
 
   const updateProfile = (updatedProfile: UserProfile) => {
