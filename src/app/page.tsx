@@ -146,14 +146,12 @@ export default function Home() {
     setActiveTab('calculator');
   };
 
-  const resetProfile = () => {
-    const resetProfile = () => {
+ const resetProfile = () => {
   localStorage.removeItem('it24_profile');
   supabase.auth.signOut().then(() => {
-    window.location.href = '/login';
+    window.location.replace('/login');
   });
 };
-  };
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
@@ -236,17 +234,11 @@ export default function Home() {
         <header className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="bg-primary p-2 rounded-lg text-white font-bold text-xl shadow-sm shrink-0">İT24</div>
+              <div className="bg-primary p-2 rounded-lg text-white font-bold text-xl shadow-sm shrink-0 dark:bg-white dark:text-primary">İT24</div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground font-headline">Dərs Cədvəli</h1>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm">
               <span>Salam, <b>{profile.name}</b></span>
-              <button 
-                onClick={resetProfile} 
-                className="text-primary hover:underline ml-2 font-medium"
-              >
-                Sıfırla
-              </button>
             </div>
           </div>
           
