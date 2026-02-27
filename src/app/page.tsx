@@ -51,9 +51,25 @@ export default function Home() {
     // Auth yoxlaması
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        window.location.href = '/login';
-        return;
+    window.location.href = '/login';
+    return;
+  }
+  const savedProfile = localStorage.getItem('it24_profile');
+  if (savedProfile) {
+    try {
+      const parsed = JSON.parse(savedProfile);
+      if (!parsed.notificationSettings || !parsed.notificationSettings.firstChannel) {
+        parsed.notificationSettings = DEFAULT_NOTIF_SETTINGS;
       }
+      if (session.user?.user_metadata?.full_name) {
+        parsed.name = session.user.user_metadata.full_name;
+        localStorage.setItem('it24_profile', JSON.stringify(parsed));
+      }
+      setProfile(parsed);
+    } catch (e) {
+      localStorage.removeItem('it24_profile');
+    }
+  }
     });
     const savedProfile = localStorage.getItem('it24_profile');
     if (savedProfile) {

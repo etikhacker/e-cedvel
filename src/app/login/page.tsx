@@ -59,7 +59,8 @@ export default function LoginPage() {
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: error.message });
     } else {
-      setMode('confirm');
+      toast({ title: 'Uğurlu!', description: 'Hesabınız yaradıldı!' });
+  setMode('login');
     }
   };
 
