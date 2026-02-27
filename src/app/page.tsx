@@ -390,6 +390,13 @@ export default function Home() {
                   <Button variant="outline" className="w-full gap-2 text-primary border-primary/20 hover:bg-primary/5 h-11 font-bold" onClick={setStandardNotifSettings}>
                     <RotateCcw className="h-4 w-4 shrink-0" /> Standart Ayarlar
                   </Button>
+                  <Button 
+  variant="outline" 
+  className="w-full gap-2 text-destructive border-destructive/20 hover:bg-destructive/5 h-11 font-bold" 
+  onClick={() => { setIsSettingsOpen(false); resetProfile(); }}
+>
+  <LogOut className="h-4 w-4 shrink-0" /> Hesabdan Çıx
+</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -491,11 +498,7 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="calculator">
-              <GradeCalculator 
-                onSave={handleSaveGrade} 
-                initialSubject={editingSubject}
-                existingDetails={editingSubject ? profile.savedDetails?.[editingSubject] : undefined}
-              />
+              <GradeCalculator />
             </TabsContent>
           </Tabs>
         )}

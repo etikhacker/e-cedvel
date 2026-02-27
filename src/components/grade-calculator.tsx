@@ -233,10 +233,6 @@ export function GradeCalculator() {
           <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>
             {result}
           </p>
-          <p className="text-sm font-medium mt-2">
-            {result >= 56 ? '✅ İmtahana buraxılırsınız!' : '❌ İmtahana buraxılmırsınız'}
-          </p>
-          <p className="text-xs text-muted-foreground">Keçid balı: 56</p>
         </div>
       )}
     </div>
