@@ -14,8 +14,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -23,16 +23,16 @@ export default function LoginPage() {
     setLoading(false);
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Hesab Tapılmadı', 
-          description: 'Bu email ilə hesab mövcud deyil və ya şifrə yanlışdır. Qeydiyyatdan keçin.' 
+        toast({
+          variant: 'destructive',
+          title: 'Hesab Tapılmadı',
+          description: 'Bu email ilə hesab mövcud deyil və ya şifrə yanlışdır. Qeydiyyatdan keçin.',
         });
       } else if (error.message.includes('Email not confirmed')) {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Email Təsdiqlənməyib', 
-          description: 'Zəhmət olmasa emailinizi təsdiqləyin.' 
+        toast({
+          variant: 'destructive',
+          title: 'Email Təsdiqlənməyib',
+          description: 'Zəhmət olmasa emailinizi təsdiqləyin.',
         });
       } else {
         toast({ variant: 'destructive', title: 'Xəta', description: error.message });
@@ -43,26 +43,26 @@ export default function LoginPage() {
   };
 
   const handleRegister = async () => {
-  if (!fullName.trim()) {
-    toast({ variant: 'destructive', title: 'Xəta', description: 'Ad Soyad daxil edin.' });
-    return;
-  }
-  setLoading(true);
-  const { error } = await supabase.auth.signUp({ 
-    email, 
-    password,
-    options: {
-      data: { full_name: fullName }
+    if (!fullName.trim()) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Ad Soyad daxil edin.' });
+      return;
     }
-  });
-  setLoading(false);
-  if (error) {
-    toast({ variant: 'destructive', title: 'Xəta', description: error.message });
-  } else {
-    toast({ title: 'Uğurlu!', description: 'Emailinizi yoxlayın, təsdiq linki göndərildi.' });
-    setMode('login');
-  }
-};
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Xəta', description: error.message });
+    } else {
+      toast({ title: 'Uğurlu!', description: 'Emailinizi yoxlayın, təsdiq linki göndərildi.' });
+      setMode('login');
+    }
+  };
 
   const handleForgot = async () => {
     setLoading(true);
@@ -94,6 +94,22 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="space-y-4">
+
+          {/* Ad Soyad - yalnız qeydiyyatda */}
+          {mode === 'register' && (
+            <div className="space-y-2">
+              <Label htmlFor="fullname">Ad Soyad</Label>
+              <Input
+                id="fullname"
+                type="text"
+                placeholder="Məs: Əli Həsənov"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -105,6 +121,7 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Şifrə - forgot-da gizli */}
           {mode !== 'forgot' && (
             <div className="space-y-2">
               <Label htmlFor="password">Şifrə</Label>
