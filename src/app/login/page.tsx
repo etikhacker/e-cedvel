@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-type Mode = 'login' | 'register' | 'forgot';
+type Mode = 'login' | 'register' | 'forgot' | 'confirm';
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -59,8 +59,7 @@ export default function LoginPage() {
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: error.message });
     } else {
-      toast({ title: 'Uğurlu!', description: 'Emailinizi yoxlayın, təsdiq linki göndərildi.' });
-      setMode('login');
+      setMode('confirm');
     }
   };
 
@@ -78,6 +77,31 @@ export default function LoginPage() {
     }
   };
 
+  // Email təsdiq ekranı
+  if (mode === 'confirm') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm space-y-8 text-center">
+          <div className="bg-primary p-3 rounded-xl text-white font-bold text-2xl inline-block shadow-md">İT24</div>
+          <div className="space-y-4 p-6 rounded-2xl border bg-card">
+            <p className="text-6xl">📧</p>
+            <h2 className="text-xl font-bold text-foreground">Email Göndərildi!</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              <span className="font-bold text-foreground">{email}</span> ünvanına təsdiq linki göndərildi.
+              Emailinizi yoxlayın və linki açın.
+            </p>
+            <div className="bg-primary/10 rounded-xl p-3 text-xs text-primary font-medium">
+              Spam qovluğunu da yoxlamağı unutmayın!
+            </div>
+          </div>
+          <Button className="w-full h-11 font-bold" onClick={() => setMode('login')}>
+            Daxil ol səhifəsinə qayıt
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-8">
@@ -94,7 +118,6 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="space-y-4">
-
           {/* Ad Soyad - yalnız qeydiyyatda */}
           {mode === 'register' && (
             <div className="space-y-2">
@@ -121,7 +144,7 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Şifrə - forgot-da gizli */}
+          {/* Şifrə */}
           {mode !== 'forgot' && (
             <div className="space-y-2">
               <Label htmlFor="password">Şifrə</Label>
