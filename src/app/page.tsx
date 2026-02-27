@@ -124,8 +124,10 @@ export default function Home() {
     }} />;
   }
 
-  const dailyClasses = FIXED_SCHEDULE.filter(c => 
-    (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
+  const schedule = getSchedule(profile.group || 'IT24.1');
+
+const dailyClasses = schedule.filter(c =>
+  (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
   (c.week === 'hamisi' || c.week === currentWeek)
 );
 
