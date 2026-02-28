@@ -124,7 +124,12 @@ export default function Home() {
 
   if (!profile) {
     return <Onboarding onComplete={(p: any) => {
-      const newProfile: UserProfile = { ...p, savedGrades: {}, savedDetails: {}, notificationSettings: DEFAULT_NOTIF_SETTINGS };
+      const newProfile: UserProfile = { 
+  ...p, 
+  savedGrades: {}, 
+  savedDetails: {}, 
+  notificationSettings: DEFAULT_NOTIF_SETTINGS 
+};
       setProfile(newProfile);
       localStorage.setItem('it24_profile', JSON.stringify(newProfile));
     }} />;
