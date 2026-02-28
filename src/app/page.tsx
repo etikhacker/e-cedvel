@@ -515,7 +515,7 @@ const weeklyClasses = schedule.filter(c =>
 
         <footer className="pt-8 border-t text-center text-sm text-muted-foreground">
           <p>© 2026 İT24 - Elizade Aksin and Omar Babayev</p>
-          <p className="text-[10px] mt-1 opacity-50">16 fevral 2026-cı il tarixindən etibarən hesablanır</p>
+          <p className="text-[10px] mt-1 opacity-50">Mingachevir State University</p>
         </footer>
       </div>
     </div>
