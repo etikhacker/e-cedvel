@@ -50,7 +50,7 @@ export default function Home() {
   useEffect(() => {
     // Auth yoxlaması
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+  if (!session) {
     window.location.href = '/login';
     return;
   }
@@ -69,8 +69,14 @@ export default function Home() {
     } catch (e) {
       localStorage.removeItem('it24_profile');
     }
+  } else {
+    // Profil yoxdursa — Supabase-dən ad al, onboarding göstər
+    if (session.user?.user_metadata?.full_name) {
+      // Onboarding-də istifadə üçün saxla
+      localStorage.setItem('it24_pending_name', session.user.user_metadata.full_name);
+    }
   }
-    });
+});
     const savedProfile = localStorage.getItem('it24_profile');
     if (savedProfile) {
       try {
