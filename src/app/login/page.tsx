@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-type Mode = 'login' | 'register' | 'forgot' | 'confirm';
+type Mode = 'login' | 'register' | 'forgot';
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -23,17 +23,9 @@ export default function LoginPage() {
     setLoading(false);
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        toast({
-          variant: 'destructive',
-          title: 'Hesab Tapılmadı',
-          description: 'Bu email ilə hesab mövcud deyil və ya şifrə yanlışdır. Qeydiyyatdan keçin.',
-        });
+        toast({ variant: 'destructive', title: 'Hesab Tapılmadı', description: 'Bu email ilə hesab mövcud deyil və ya şifrə yanlışdır.' });
       } else if (error.message.includes('Email not confirmed')) {
-        toast({
-          variant: 'destructive',
-          title: 'Email Təsdiqlənməyib',
-          description: 'Zəhmət olmasa emailinizi təsdiqləyin.',
-        });
+        toast({ variant: 'destructive', title: 'Email Təsdiqlənməyib', description: 'Zəhmət olmasa emailinizi təsdiqləyin.' });
       } else {
         toast({ variant: 'destructive', title: 'Xəta', description: error.message });
       }
@@ -51,16 +43,14 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName },
-      },
+      options: { data: { full_name: fullName } },
     });
     setLoading(false);
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: error.message });
     } else {
-      toast({ title: 'Uğurlu!', description: 'Hesabınız yaradıldı!' });
-  setMode('login');
+      toast({ title: 'Uğurlu!', description: 'Hesabınız yaradıldı! Daxil ola bilərsiniz.' });
+      setMode('login');
     }
   };
 
@@ -78,115 +68,99 @@ export default function LoginPage() {
     }
   };
 
-  // Email təsdiq ekranı
-  if (mode === 'confirm') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm space-y-8 text-center">
-          <div className="bg-primary p-3 rounded-xl text-white font-bold text-2xl inline-block shadow-md">İT24</div>
-          <div className="space-y-4 p-6 rounded-2xl border bg-card">
-            <p className="text-6xl">📧</p>
-            <h2 className="text-xl font-bold text-foreground">Email Göndərildi!</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              <span className="font-bold text-foreground">{email}</span> ünvanına təsdiq linki göndərildi.
-              Emailinizi yoxlayın və linki açın.
-            </p>
-            <div className="bg-primary/10 rounded-xl p-3 text-xs text-primary font-medium">
-              Spam qovluğunu da yoxlamağı unutmayın!
-            </div>
-          </div>
-          <Button className="w-full h-11 font-bold" onClick={() => setMode('login')}>
-            Daxil ol səhifəsinə qayıt
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
-        <div className="text-center space-y-2">
-          <div className="bg-primary p-3 rounded-xl text-white font-bold text-2xl inline-block shadow-md">İT24</div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Şifrəni Bərpa Et'}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {mode === 'login' ? 'Hesabınıza daxil olun' : mode === 'register' ? 'Yeni hesab yaradın' : 'Emailinizi daxil edin'}
-          </p>
-        </div>
-
-        {/* Form */}
-        <div className="space-y-4">
-          {/* Ad Soyad - yalnız qeydiyyatda */}
-          {mode === 'register' && (
-            <div className="space-y-2">
-              <Label htmlFor="fullname">Ad Soyad</Label>
-              <Input
-                id="fullname"
-                type="text"
-                placeholder="Məs: Əli Həsənov"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-          )}
-
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="email@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+        
+        {/* Sol tərəf - Form */}
+        <div className="bg-gray-900 p-8 md:p-12 flex flex-col justify-center space-y-8">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-white">
+              {mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Şifrəni Bərpa Et'}
+            </h1>
           </div>
 
-          {/* Şifrə */}
-          {mode !== 'forgot' && (
+          <div className="space-y-4">
+            {mode === 'register' && (
+              <div className="space-y-2">
+                <Label htmlFor="fullname" className="text-gray-300 text-sm">Ad Soyad</Label>
+                <Input
+                  id="fullname"
+                  type="text"
+                  placeholder="Məs: Əli Həsənov"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="password">Şifrə</Label>
+              <Label htmlFor="email" className="text-gray-300 text-sm">E-poçt</Label>
               <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
+                id="email"
+                type="email"
+                placeholder="E-poçt"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl"
               />
             </div>
-          )}
 
-          <Button
-            className="w-full h-11 font-bold"
-            disabled={loading}
-            onClick={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot}
-          >
-            {loading ? 'Gözləyin...' : mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Email Göndər'}
-          </Button>
+            {mode !== 'forgot' && (
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-300 text-sm">Şifrə</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Şifrə"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl"
+                />
+              </div>
+            )}
+
+            <Button
+              className="w-full h-12 font-bold text-base rounded-xl bg-teal-500 hover:bg-teal-400 text-white border-0"
+              disabled={loading}
+              onClick={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot}
+            >
+              {loading ? 'Gözləyin...' : mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Email Göndər'}
+            </Button>
+          </div>
+
+          <div className="text-center space-y-2 text-sm">
+            {mode === 'login' && (
+              <>
+                <p className="text-gray-400">
+                  Hesabınız yoxdur?{' '}
+                  <button onClick={() => setMode('register')} className="text-teal-400 hover:underline font-medium">
+                    Qeydiyyat
+                  </button>
+                </p>
+                <button onClick={() => setMode('forgot')} className="text-teal-400 hover:underline block w-full">
+                  Şifrəni unutmusunuz?
+                </button>
+              </>
+            )}
+            {(mode === 'register' || mode === 'forgot') && (
+              <button onClick={() => setMode('login')} className="text-gray-400 hover:text-white">
+                ← Geri qayıt
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Alt keçidlər */}
-        <div className="text-center space-y-2 text-sm">
-          {mode === 'login' && (
-            <>
-              <button onClick={() => setMode('forgot')} className="text-primary hover:underline block w-full">
-                Şifrəni unutmusunuz?
-              </button>
-              <button onClick={() => setMode('register')} className="text-muted-foreground hover:underline block w-full">
-                Hesabınız yoxdur? <span className="text-primary font-medium">Qeydiyyat</span>
-              </button>
-            </>
-          )}
-          {(mode === 'register' || mode === 'forgot') && (
-            <button onClick={() => setMode('login')} className="text-muted-foreground hover:underline">
-              ← Geri qayıt
-            </button>
-          )}
+        {/* Sağ tərəf - Banner */}
+        <div className="hidden md:flex flex-col items-center justify-center bg-gradient-to-br from-teal-600 to-teal-400 p-12 text-center">
+          <h2 className="text-4xl font-extrabold text-white leading-tight tracking-wide uppercase">
+            E-Cədvəl Portalına<br />Xoş Gəlmisiniz!
+          </h2>
+          <p className="mt-6 text-teal-100 text-sm font-medium">İT24 Dərs Cədvəli Tətbiqi</p>
         </div>
+
       </div>
     </div>
   );
