@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Calculator, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import { Calculator, RotateCcw, Plus, Trash2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,15 +31,32 @@ const defaultState = (): GradeState => ({
   laboratoriya: [],
 });
 
-export function GradeCalculator() {
+type SaveData = {
+  subject: string;
+  total: number;
+  davamiyyat: number;
+  serbest: number;
+  kollokviumOrta: number;
+  seminarOrta: number;
+  labBal: number;
+};
+
+interface GradeCalculatorProps {
+  onSave?: (data: SaveData) => void;
+}
+
+export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   const [subject, setSubject] = useState('');
   const [grades, setGrades] = useState<GradeState>(defaultState());
   const [result, setResult] = useState<number | null>(null);
+  const [lastCalc, setLastCalc] = useState<Omit<SaveData, 'subject'> | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const handleSubjectChange = (s: string) => {
     setSubject(s);
     setGrades(defaultState());
     setResult(null);
+    setSaved(false);
   };
 
   const toggleLab = (n: number) => {
@@ -51,39 +68,30 @@ export function GradeCalculator() {
     }));
   };
 
-  const addSeminar = () => {
-    setGrades(prev => ({ ...prev, seminar: [...prev.seminar, ''] }));
-  };
-
-  const removeSeminar = (i: number) => {
-    setGrades(prev => ({ ...prev, seminar: prev.seminar.filter((_, idx) => idx !== i) }));
-  };
-
+  const addSeminar = () => setGrades(prev => ({ ...prev, seminar: [...prev.seminar, ''] }));
+  const removeSeminar = (i: number) => setGrades(prev => ({ ...prev, seminar: prev.seminar.filter((_, idx) => idx !== i) }));
   const updateSeminar = (i: number, val: string) => {
-    setGrades(prev => {
-      const s = [...prev.seminar];
-      s[i] = val;
-      return { ...prev, seminar: s };
-    });
+    setGrades(prev => { const s = [...prev.seminar]; s[i] = val; return { ...prev, seminar: s }; });
   };
 
   const calculate = () => {
     const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
     const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
-
     const kollokviumVals = grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0));
     const kollokviumOrta = kollokviumVals.reduce((a, b) => a + b, 0) / 3;
-
     const seminarVals = grades.seminar.map(s => Math.min(10, parseFloat(s) || 0));
-    const seminarOrta = seminarVals.length > 0
-      ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length
-      : 0;
+    const seminarOrta = seminarVals.length > 0 ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length : 0;
+    const labBal = Math.min(15, (grades.laboratoriya.length / 8) * 15);
+    const total = Math.round((davamiyyat + serbest + kollokviumOrta + seminarOrta + labBal) * 10) / 10;
+    setResult(total);
+    setSaved(false);
+    setLastCalc({ total, davamiyyat, serbest, kollokviumOrta, seminarOrta, labBal });
+  };
 
-    const labCount = grades.laboratoriya.length;
-    const labBal = Math.min(15, (labCount / 8) * 15);
-
-    const total = davamiyyat + serbest + kollokviumOrta + seminarOrta + labBal;
-    setResult(Math.round(total * 10) / 10);
+  const handleSave = () => {
+    if (!onSave || !lastCalc || !subject) return;
+    onSave({ subject, ...lastCalc });
+    setSaved(true);
   };
 
   if (!subject) {
@@ -96,7 +104,6 @@ export function GradeCalculator() {
             <p className="text-sm text-muted-foreground">Qiymətlərinizi daxil edin</p>
           </div>
         </div>
-
         <div className="space-y-2">
           <Label className="font-bold">Fənn Seçin</Label>
           <select
@@ -105,12 +112,9 @@ export function GradeCalculator() {
             className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="" disabled>Dərsi seçin</option>
-            {SUBJECTS.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
+            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-3">
           <Calculator className="h-12 w-12 opacity-20" />
           <p className="text-sm">Zəhmət olmasa dərsi seçin</p>
@@ -129,7 +133,6 @@ export function GradeCalculator() {
         </div>
       </div>
 
-      {/* Fənn seçimi */}
       <div className="space-y-2">
         <Label className="font-bold">Fənn Seçin</Label>
         <select
@@ -138,58 +141,37 @@ export function GradeCalculator() {
           className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="" disabled>Dərsi seçin</option>
-          {SUBJECTS.map(s => (
-            <option key={s} value={s}>{s}</option>
-          ))}
+          {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
-      {/* Davamiyyət və Sərbəst iş */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="font-bold text-sm">Davamiyyət <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-          <Input
-            type="number"
-            min={0} max={10}
-            placeholder="Məs: 10"
-            value={grades.davamiyyat}
-            onChange={e => setGrades(prev => ({ ...prev, davamiyyat: e.target.value }))}
-          />
+          <Input type="number" min={0} max={10} placeholder="Məs: 10" value={grades.davamiyyat}
+            onChange={e => setGrades(prev => ({ ...prev, davamiyyat: e.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label className="font-bold text-sm">Sərbəst İş <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-          <Input
-            type="number"
-            min={0} max={10}
-            placeholder="Məs: 10"
-            value={grades.serbest}
-            onChange={e => setGrades(prev => ({ ...prev, serbest: e.target.value }))}
-          />
+          <Input type="number" min={0} max={10} placeholder="Məs: 10" value={grades.serbest}
+            onChange={e => setGrades(prev => ({ ...prev, serbest: e.target.value }))} />
         </div>
       </div>
 
-      {/* Kollokvium */}
       <div className="space-y-2">
         <Label className="font-bold text-sm">Kollokvium Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
         <div className="grid grid-cols-3 gap-3">
           {grades.kollokvium.map((k, i) => (
-            <Input
-              key={i}
-              type="number"
-              min={0} max={10}
-              placeholder="Məs: 10"
-              value={k}
+            <Input key={i} type="number" min={0} max={10} placeholder="Məs: 10" value={k}
               onChange={e => {
                 const kol = [...grades.kollokvium] as [string, string, string];
                 kol[i] = e.target.value;
                 setGrades(prev => ({ ...prev, kollokvium: kol }));
-              }}
-            />
+              }} />
           ))}
         </div>
       </div>
 
-      {/* Seminar */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label className="font-bold text-sm">Seminar Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
@@ -197,19 +179,11 @@ export function GradeCalculator() {
             <Plus className="h-4 w-4" /> Əlavə et
           </Button>
         </div>
-        {grades.seminar.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">Seminar qiyməti əlavə edin</p>
-        )}
+        {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiyməti əlavə edin</p>}
         <div className="space-y-2">
           {grades.seminar.map((s, i) => (
             <div key={i} className="flex gap-2">
-              <Input
-                type="number"
-                min={0} max={10}
-                placeholder={`Seminar ${i + 1}`}
-                value={s}
-                onChange={e => updateSeminar(i, e.target.value)}
-              />
+              <Input type="number" min={0} max={10} placeholder={`Seminar ${i + 1}`} value={s} onChange={e => updateSeminar(i, e.target.value)} />
               <Button variant="ghost" size="icon" onClick={() => removeSeminar(i)} className="text-destructive hover:bg-destructive/10 shrink-0">
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -218,28 +192,21 @@ export function GradeCalculator() {
         </div>
       </div>
 
-      {/* Laboratoriya */}
       <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
         <div className="flex items-center justify-between">
-          <Label className="font-bold text-sm">
-            Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span>
-          </Label>
+          <Label className="font-bold text-sm">Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span></Label>
           <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))} className="gap-1 text-muted-foreground hover:bg-muted text-xs">
             <RotateCcw className="h-3 w-3" /> Sıfırla
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-            <button
-              key={n}
-              onClick={() => toggleLab(n)}
-              className={cn(
-                "h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
+            <button key={n} onClick={() => toggleLab(n)}
+              className={cn("h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
                 grades.laboratoriya.includes(n)
                   ? "bg-primary border-primary text-white shadow-md scale-110"
                   : "bg-background border-border text-foreground hover:border-primary/50"
-              )}
-            >
+              )}>
               {n}
             </button>
           ))}
@@ -250,21 +217,38 @@ export function GradeCalculator() {
         </div>
       </div>
 
-      {/* Hesabla */}
       <Button className="w-full h-14 text-base font-bold gap-2" onClick={calculate}>
         <Calculator className="h-5 w-5 shrink-0" /> Hesabla
       </Button>
 
-      {/* Nəticə */}
       {result !== null && (
-        <div className={cn(
-          "p-6 rounded-2xl text-center border-2 space-y-1 animate-in fade-in slide-in-from-bottom-4",
-          result >= 56 ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"
-        )}>
-          <p className="text-sm text-muted-foreground font-medium">Cari Giriş Balınız</p>
-          <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>
-            {result}
-          </p>
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
+          <div className={cn(
+            "p-6 rounded-2xl text-center border-2 space-y-1",
+            result >= 56 ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"
+          )}>
+            <p className="text-sm text-muted-foreground font-medium">Cari Giriş Balınız</p>
+            <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>
+              {result}
+            </p>
+          </div>
+
+          {onSave && (
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-12 gap-2 font-bold border-2 transition-all",
+                saved
+                  ? "border-green-500/40 text-green-500 bg-green-500/10"
+                  : "border-primary/30 text-primary hover:bg-primary/5"
+              )}
+              onClick={handleSave}
+              disabled={saved}
+            >
+              <Save className="h-5 w-5 shrink-0" />
+              {saved ? 'Yadda Saxlanıldı ✓' : 'Kabinetdə Yadda Saxla'}
+            </Button>
+          )}
         </div>
       )}
     </div>

@@ -508,7 +508,14 @@ const weeklyClasses = schedule.filter(c =>
             </TabsContent>
 
             <TabsContent value="calculator">
-              <GradeCalculator />
+              <GradeCalculator onSave={(data) => handleSaveGrade(data.subject, {
+  total: data.total,
+  davamiyyat: data.davamiyyat,
+  serbest: data.serbest,
+  kollokviumOrta: data.kollokviumOrta,
+  seminarOrta: data.seminarOrta,
+  labBal: data.labBal,
+})} />
             </TabsContent>
           </Tabs>
         )}
