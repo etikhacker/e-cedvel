@@ -110,26 +110,28 @@ export default function LoginPage() {
             </div>
 
             {mode !== 'forgot' && (
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300 text-sm">Şifrə</Label>
-                <Input
-                  id="password"
-    type={showPassword ? 'text' : 'password'}
-    placeholder="Şifrə"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
-    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl pr-12"
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-  >
-    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-  </button>
-              </div>
-            )}
+  <div className="space-y-2">
+    <Label htmlFor="password" className="text-gray-300 text-sm">Şifrə</Label>
+    <div className="relative">
+      <Input
+        id="password"
+        type={showPassword ? 'text' : 'password'}
+        placeholder="Şifrə"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
+        className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl pr-12"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+      >
+        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+      </button>
+    </div>
+  </div>
+)}
 
             <Button
               className="w-full h-12 font-bold text-base rounded-xl bg-teal-500 hover:bg-teal-400 text-white border-0"
