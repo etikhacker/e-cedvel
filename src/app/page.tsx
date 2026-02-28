@@ -151,23 +151,28 @@ const weeklyClasses = schedule.filter(c =>
     localStorage.setItem('it24_profile', JSON.stringify(updatedProfile));
   };
 
-  const handleSaveGrade = (subject: string, details: GradeDetails) => {
-    const updatedProfile = {
-      ...profile,
-      savedGrades: {
-        ...(profile.savedGrades || {}),
-        [subject]: Math.round(details.total)
-      },
-      savedDetails: {
-        ...(profile.savedDetails || {}),
-        [subject]: { ...details, total: Math.round(details.total) }
+  const handleSaveGrade = (data: { subject: string; total: number; davamiyyat: number; serbest: number; kollokviumOrta: number; seminarOrta: number; labBal: number }) => {
+  const updatedProfile = {
+    ...profile,
+    savedGrades: {
+      ...(profile.savedGrades || {}),
+      [data.subject]: Math.round(data.total)
+    },
+    savedDetails: {
+      ...(profile.savedDetails || {}),
+      [data.subject]: {
+        total: Math.round(data.total),
+        davamiyyat: data.davamiyyat,
+        serbest: data.serbest,
+        kollokviumOrta: data.kollokviumOrta,
+        seminarOrta: data.seminarOrta,
+        labBal: data.labBal,
       }
-    };
-    updateProfile(updatedProfile);
-    toast({ title: "Yadda saxlanıldı", description: `${subject} balınız kabinetə əlavə edildi.` });
-    setEditingSubject(undefined);
-    setIsProfileOpen(true);
+    }
   };
+  updateProfile(updatedProfile);
+  toast({ title: "Yadda saxlanıldı", description: `${data.subject} balınız kabinetə əlavə edildi.` });
+};
 
   const handleEditGrade = (subject: string) => {
     setEditingSubject(subject);
@@ -519,14 +524,7 @@ const weeklyClasses = schedule.filter(c =>
             </TabsContent>
 
             <TabsContent value="calculator">
-              <GradeCalculator onSave={(data) => handleSaveGrade(data.subject, {
-  total: data.total,
-  davamiyyat: data.davamiyyat,
-  serbest: data.serbest,
-  kollokviumOrta: data.kollokviumOrta,
-  seminarOrta: data.seminarOrta,
-  labBal: data.labBal,
-})} />
+              <GradeCalculator onSave={handleSaveGrade} />
             </TabsContent>
           </Tabs>
         )}

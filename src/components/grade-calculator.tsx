@@ -21,6 +21,7 @@ type GradeState = {
   kollokvium: [string, string, string];
   seminar: string[];
   laboratoriya: number[];
+  labMax: number;
 };
 
 const defaultState = (): GradeState => ({
@@ -29,6 +30,7 @@ const defaultState = (): GradeState => ({
   kollokvium: ['', '', ''],
   seminar: [],
   laboratoriya: [],
+  labMax: 15,
 });
 
 type SaveData = {
@@ -60,12 +62,32 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   };
 
   const toggleLab = (n: number) => {
-    setGrades(prev => ({
-      ...prev,
-      laboratoriya: prev.laboratoriya.includes(n)
+    setGrades(prev => {
+      const newLabs = prev.laboratoriya.includes(n)
         ? prev.laboratoriya.filter(x => x !== n)
-        : [...prev.laboratoriya, n],
-    }));
+        : [...prev.laboratoriya, n].sort((a, b) => a - b);
+      // 5 basılanda 1-5 hamısını seç
+      if (!prev.laboratoriya.includes(n) && n === 5 && newLabs.length === 1) {
+        return { ...prev, laboratoriya: [1, 2, 3, 4, 5] };
+      }
+      return { ...prev, laboratoriya: newLabs };
+    });
+  };
+
+  // 5 basılanda 1-5 seç, əgər hamısı seçilibsə sil
+  const smartToggleLab = (n: number) => {
+    setGrades(prev => {
+      const selected = prev.laboratoriya;
+      if (selected.includes(n)) {
+        return { ...prev, laboratoriya: selected.filter(x => x !== n) };
+      }
+      // Yeni seçimdə əvvəlkilər + yenisi ardıcıl olacaqsa toplu seç
+      const newSelected = [...selected, n].sort((a, b) => a - b);
+      // Ən böyük seçilən rəqəmə qədər hamısını seç
+      const max = Math.max(...newSelected);
+      const consecutive = Array.from({ length: max }, (_, i) => i + 1);
+      return { ...prev, laboratoriya: consecutive };
+    });
   };
 
   const addSeminar = () => setGrades(prev => ({ ...prev, seminar: [...prev.seminar, ''] }));
@@ -81,7 +103,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
     const kollokviumOrta = kollokviumVals.reduce((a, b) => a + b, 0) / 3;
     const seminarVals = grades.seminar.map(s => Math.min(10, parseFloat(s) || 0));
     const seminarOrta = seminarVals.length > 0 ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length : 0;
-    const labBal = Math.min(15, (grades.laboratoriya.length / 8) * 15);
+    const labBal = Math.min(grades.labMax, (grades.laboratoriya.length / 8) * grades.labMax);
     const total = Math.round((davamiyyat + serbest + kollokviumOrta + seminarOrta + labBal) * 10) / 10;
     setResult(total);
     setSaved(false);
@@ -106,11 +128,8 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
         <div className="space-y-2">
           <Label className="font-bold">Fənn Seçin</Label>
-          <select
-            value=""
-            onChange={e => handleSubjectChange(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          >
+          <select value="" onChange={e => handleSubjectChange(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="" disabled>Dərsi seçin</option>
             {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -135,11 +154,8 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
 
       <div className="space-y-2">
         <Label className="font-bold">Fənn Seçin</Label>
-        <select
-          value={subject}
-          onChange={e => handleSubjectChange(e.target.value)}
-          className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-        >
+        <select value={subject} onChange={e => handleSubjectChange(e.target.value)}
+          className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
           <option value="" disabled>Dərsi seçin</option>
           {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -172,9 +188,13 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
       </div>
 
+      {/* Seminar */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="font-bold text-sm">Seminar Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+          <div className="flex items-center gap-3">
+            <Label className="font-bold text-sm">Seminar Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+            <span className="text-xs text-red-500 font-medium">* Seminar yoxdursa boş qoyun</span>
+          </div>
           <Button variant="ghost" size="sm" onClick={addSeminar} className="gap-1 text-primary hover:bg-primary/10">
             <Plus className="h-4 w-4" /> Əlavə et
           </Button>
@@ -192,28 +212,44 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
       </div>
 
+      {/* Laboratoriya */}
       <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
         <div className="flex items-center justify-between">
-          <Label className="font-bold text-sm">Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span></Label>
-          <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))} className="gap-1 text-muted-foreground hover:bg-muted text-xs">
+          <Label className="font-bold text-sm">
+            Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span>
+          </Label>
+          <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))}
+            className="gap-1 text-muted-foreground hover:bg-muted text-xs">
             <RotateCcw className="h-3 w-3" /> Sıfırla
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-            <button key={n} onClick={() => toggleLab(n)}
+            <button key={n} onClick={() => smartToggleLab(n)}
               className={cn("h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
                 grades.laboratoriya.includes(n)
                   ? "bg-primary border-primary text-white shadow-md scale-110"
-                  : "bg-background border-border text-foreground hover:border-primary/50"
-              )}>
+                  : "bg-background border-border text-foreground hover:border-primary/50")}>
               {n}
             </button>
           ))}
         </div>
+        {/* Lab max bal seçimi */}
+        <div className="flex items-center gap-3 pt-1">
+          <Label className="text-xs text-muted-foreground shrink-0">Maks. lab balı:</Label>
+          <div className="flex gap-2">
+            {[15, 20, 25, 30].map(v => (
+              <button key={v} onClick={() => setGrades(prev => ({ ...prev, labMax: v }))}
+                className={cn("px-3 py-1 rounded-lg text-xs font-bold border transition-all",
+                  grades.labMax === v ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50")}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Maksimum laboratoriya balı: <span className="font-bold">15</span></p>
-          <p className="text-xs text-red-500 font-medium">* Fənnin laboratoriyası yoxdursa boş qoyun</p>
+          <p className="text-xs text-muted-foreground">Seçilmiş maksimum: <span className="font-bold text-primary">{grades.labMax}</span></p>
+          <p className="text-xs text-red-500 font-medium">* Laboratoriya yoxdursa boş qoyun</p>
         </div>
       </div>
 
@@ -223,28 +259,21 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
 
       {result !== null && (
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
-          <div className={cn(
-            "p-6 rounded-2xl text-center border-2 space-y-1",
-            result >= 56 ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10"
-          )}>
+          <div className={cn("p-6 rounded-2xl text-center border-2 space-y-2",
+            result >= 56 ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10")}>
             <p className="text-sm text-muted-foreground font-medium">Cari Giriş Balınız</p>
-            <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>
-              {result}
-            </p>
+            <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>{result}</p>
+            <div className={cn("inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold",
+              result >= 56 ? "bg-green-500/20 text-green-600" : "bg-red-500/20 text-red-600")}>
+              {result >= 56 ? '✓ İmtahana buraxılırsınız' : '⚠ Kafi deyil!'}
+            </div>
           </div>
 
           {onSave && (
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full h-12 gap-2 font-bold border-2 transition-all",
-                saved
-                  ? "border-green-500/40 text-green-500 bg-green-500/10"
-                  : "border-primary/30 text-primary hover:bg-primary/5"
-              )}
-              onClick={handleSave}
-              disabled={saved}
-            >
+            <Button variant="outline"
+              className={cn("w-full h-12 gap-2 font-bold border-2 transition-all",
+                saved ? "border-green-500/40 text-green-500 bg-green-500/10" : "border-primary/30 text-primary hover:bg-primary/5")}
+              onClick={handleSave} disabled={saved}>
               <Save className="h-5 w-5 shrink-0" />
               {saved ? 'Yadda Saxlanıldı ✓' : 'Kabinetdə Yadda Saxla'}
             </Button>
