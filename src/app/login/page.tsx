@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff } from 'lucide-react';
 
 type Mode = 'login' | 'register' | 'forgot';
 
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -112,13 +114,20 @@ export default function LoginPage() {
                 <Label htmlFor="password" className="text-gray-300 text-sm">Şifrə</Label>
                 <Input
                   id="password"
-                  type="password"
-                  placeholder="Şifrə"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl"
-                />
+    type={showPassword ? 'text' : 'password'}
+    placeholder="Şifrə"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    onKeyDown={(e) => e.key === 'Enter' && mode === 'login' && handleLogin()}
+    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 h-12 rounded-xl pr-12"
+  />
+  <button
+    type="button"
+    onClick={() => setShowPassword(!showPassword)}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+  >
+    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+  </button>
               </div>
             )}
 
@@ -158,7 +167,7 @@ export default function LoginPage() {
           <h2 className="text-4xl font-extrabold text-white leading-tight tracking-wide uppercase">
             E-Cədvəl Portalına<br />Xoş Gəlmisiniz!
           </h2>
-          <p className="mt-6 text-teal-100 text-sm font-medium">İT24 Dərs Cədvəli Tətbiqi</p>
+          <p className="mt-6 text-teal-100 text-sm font-medium">Mingachevir State University</p>
         </div>
 
       </div>
