@@ -32,14 +32,9 @@ const defaultState = (): GradeState => ({
 });
 
 export function GradeCalculator() {
-  const [subject, setSubject] = useState(SUBJECTS[0]);
+  const [subject, setSubject] = useState('');
   const [grades, setGrades] = useState<GradeState>(defaultState());
   const [result, setResult] = useState<number | null>(null);
-
-  const reset = () => {
-    setGrades(defaultState());
-    setResult(null);
-  };
 
   const handleSubjectChange = (s: string) => {
     setSubject(s);
@@ -75,21 +70,54 @@ export function GradeCalculator() {
   const calculate = () => {
     const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
     const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
-    
+
     const kollokviumVals = grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0));
     const kollokviumOrta = kollokviumVals.reduce((a, b) => a + b, 0) / 3;
-    
+
     const seminarVals = grades.seminar.map(s => Math.min(10, parseFloat(s) || 0));
     const seminarOrta = seminarVals.length > 0
       ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length
       : 0;
-    
+
     const labCount = grades.laboratoriya.length;
     const labBal = Math.min(15, (labCount / 8) * 15);
 
     const total = davamiyyat + serbest + kollokviumOrta + seminarOrta + labBal;
     setResult(Math.round(total * 10) / 10);
   };
+
+  if (!subject) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center gap-3">
+          <Calculator className="h-6 w-6 text-primary shrink-0" />
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
+            <p className="text-sm text-muted-foreground">Qiymətlərinizi daxil edin</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="font-bold">Fənn Seçin</Label>
+          <select
+            value=""
+            onChange={e => handleSubjectChange(e.target.value)}
+            className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="" disabled>Dərsi seçin</option>
+            {SUBJECTS.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-3">
+          <Calculator className="h-12 w-12 opacity-20" />
+          <p className="text-sm">Zəhmət olmasa dərsi seçin</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -109,6 +137,7 @@ export function GradeCalculator() {
           onChange={e => handleSubjectChange(e.target.value)}
           className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
+          <option value="" disabled>Dərsi seçin</option>
           {SUBJECTS.map(s => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -215,7 +244,10 @@ export function GradeCalculator() {
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">Maksimum laboratoriya balı: <span className="font-bold">15</span></p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Maksimum laboratoriya balı: <span className="font-bold">15</span></p>
+          <p className="text-xs text-red-500 font-medium">* Fənnin laboratoriyası yoxdursa boş qoyun</p>
+        </div>
       </div>
 
       {/* Hesabla */}
