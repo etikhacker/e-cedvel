@@ -39,22 +39,93 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   useEffect(() => {
+    // ---- .then() XARICINDƏ olan hər şey ----
+
+    // Tema
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+
+    // Bildiriş icazəsi
+    if ('Notification' in window) {
+      setNotifPermission(Notification.permission);
+    }
+
+    // Cari həftə
+    const startDate = new Date('2026-02-16');
+    const now = new Date();
+    const diffInDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const weekIndex = Math.floor(diffInDays / 7);
+    const calculatedWeek = weekIndex % 2 === 0 ? 'ust' : 'alt';
+    setCurrentWeek(calculatedWeek);
+    setSelectedWeeklyWeek(calculatedWeek);
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    // Avtomatik bildiriş — hər dəqiqə
+    const notifInterval = setInterval(() => {
+      if (Notification.permission !== 'granted') return;
+      const savedP = localStorage.getItem('it24_profile');
+      if (!savedP) return;
+      const p = JSON.parse(savedP);
+      if (!p.notificationSettings?.firstChannel?.enabled) return;
+
+      const nowT = new Date();
+      const sched = getSchedule(p.group || 'IT24.1');
+      const dayNames = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
+      const todayName = dayNames[nowT.getDay()];
+      const sd = new Date('2026-02-16');
+      const dd = Math.floor((nowT.getTime() - sd.getTime()) / 86400000);
+      const week = Math.floor(dd / 7) % 2 === 0 ? 'ust' : 'alt';
+
+      const todayClasses = sched.filter(c =>
+        c.day === todayName &&
+        (c.subgroup === 'hamisi' || c.subgroup === p.subgroup) &&
+        (c.week === 'hamisi' || c.week === week)
+      );
+
+      todayClasses.forEach(cls => {
+        const [startTime] = cls.time.split('-');
+        const [h, m] = startTime.split(':').map(Number);
+        const classTime = new Date(nowT);
+        classTime.setHours(h, m, 0, 0);
+        const diffMin = Math.round((classTime.getTime() - nowT.getTime()) / 60000);
+        const settings = p.notificationSettings;
+        const isFirst = todayClasses[0] === cls;
+        const t1 = isFirst ? settings.firstChannel.firstClassMinutes : settings.firstChannel.otherClassesMinutes;
+        const t2 = settings.secondChannel.enabled
+          ? (isFirst ? settings.secondChannel.firstClassMinutes : settings.secondChannel.otherClassesMinutes)
+          : -1;
+        const notifKey = `notif_${cls.day}_${cls.time}_${diffMin}`;
+        if ((diffMin === t1 || diffMin === t2) && !sessionStorage.getItem(notifKey)) {
+          sessionStorage.setItem(notifKey, '1');
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification(`📚 ${cls.subject}`, {
+              body: `${diffMin} dəqiqə sonra — ${cls.time}, otaq ${cls.room} (${cls.teacher})`,
+              icon: '/icon-192x192.png',
+              tag: notifKey,
+            });
+          });
+        }
+      });
+    }, 60000);
+
+    // ---- .then() İÇİNDƏ olan hər şey ----
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         window.location.href = '/login';
         return;
       }
-
       const meta = session.user?.user_metadata;
       const savedProfile = localStorage.getItem('it24_profile');
-
       if (savedProfile) {
         try {
           const parsed = JSON.parse(savedProfile);
           if (!parsed.notificationSettings?.firstChannel) {
             parsed.notificationSettings = DEFAULT_NOTIF_SETTINGS;
           }
-          // Həmişə Supabase-dən ən son məlumatları al
           if (meta?.full_name) parsed.name = meta.full_name;
           if (meta?.group) parsed.group = meta.group;
           if (meta?.subgroup) parsed.subgroup = meta.subgroup;
@@ -65,82 +136,10 @@ export default function Home() {
           localStorage.removeItem('it24_profile');
         }
       }
-      // Service Worker qeydiyyatı
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
-}
-
-// Avtomatik bildiriş yoxlaması — hər dəqiqə
-const notifInterval = setInterval(() => {
-  if (Notification.permission !== 'granted') return;
-  const savedP = localStorage.getItem('it24_profile');
-  if (!savedP) return;
-  const p = JSON.parse(savedP);
-  if (!p.notificationSettings?.firstChannel?.enabled) return;
-
-  const now = new Date();
-  const schedule = getSchedule(p.group || 'IT24.1');
-  const dayNames = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
-  const todayName = dayNames[now.getDay()];
-  
-  const startDate = new Date('2026-02-16');
-  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / 86400000);
-  const week = Math.floor(diffDays / 7) % 2 === 0 ? 'ust' : 'alt';
-
-  const todayClasses = schedule.filter(c =>
-    c.day === todayName &&
-    (c.subgroup === 'hamisi' || c.subgroup === p.subgroup) &&
-    (c.week === 'hamisi' || c.week === week)
-  );
-
-  todayClasses.forEach(cls => {
-    const [startTime] = cls.time.split('-');
-    const [h, m] = startTime.split(':').map(Number);
-    const classTime = new Date(now);
-    classTime.setHours(h, m, 0, 0);
-
-    const diffMin = Math.round((classTime.getTime() - now.getTime()) / 60000);
-    const settings = p.notificationSettings;
-
-    const isFirst = todayClasses[0] === cls;
-    const targetMin1 = isFirst ? settings.firstChannel.firstClassMinutes : settings.firstChannel.otherClassesMinutes;
-    const targetMin2 = settings.secondChannel.enabled
-      ? (isFirst ? settings.secondChannel.firstClassMinutes : settings.secondChannel.otherClassesMinutes)
-      : -1;
-
-    const notifKey = `notif_${cls.day}_${cls.time}_${diffMin}`;
-    if ((diffMin === targetMin1 || diffMin === targetMin2) && !sessionStorage.getItem(notifKey)) {
-      sessionStorage.setItem(notifKey, '1');
-      navigator.serviceWorker.ready.then(reg => {
-        reg.showNotification(`📚 ${cls.subject}`, {
-          body: `${diffMin} dəqiqə sonra — ${cls.time}, otaq ${cls.room} (${cls.teacher})`,
-          icon: '/icon-192x192.png',
-          tag: notifKey,
-        });
-      });
-    }
-  });
-}, 60000);
-
-return () => clearInterval(notifInterval);
-      // Profil yoxdursa onboarding göstərəcək
-      setIsReady(true);
+      setIsReady(true); // ← .then() içində, ən sonda
     });
 
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifPermission(Notification.permission);
-    }
-
-    const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
-
-    const startDate = new Date('2026-02-16');
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const weekIndex = Math.floor(diffInDays / 7);
-    const calculatedWeek = weekIndex % 2 === 0 ? 'ust' : 'alt';
-    setCurrentWeek(calculatedWeek);
-    setSelectedWeeklyWeek(calculatedWeek);
+    return () => clearInterval(notifInterval); // ← useEffect-in ən sonu
   }, []);
 
   const toggleDarkMode = () => {
@@ -285,10 +284,7 @@ return () => clearInterval(notifInterval);
     if (value === 'weekly') setSelectedWeeklyWeek(currentWeek);
   };
 
-  // Logo üçün qrup adını qısalt
-  const logoText = profile.group
-    ? profile.group.replace('İT', 'İT').replace('IT', 'İT')
-    : 'İT24';
+  const logoText = profile.group || 'İT24';
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
