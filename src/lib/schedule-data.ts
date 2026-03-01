@@ -55,7 +55,9 @@ export const SCHEDULE_IT24_2: ScheduleItem[] = [
 ];
 
 export const getSchedule = (group: string): ScheduleItem[] => {
-  if (group === 'IT24.2') return SCHEDULE_IT24_2;
+  // Həm latın həm kiril İ-ni dəstəklə
+  const normalized = group.replace('İ', 'I').replace('і', 'i').toUpperCase();
+  if (normalized.includes('24.2') || normalized.includes('242')) return SCHEDULE_IT24_2;
   return SCHEDULE_IT24_1;
 };
 
