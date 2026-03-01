@@ -135,7 +135,10 @@ export default function Home() {
     }} />;
   }
 
-  const schedule = getSchedule(profile.group || 'IT24.1');
+  const groupKey = profile.group === 'it242' ? 'IT24.2' 
+               : profile.group === 'it241' ? 'IT24.1' 
+               : (profile.group || 'IT24.1');
+const schedule = getSchedule(groupKey);
 
 const dailyClasses = schedule.filter(c =>
   (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
