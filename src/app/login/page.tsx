@@ -18,8 +18,8 @@ const FACULTIES: Record<string, string[]> = {
   ],
   'Mühəndislik fakültəsi': [
     'İT24.1', 'İT24.2', 'İT23.1', 'İT23.2',
-    'ELEKTRONİKA24', 'ELEKTRONİKA23',
-    'MÜHƏNDİSLİK24', 'MÜHƏNDİSLİK23',
+    'EN24', 'EN23',
+    'KM24', 'KM23',
   ],
   'İqtisadiyyat fakültəsi': [
     'İQTİSAD24.1', 'İQTİSAD24.2', 'İQTİSAD23.1', 'İQTİSAD23.2',
