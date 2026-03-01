@@ -65,6 +65,64 @@ export default function Home() {
           localStorage.removeItem('it24_profile');
         }
       }
+      // Service Worker qeydiyyatı
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
+// Avtomatik bildiriş yoxlaması — hər dəqiqə
+const notifInterval = setInterval(() => {
+  if (Notification.permission !== 'granted') return;
+  const savedP = localStorage.getItem('it24_profile');
+  if (!savedP) return;
+  const p = JSON.parse(savedP);
+  if (!p.notificationSettings?.firstChannel?.enabled) return;
+
+  const now = new Date();
+  const schedule = getSchedule(p.group || 'IT24.1');
+  const dayNames = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
+  const todayName = dayNames[now.getDay()];
+  
+  const startDate = new Date('2026-02-16');
+  const diffDays = Math.floor((now.getTime() - startDate.getTime()) / 86400000);
+  const week = Math.floor(diffDays / 7) % 2 === 0 ? 'ust' : 'alt';
+
+  const todayClasses = schedule.filter(c =>
+    c.day === todayName &&
+    (c.subgroup === 'hamisi' || c.subgroup === p.subgroup) &&
+    (c.week === 'hamisi' || c.week === week)
+  );
+
+  todayClasses.forEach(cls => {
+    const [startTime] = cls.time.split('-');
+    const [h, m] = startTime.split(':').map(Number);
+    const classTime = new Date(now);
+    classTime.setHours(h, m, 0, 0);
+
+    const diffMin = Math.round((classTime.getTime() - now.getTime()) / 60000);
+    const settings = p.notificationSettings;
+
+    const isFirst = todayClasses[0] === cls;
+    const targetMin1 = isFirst ? settings.firstChannel.firstClassMinutes : settings.firstChannel.otherClassesMinutes;
+    const targetMin2 = settings.secondChannel.enabled
+      ? (isFirst ? settings.secondChannel.firstClassMinutes : settings.secondChannel.otherClassesMinutes)
+      : -1;
+
+    const notifKey = `notif_${cls.day}_${cls.time}_${diffMin}`;
+    if ((diffMin === targetMin1 || diffMin === targetMin2) && !sessionStorage.getItem(notifKey)) {
+      sessionStorage.setItem(notifKey, '1');
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(`📚 ${cls.subject}`, {
+          body: `${diffMin} dəqiqə sonra — ${cls.time}, otaq ${cls.room} (${cls.teacher})`,
+          icon: '/icon-192x192.png',
+          tag: notifKey,
+        });
+      });
+    }
+  });
+}, 60000);
+
+return () => clearInterval(notifInterval);
       // Profil yoxdursa onboarding göstərəcək
       setIsReady(true);
     });
