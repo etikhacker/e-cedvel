@@ -176,9 +176,7 @@ export default function Home() {
     (c.week === 'hamisi' || c.week === currentWeek)
   );
 
-  const weeklyClasses = schedule.filter(c =>
-    (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup)
-  );
+  const weeklyClasses = schedule;
 
   const updateProfile = (updatedProfile: UserProfile) => {
     setProfile(updatedProfile);
