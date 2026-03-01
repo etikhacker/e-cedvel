@@ -13,8 +13,8 @@ type Mode = 'login' | 'register' | 'forgot';
 
 const FACULTIES: Record<string, string[]> = {
   'Təhsil fakültəsi': [
-    'İBT11', 'İBT12', 'İBT13', 'İBT21', 'İBT22', 'İBT23',
-    'MATEMATİKA11', 'MATEMATİKA12', 'FİZİKA11', 'KİMYA11',
+    'İS24.1', 'İS24.2', 'RI23', 'TPX24', 'Sİ24', 'Sİ25',
+    'MT24', 'MT25',
   ],
   'Mühəndislik fakültəsi': [
     'İT24.1', 'İT24.2', 'İT23.1', 'İT23.2',
