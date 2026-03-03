@@ -12,13 +12,18 @@ export interface NotificationSettings {
 }
 
 export interface GradeDetails {
-  components?: Record<string, number>;
   total: number;
   davamiyyat?: number;
   serbest?: number;
   kollokviumOrta?: number;
   seminarOrta?: number;
   labBal?: number;
+  attendance?: number;
+  independentWork?: number;
+  colloquiums?: number[];
+  seminars?: number[];
+  completedLabs?: number[];
+  components?: Record<string, number>;
 }
 
 export interface UserProfile {
