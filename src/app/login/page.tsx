@@ -126,8 +126,8 @@ export default function LoginPage() {
         <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
-              <div className="bg-green-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">İT24</div>
-              <span className="text-xl font-bold text-gray-800">E-Cədvəl</span>
+              <div className="bg-green-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">E</div>
+              <span className="text-xl font-bold text-gray-800">-Cədvəl</span>
             </div>
             <p className="text-gray-400 text-sm">
               {mode === 'login' ? 'Hesabınıza daxil olun' : mode === 'register' ? 'Yeni hesab yaradın' : 'Şifrə bərpası'}
