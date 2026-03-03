@@ -115,7 +115,7 @@ export default function Home() {
     // ---- .then() İÇİNDƏ olan hər şey ----
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        window.location.href = '/login';
+        window.location.replace('/login');
         return;
       }
       const meta = session.user?.user_metadata;
