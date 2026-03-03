@@ -130,7 +130,17 @@ export default function Home() {
           if (meta?.group) parsed.group = meta.group;
           if (meta?.subgroup) parsed.subgroup = meta.subgroup;
           if (meta?.faculty) parsed.faculty = meta.faculty;
-          localStorage.setItem('it24_profile', JSON.stringify(parsed));
+          const savedGradesBackup = localStorage.getItem('it24_saved_grades');
+if (savedGradesBackup) {
+  try {
+    const backup = JSON.parse(savedGradesBackup);
+    if (!parsed.savedGrades || Object.keys(parsed.savedGrades).length === 0) {
+      parsed.savedGrades = backup.savedGrades;
+      parsed.savedDetails = backup.savedDetails;
+    }
+    localStorage.removeItem('it24_saved_grades');
+  } catch (e) {}
+}
           setProfile(parsed);
         } catch (e) {
           localStorage.removeItem('it24_profile');
@@ -211,11 +221,26 @@ export default function Home() {
   };
 
   const resetProfile = () => {
-    localStorage.removeItem('it24_profile');
-    supabase.auth.signOut().then(() => {
-      window.location.replace('/login');
-    });
-  };
+  // Ballari saxla
+  const savedProfile = localStorage.getItem('it24_profile');
+  let savedGrades = {};
+  let savedDetails = {};
+  if (savedProfile) {
+    try {
+      const p = JSON.parse(savedProfile);
+      savedGrades = p.savedGrades || {};
+      savedDetails = p.savedDetails || {};
+    } catch (e) {}
+  }
+  localStorage.removeItem('it24_profile');
+  // Ballari geri yaz
+  if (Object.keys(savedGrades).length > 0) {
+    localStorage.setItem('it24_saved_grades', JSON.stringify({ savedGrades, savedDetails }));
+  }
+  supabase.auth.signOut().then(() => {
+    window.location.replace('/login');
+  });
+};
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
