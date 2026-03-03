@@ -47,9 +47,12 @@ export default function LoginPage() {
     if (!subgroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Alt/Üst qrup seçin.' }); return; }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { data: { full_name: fullName, faculty, group, subgroup } },
-    });
+  email, password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    data: { full_name: fullName, faculty, group, subgroup },
+  },
+});
     setLoading(false);
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: error.message });
