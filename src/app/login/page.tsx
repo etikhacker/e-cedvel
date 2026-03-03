@@ -140,7 +140,7 @@ export default function LoginPage() {
                 <div className="space-y-1.5">
                   <Label className="text-gray-600 text-sm">Ad Soyad</Label>
                   <Input placeholder="Məs: Əli Həsənov" value={fullName} onChange={e => setFullName(e.target.value)}
-                    className="h-11 rounded-xl border-gray-900" />
+                    className="h-11 rounded-xl border-gray-900"/>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-gray-600 text-sm">Fakültə</Label>
