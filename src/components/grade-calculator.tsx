@@ -15,22 +15,26 @@ const SUBJECTS = [
   'Diskret Riyaziyyat',
 ];
 
+type Components = {
+  hasKollokvium: boolean;
+  hasSeminar: boolean;
+  hasLab: boolean;
+};
+
 type GradeState = {
   davamiyyat: string;
   serbest: string;
   kollokvium: [string, string, string];
   seminar: string[];
   laboratoriya: number[];
-  labMax: number;
 };
 
-const defaultState = (): GradeState => ({
+const defaultGrades = (): GradeState => ({
   davamiyyat: '',
   serbest: '',
   kollokvium: ['', '', ''],
   seminar: [],
   laboratoriya: [],
-  labMax: 15,
 });
 
 type SaveData = {
@@ -49,14 +53,23 @@ interface GradeCalculatorProps {
 
 export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   const [subject, setSubject] = useState('');
-  const [grades, setGrades] = useState<GradeState>(defaultState());
+  const [components, setComponents] = useState<Components | null>(null);
+  const [grades, setGrades] = useState<GradeState>(defaultGrades());
   const [result, setResult] = useState<number | null>(null);
   const [lastCalc, setLastCalc] = useState<Omit<SaveData, 'subject'> | null>(null);
   const [saved, setSaved] = useState(false);
 
   const handleSubjectChange = (s: string) => {
     setSubject(s);
-    setGrades(defaultState());
+    setComponents(null);
+    setGrades(defaultGrades());
+    setResult(null);
+    setSaved(false);
+  };
+
+  const handleComponentsConfirm = (c: Components) => {
+    setComponents(c);
+    setGrades(defaultGrades());
     setResult(null);
     setSaved(false);
   };
@@ -80,34 +93,37 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
     setGrades(prev => { const s = [...prev.seminar]; s[i] = val; return { ...prev, seminar: s }; });
   };
 
-  const hasLab = grades.laboratoriya.length > 0;
-  const hasSeminar = grades.seminar.length > 0;
-
   const calculate = () => {
+    if (!components) return;
     const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
     const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
 
-    const seminarVals = grades.seminar.map(s => Math.min(10, parseFloat(s) || 0));
+    const kollokviumVals = components.hasKollokvium
+      ? grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0))
+      : [];
+    const seminarVals = components.hasSeminar
+      ? grades.seminar.map(s => Math.min(10, parseFloat(s) || 0))
+      : [];
 
     let kombinOrta = 0;
     let labBal = 0;
 
-    if (!hasLab) {
-      // Lab yoxdur: kollokvium + seminar orta, max 20
-      const kollokviumVals = grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0));
+    if (components.hasLab && !components.hasSeminar && !components.hasKollokvium) {
+      // Yalnız lab: max 30
+      labBal = Math.min(30, (grades.laboratoriya.length / 8) * 30);
+      kombinOrta = 0;
+    } else if (!components.hasLab) {
+      // Lab yoxdur: kollokvium+seminar orta, max 20
       const allVals = [...kollokviumVals, ...seminarVals];
       const orta = allVals.length > 0 ? allVals.reduce((a, b) => a + b, 0) / allVals.length : 0;
       kombinOrta = Math.min(20, (orta / 10) * 20);
       labBal = 0;
-    } else if (!hasSeminar) {
-      // Seminar yoxdur, lab var: lab max 30, kollokvium olmur
-      labBal = Math.min(30, (grades.laboratoriya.length / 8) * 30);
-      kombinOrta = 0;
     } else {
-      // Hər ikisi var: seminar max 10, lab max 15
-      const orta = seminarVals.length > 0 ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length : 0;
+      // Lab + (kollokvium və/və ya seminar): lab max 15, kombin max 10
+      const allVals = [...kollokviumVals, ...seminarVals];
+      const orta = allVals.length > 0 ? allVals.reduce((a, b) => a + b, 0) / allVals.length : 0;
       kombinOrta = Math.min(10, orta);
-      labBal = Math.min(grades.labMax, (grades.laboratoriya.length / 8) * grades.labMax);
+      labBal = Math.min(15, (grades.laboratoriya.length / 8) * 15);
     }
 
     const total = Math.round((davamiyyat + serbest + kombinOrta + labBal) * 10) / 10;
@@ -122,6 +138,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
     setSaved(true);
   };
 
+  // Fənn seçilməyib
   if (!subject) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
@@ -148,6 +165,12 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
     );
   }
 
+  // Fənn seçilib, komponentlər seçilməyib
+  if (!components) {
+    return <ComponentSelector subject={subject} onSubjectChange={handleSubjectChange} onConfirm={handleComponentsConfirm} />;
+  }
+
+  // Əsas form
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -158,13 +181,17 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="font-bold">Fənn Seçin</Label>
-        <select value={subject} onChange={e => handleSubjectChange(e.target.value)}
-          className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="" disabled>Dərsi seçin</option>
-          {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+      {/* Fənn + dəyişdir */}
+      <div className="flex items-center justify-between p-3 bg-primary/5 rounded-xl border border-primary/20">
+        <div>
+          <p className="font-bold text-foreground">{subject}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {[components.hasKollokvium && 'Kollokvium', components.hasSeminar && 'Seminar', components.hasLab && 'Lab'].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={() => handleSubjectChange(subject)} className="text-xs text-primary">
+          Dəyiş
+        </Button>
       </div>
 
       {/* Davamiyyət + Sərbəst */}
@@ -181,15 +208,13 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
       </div>
 
-      {/* Kollokvium — yalnız lab yoxdursa */}
-      {!hasLab ? (
+      {/* Kollokvium */}
+      {components.hasKollokvium && (
         <div className="space-y-2">
-          <Label className="font-bold text-sm">
-            Kollokvium Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span>
-          </Label>
+          <Label className="font-bold text-sm">Kollokvium Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
           <div className="grid grid-cols-3 gap-3">
             {grades.kollokvium.map((k, i) => (
-              <Input key={i} type="number" min={0} max={10} placeholder="Məs: 10" value={k}
+              <Input key={i} type="number" min={0} max={10} placeholder={`Kollokvium ${i+1}`} value={k}
                 onChange={e => {
                   const kol = [...grades.kollokvium] as [string, string, string];
                   kol[i] = e.target.value;
@@ -198,85 +223,61 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
             ))}
           </div>
         </div>
-      ) : (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-          <p className="text-sm text-red-500 font-medium">⚠ Laboratoriyalı fənnin kollokvumu olmur</p>
-        </div>
       )}
 
       {/* Seminar */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Label className="font-bold text-sm">
-              Seminar Qiymətləri
-              <span className="text-muted-foreground font-normal ml-1">
-                {!hasLab ? '(Max 10, lab yoxdursa max 20)' : '(Max 10)'}
-              </span>
-            </Label>
-            <span className="text-xs text-red-500 font-medium">* Seminar yoxdursa boş qoyun</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={addSeminar} className="gap-1 text-primary hover:bg-primary/10 shrink-0">
-            <Plus className="h-4 w-4" /> Əlavə et
-          </Button>
-        </div>
-        {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiyməti əlavə edin</p>}
+      {components.hasSeminar && (
         <div className="space-y-2">
-          {grades.seminar.map((s, i) => (
-            <div key={i} className="flex gap-2">
-              <Input type="number" min={0} max={10} placeholder={`Seminar ${i + 1}`} value={s}
-                onChange={e => updateSeminar(i, e.target.value)} />
-              <Button variant="ghost" size="icon" onClick={() => removeSeminar(i)}
-                className="text-destructive hover:bg-destructive/10 shrink-0">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+          <div className="flex items-center justify-between">
+            <Label className="font-bold text-sm">Seminar Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+            <Button variant="ghost" size="sm" onClick={addSeminar} className="gap-1 text-primary hover:bg-primary/10">
+              <Plus className="h-4 w-4" /> Əlavə et
+            </Button>
+          </div>
+          {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiyməti əlavə edin</p>}
+          <div className="space-y-2">
+            {grades.seminar.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <Input type="number" min={0} max={10} placeholder={`Seminar ${i + 1}`} value={s}
+                  onChange={e => updateSeminar(i, e.target.value)} />
+                <Button variant="ghost" size="icon" onClick={() => removeSeminar(i)}
+                  className="text-destructive hover:bg-destructive/10 shrink-0">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Laboratoriya */}
-      <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <Label className="font-bold text-sm">
-            Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span>
-            <span className="text-muted-foreground font-normal ml-1">
-              {!hasSeminar && hasLab ? '(Max 30)' : hasLab ? '(Max 15)' : ''}
-            </span>
-          </Label>
-          <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))}
-            className="gap-1 text-muted-foreground hover:bg-muted text-xs">
-            <RotateCcw className="h-3 w-3" /> Sıfırla
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-            <button key={n} onClick={() => smartToggleLab(n)}
-              className={cn("h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
-                grades.laboratoriya.includes(n)
-                  ? "bg-primary border-primary text-white shadow-md scale-110"
-                  : "bg-background border-border text-foreground hover:border-primary/50")}>
-              {n}
-            </button>
-          ))}
-        </div>
-        {/* Lab max — yalnız hər ikisi varsa */}
-        {hasLab && hasSeminar && (
-          <div className="flex items-center gap-3 pt-1">
-            <Label className="text-xs text-muted-foreground shrink-0">Maks. lab balı:</Label>
-            <div className="flex gap-2">
-              {[15, 20, 25, 30].map(v => (
-                <button key={v} onClick={() => setGrades(prev => ({ ...prev, labMax: v }))}
-                  className={cn("px-3 py-1 rounded-lg text-xs font-bold border transition-all",
-                    grades.labMax === v ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50")}>
-                  {v}
-                </button>
-              ))}
-            </div>
+      {components.hasLab && (
+        <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <Label className="font-bold text-sm">
+              Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span>
+              <span className="text-muted-foreground font-normal ml-1">
+                {!components.hasSeminar && !components.hasKollokvium ? '(Max 30)' : '(Max 15)'}
+              </span>
+            </Label>
+            <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))}
+              className="gap-1 text-muted-foreground hover:bg-muted text-xs">
+              <RotateCcw className="h-3 w-3" /> Sıfırla
+            </Button>
           </div>
-        )}
-        <p className="text-xs text-red-500 font-medium">* Laboratoriya yoxdursa boş qoyun</p>
-      </div>
+          <div className="flex flex-wrap gap-2">
+            {[1,2,3,4,5,6,7,8].map(n => (
+              <button key={n} onClick={() => smartToggleLab(n)}
+                className={cn("h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
+                  grades.laboratoriya.includes(n)
+                    ? "bg-primary border-primary text-white shadow-md scale-110"
+                    : "bg-background border-border text-foreground hover:border-primary/50")}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Button className="w-full h-14 text-base font-bold gap-2" onClick={calculate}>
         <Calculator className="h-5 w-5 shrink-0" /> Hesabla
@@ -294,7 +295,6 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
               {result >= 28 ? '✓ İmtahana buraxılırsınız' : '⚠ Kafi deyil!'}
             </div>
           </div>
-
           {onSave && (
             <Button variant="outline"
               className={cn("w-full h-12 gap-2 font-bold border-2 transition-all",
@@ -306,6 +306,63 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Komponent seçici
+function ComponentSelector({ subject, onSubjectChange, onConfirm }: {
+  subject: string;
+  onSubjectChange: (s: string) => void;
+  onConfirm: (c: Components) => void;
+}) {
+  const [hasKollokvium, setHasKollokvium] = useState(false);
+  const [hasSeminar, setHasSeminar] = useState(false);
+  const [hasLab, setHasLab] = useState(false);
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <Calculator className="h-6 w-6 text-primary shrink-0" />
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
+          <p className="text-sm text-muted-foreground">Qiymətlərinizi daxil edin</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="font-bold">Fənn Seçin</Label>
+        <select value={subject} onChange={e => onSubjectChange(e.target.value)}
+          className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+          <option value="" disabled>Dərsi seçin</option>
+          {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      <div className="p-5 rounded-2xl border bg-muted/20 space-y-4">
+        <p className="font-bold text-foreground">Bu fənnin hansı komponentləri var?</p>
+        <div className="space-y-3">
+          {[
+            { label: 'Kollokvium', value: hasKollokvium, set: setHasKollokvium },
+            { label: 'Seminar', value: hasSeminar, set: setHasSeminar },
+            { label: 'Laboratoriya', value: hasLab, set: setHasLab },
+          ].map(({ label, value, set }) => (
+            <button key={label} type="button" onClick={() => set(!value)}
+              className={cn("w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all font-medium",
+                value ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary/40")}>
+              <span>{label}</span>
+              <span className={cn("h-5 w-5 rounded-full border-2 flex items-center justify-center text-xs",
+                value ? "border-primary bg-primary text-white" : "border-muted-foreground")}>
+                {value ? '✓' : ''}
+              </span>
+            </button>
+          ))}
+        </div>
+        <Button className="w-full h-11" disabled={!hasKollokvium && !hasSeminar && !hasLab}
+          onClick={() => onConfirm({ hasKollokvium, hasSeminar, hasLab })}>
+          Davam et →
+        </Button>
+      </div>
     </div>
   );
 }
