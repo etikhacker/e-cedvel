@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const SUBJECTS = [
-  'Komputer Sebekeieri',
-  'Emeliyyat Sistemleri',
-  'Obyektyonlu Proqramlashdirma',
-  'Verilenlerbazasi Sistemleri',
+  'Komputer Şəbəkələri',
+  'Eməliyyat Sistemləri',
+  'Obyektyönlu Proqramlaşdirma',
+  'Verilenlərbazasi Sistemləri',
   'Diskret Riyaziyyat',
 ];
 
@@ -145,12 +145,12 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         <div className="flex items-center gap-3">
           <Calculator className="h-6 w-6 text-primary shrink-0" />
           <div>
-            <h2 className="text-xl font-bold text-foreground">Giris Bali Hesablayici</h2>
-            <p className="text-sm text-muted-foreground">Qiymetlen daxil edin</p>
+            <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
+            <p className="text-sm text-muted-foreground">Qiymətləri daxil edin</p>
           </div>
         </div>
         <div className="space-y-2">
-          <Label className="font-bold">Fenn Secin</Label>
+          <Label className="font-bold">Fənn Seçin</Label>
           <select value="" onChange={e => handleSubjectChange(e.target.value)}
             className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
             <option value="" disabled>Dersi secin</option>
@@ -159,7 +159,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
         </div>
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-3">
           <Calculator className="h-12 w-12 opacity-20" />
-          <p className="text-sm">Zehmет olmasa dersi secin</p>
+          <p className="text-sm">Zəhmət olmasa dərsi seçin</p>
         </div>
       </div>
     );
@@ -174,8 +174,8 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
       <div className="flex items-center gap-3">
         <Calculator className="h-6 w-6 text-primary shrink-0" />
         <div>
-          <h2 className="text-xl font-bold text-foreground">Giris Bali Hesablayici</h2>
-          <p className="text-sm text-muted-foreground">Qiymetlen daxil edin</p>
+          <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
+          <p className="text-sm text-muted-foreground">Qiymətlər daxil edin</p>
         </div>
       </div>
 
@@ -193,12 +193,12 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="font-bold text-sm">Davamiyyet <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+          <Label className="font-bold text-sm">Davamiyyət <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
           <Input type="number" min={0} max={10} placeholder="Mes: 10" value={grades.davamiyyat}
             onChange={e => setGrades(prev => ({ ...prev, davamiyyat: e.target.value }))} />
         </div>
         <div className="space-y-2">
-          <Label className="font-bold text-sm">Serbest Is <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+          <Label className="font-bold text-sm">Sərbəst iş <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
           <Input type="number" min={0} max={10} placeholder="Mes: 10" value={grades.serbest}
             onChange={e => setGrades(prev => ({ ...prev, serbest: e.target.value }))} />
         </div>
@@ -206,7 +206,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
 
       {components.hasKollokvium && (
         <div className="space-y-2">
-          <Label className="font-bold text-sm">Kollokvium Qiymetlen <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
+          <Label className="font-bold text-sm">Kollokvium Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
           <div className="grid grid-cols-3 gap-3">
             {grades.kollokvium.map((k, i) => (
               <Input key={i} type="number" min={0} max={10} placeholder={`Kollokvium ${i+1}`} value={k}
@@ -228,7 +228,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
               <Plus className="h-4 w-4" /> Elave et
             </Button>
           </div>
-          {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiymeti elave edin</p>}
+          {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiymətı əlavə edin</p>}
           <div className="space-y-2">
             {grades.seminar.map((s, i) => (
               <div key={i} className="flex gap-2">
@@ -255,7 +255,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
             </Label>
             <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))}
               className="gap-1 text-muted-foreground hover:bg-muted text-xs">
-              <RotateCcw className="h-3 w-3" /> Sifirla
+              <RotateCcw className="h-3 w-3" /> Sıfırla
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -318,22 +318,22 @@ function ComponentSelector({ subject, onSubjectChange, onConfirm }: {
       <div className="flex items-center gap-3">
         <Calculator className="h-6 w-6 text-primary shrink-0" />
         <div>
-          <h2 className="text-xl font-bold text-foreground">Giris Bali Hesablayici</h2>
-          <p className="text-sm text-muted-foreground">Qiymetlen daxil edin</p>
+          <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
+          <p className="text-sm text-muted-foreground">Qiymətləri daxil edin</p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="font-bold">Fenn Secin</Label>
+        <Label className="font-bold">Fənn Seçin</Label>
         <select value={subject} onChange={e => onSubjectChange(e.target.value)}
           className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="" disabled>Dersi secin</option>
+          <option value="" disabled>Dərsi seçin</option>
           {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
       <div className="p-5 rounded-2xl border bg-muted/20 space-y-4">
-        <p className="font-bold text-foreground">Bu fennin hansi komponentleri var?</p>
+        <p className="font-bold text-foreground">Bu fənnin hansı komponentləri var?</p>
         <div className="space-y-3">
           {([
             { label: 'Kollokvium', value: hasKollokvium, set: setHasKollokvium },
@@ -353,7 +353,7 @@ function ComponentSelector({ subject, onSubjectChange, onConfirm }: {
 
           {hasLab && (
             <div className="px-1 pb-1 space-y-2">
-              <p className="text-sm text-muted-foreground font-medium">Laboratoriya sayi:</p>
+              <p className="text-sm text-muted-foreground font-medium">Laboratoriya sayı:</p>
               <div className="flex flex-wrap gap-2">
                 {[4, 5, 6, 7, 8, 10, 12].map(n => (
                   <button key={n} type="button" onClick={() => setLabCount(n)}
