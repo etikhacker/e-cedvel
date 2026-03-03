@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "İT24 Dərs Cədvəli",
-  description: "İT24 qrupu üçün dərs cədvəli tətbiqi",
+  title: "E-Cədvəl",
+  description: "Mingəçevir Dövlət Universiteti dərs cədvəli",
 };
 
 export default function RootLayout({
