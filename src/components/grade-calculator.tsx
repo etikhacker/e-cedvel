@@ -1,287 +1,286 @@
-'use client';
 
-import React, { useState } from 'react';
-import { Calculator, RotateCcw, Plus, Trash2, Save } from 'lucide-react';
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-
-const SUBJECTS = [
-  'Kompüter Şəbəkələri',
-  'Əməliyyat Sistemləri',
-  'Obyektyönlü Proqramlaşdırma',
-  'Verilənlər Bazası Sistemləri',
-  'Diskret Riyaziyyat',
-];
-
-type GradeState = {
-  davamiyyat: string;
-  serbest: string;
-  kollokvium: [string, string, string];
-  seminar: string[];
-  laboratoriya: number[];
-  labMax: number;
-};
-
-const defaultState = (): GradeState => ({
-  davamiyyat: '',
-  serbest: '',
-  kollokvium: ['', '', ''],
-  seminar: [],
-  laboratoriya: [],
-  labMax: 15,
-});
-
-type SaveData = {
-  subject: string;
-  total: number;
-  davamiyyat: number;
-  serbest: number;
-  kollokviumOrta: number;
-  seminarOrta: number;
-  labBal: number;
-};
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2, Calculator, CheckCircle2, AlertCircle, Info, Save, RotateCcw } from 'lucide-react';
+import { FIXED_SCHEDULE } from '@/lib/schedule-data';
+import { Badge } from '@/components/ui/badge';
+import { GradeDetails } from '@/lib/types';
 
 interface GradeCalculatorProps {
-  onSave?: (data: SaveData) => void;
+  onSave?: (subject: string, details: GradeDetails) => void;
+  initialSubject?: string;
+  existingDetails?: GradeDetails;
 }
 
-export function GradeCalculator({ onSave }: GradeCalculatorProps) {
-  const [subject, setSubject] = useState('');
-  const [grades, setGrades] = useState<GradeState>(defaultState());
-  const [result, setResult] = useState<number | null>(null);
-  const [lastCalc, setLastCalc] = useState<Omit<SaveData, 'subject'> | null>(null);
-  const [saved, setSaved] = useState(false);
+export const GradeCalculator = ({ onSave, initialSubject, existingDetails }: GradeCalculatorProps) => {
+  const [selectedSubject, setSelectedSubject] = useState<string>(initialSubject || '');
+  const [attendance, setAttendance] = useState<string>(existingDetails?.attendance || '');
+  const [independentWork, setIndependentWork] = useState<string>(existingDetails?.independentWork || '');
+  const [colloquiums, setColloquiums] = useState<string[]>(existingDetails?.colloquiums || ['', '', '']);
+  const [seminars, setSeminars] = useState<string[]>(existingDetails?.seminars || []);
+  const [completedLabs, setCompletedLabs] = useState<number>(existingDetails?.completedLabs || 0);
+  const [result, setResult] = useState<number | null>(existingDetails?.total || null);
 
-  const handleSubjectChange = (s: string) => {
-    setSubject(s);
-    setGrades(defaultState());
-    setResult(null);
-    setSaved(false);
-  };
+  const subjects = Array.from(new Set(FIXED_SCHEDULE.map(s => s.name.split('(')[0].trim())));
 
-  const toggleLab = (n: number) => {
-    setGrades(prev => {
-      const newLabs = prev.laboratoriya.includes(n)
-        ? prev.laboratoriya.filter(x => x !== n)
-        : [...prev.laboratoriya, n].sort((a, b) => a - b);
-      // 5 basılanda 1-5 hamısını seç
-      if (!prev.laboratoriya.includes(n) && n === 5 && newLabs.length === 1) {
-        return { ...prev, laboratoriya: [1, 2, 3, 4, 5] };
+  const isOS = selectedSubject.toLowerCase().includes('əməliyyat');
+  const isDiscrete = selectedSubject.toLowerCase().includes('diskret');
+  const isCN = selectedSubject.toLowerCase().includes('şəbəkə');
+
+  const maxLabs = isDiscrete ? 0 : (isOS || isCN ? 8 : 5);
+  const labTotalPoints = isOS ? 30 : 15;
+  const multiplier = isDiscrete ? 3 : 1.5;
+
+  useEffect(() => {
+    if (initialSubject) {
+      setSelectedSubject(initialSubject);
+      if (existingDetails) {
+        setAttendance(existingDetails.attendance);
+        setIndependentWork(existingDetails.independentWork);
+        setColloquiums(existingDetails.colloquiums);
+        setSeminars(existingDetails.seminars);
+        setCompletedLabs(existingDetails.completedLabs);
+        setResult(existingDetails.total);
       }
-      return { ...prev, laboratoriya: newLabs };
-    });
-  };
+    }
+  }, [initialSubject, existingDetails]);
 
-  // 5 basılanda 1-5 seç, əgər hamısı seçilibsə sil
-  const smartToggleLab = (n: number) => {
-    setGrades(prev => {
-      const selected = prev.laboratoriya;
-      if (selected.includes(n)) {
-        return { ...prev, laboratoriya: selected.filter(x => x !== n) };
+  useEffect(() => {
+    if (!initialSubject || selectedSubject !== initialSubject) {
+      setResult(null);
+      setCompletedLabs(0);
+      setColloquiums(['', '', '']);
+      setSeminars([]);
+      setAttendance('');
+      setIndependentWork('');
+    }
+  }, [selectedSubject]);
+
+  const calculateGrade = () => {
+    let total = 0;
+    total += Math.min(Number(attendance) || 0, 10);
+    total += Math.min(Number(independentWork) || 0, 10);
+
+    if (!isOS) {
+      const collValues = colloquiums.map(Number).filter(n => !isNaN(n) && n > 0);
+      const semValues = seminars.map(Number).filter(n => !isNaN(n) && n > 0);
+      const allGrades = [...collValues, ...semValues];
+
+      if (allGrades.length > 0) {
+        const avg = allGrades.reduce((a, b) => a + b, 0) / allGrades.length;
+        total += avg * multiplier;
       }
-      // Yeni seçimdə əvvəlkilər + yenisi ardıcıl olacaqsa toplu seç
-      const newSelected = [...selected, n].sort((a, b) => a - b);
-      // Ən böyük seçilən rəqəmə qədər hamısını seç
-      const max = Math.max(...newSelected);
-      const consecutive = Array.from({ length: max }, (_, i) => i + 1);
-      return { ...prev, laboratoriya: consecutive };
-    });
-  };
+    }
 
-  const addSeminar = () => setGrades(prev => ({ ...prev, seminar: [...prev.seminar, ''] }));
-  const removeSeminar = (i: number) => setGrades(prev => ({ ...prev, seminar: prev.seminar.filter((_, idx) => idx !== i) }));
-  const updateSeminar = (i: number, val: string) => {
-    setGrades(prev => { const s = [...prev.seminar]; s[i] = val; return { ...prev, seminar: s }; });
-  };
-
-  const calculate = () => {
-    const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
-    const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
-    const kollokviumVals = grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0));
-    const kollokviumOrta = kollokviumVals.reduce((a, b) => a + b, 0) / 3;
-    const seminarVals = grades.seminar.map(s => Math.min(10, parseFloat(s) || 0));
-    const seminarOrta = seminarVals.length > 0 ? seminarVals.reduce((a, b) => a + b, 0) / seminarVals.length : 0;
-    const labBal = Math.min(grades.labMax, (grades.laboratoriya.length / 8) * grades.labMax);
-    const total = Math.round((davamiyyat + serbest + kollokviumOrta + seminarOrta + labBal) * 10) / 10;
-    setResult(total);
-    setSaved(false);
-    setLastCalc({ total, davamiyyat, serbest, kollokviumOrta, seminarOrta, labBal });
+    if (maxLabs > 0) {
+      const labScore = (completedLabs / maxLabs) * labTotalPoints;
+      total += labScore;
+    }
+    
+    setResult(Math.round(total));
   };
 
   const handleSave = () => {
-    if (!onSave || !lastCalc || !subject) return;
-    onSave({ subject, ...lastCalc });
-    setSaved(true);
+    if (result !== null && onSave) {
+      onSave(selectedSubject, {
+        attendance,
+        independentWork,
+        colloquiums,
+        seminars,
+        completedLabs,
+        total: result
+      });
+    }
   };
 
-  if (!subject) {
-    return (
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Calculator className="h-6 w-6 text-primary shrink-0" />
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
-            <p className="text-sm text-muted-foreground">Qiymətlərinizi daxil edin</p>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="font-bold">Fənn Seçin</Label>
-          <select value="" onChange={e => handleSubjectChange(e.target.value)}
-            className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-            <option value="" disabled>Dərsi seçin</option>
-            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground space-y-3">
-          <Calculator className="h-12 w-12 opacity-20" />
-          <p className="text-sm">Zəhmət olmasa dərsi seçin</p>
-        </div>
-      </div>
-    );
-  }
+  const getResultMessage = (res: number) => {
+    if (res >= 40) return { text: "Əla!", color: "bg-green-500", icon: <CheckCircle2 className="h-5 w-5" /> };
+    if (res >= 30) return { text: "Normal", color: "bg-primary", icon: <CheckCircle2 className="h-5 w-5" /> };
+    return { text: "Kafi deyil!", color: "bg-destructive", icon: <AlertCircle className="h-5 w-5" /> };
+  };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <Calculator className="h-6 w-6 text-primary shrink-0" />
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Giriş Balı Hesablayıcı</h2>
-          <p className="text-sm text-muted-foreground">Qiymətlərinizi daxil edin</p>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="font-bold">Fənn Seçin</Label>
-        <select value={subject} onChange={e => handleSubjectChange(e.target.value)}
-          className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="" disabled>Dərsi seçin</option>
-          {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
+    <Card className="shadow-lg border-primary/10">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-primary">
+          <Calculator className="h-6 w-6" />
+          Giriş Balı Hesablayıcı
+        </CardTitle>
+        <CardDescription>
+          Qiymətlərinizi daxil edin
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label className="font-bold text-sm">Davamiyyət <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-          <Input type="number" min={0} max={10} placeholder="Məs: 10" value={grades.davamiyyat}
-            onChange={e => setGrades(prev => ({ ...prev, davamiyyat: e.target.value }))} />
+          <Label htmlFor="subject">Fənn Seçin</Label>
+          <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+            <SelectTrigger id="subject" className="h-12">
+              <SelectValue placeholder="Dərsi seçin" />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map(sub => (
+                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="space-y-2">
-          <Label className="font-bold text-sm">Sərbəst İş <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-          <Input type="number" min={0} max={10} placeholder="Məs: 10" value={grades.serbest}
-            onChange={e => setGrades(prev => ({ ...prev, serbest: e.target.value }))} />
-        </div>
-      </div>
 
-      <div className="space-y-2">
-        <Label className="font-bold text-sm">Kollokvium Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-        <div className="grid grid-cols-3 gap-3">
-          {grades.kollokvium.map((k, i) => (
-            <Input key={i} type="number" min={0} max={10} placeholder="Məs: 10" value={k}
-              onChange={e => {
-                const kol = [...grades.kollokvium] as [string, string, string];
-                kol[i] = e.target.value;
-                setGrades(prev => ({ ...prev, kollokvium: kol }));
-              }} />
-          ))}
-        </div>
-      </div>
-
-      {/* Seminar */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Label className="font-bold text-sm">Seminar Qiymətləri <span className="text-muted-foreground font-normal">(Max 10)</span></Label>
-            <span className="text-xs text-red-500 font-medium">* Seminar yoxdursa boş qoyun</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={addSeminar} className="gap-1 text-primary hover:bg-primary/10">
-            <Plus className="h-4 w-4" /> Əlavə et
-          </Button>
-        </div>
-        {grades.seminar.length === 0 && <p className="text-sm text-muted-foreground italic">Seminar qiyməti əlavə edin</p>}
-        <div className="space-y-2">
-          {grades.seminar.map((s, i) => (
-            <div key={i} className="flex gap-2">
-              <Input type="number" min={0} max={10} placeholder={`Seminar ${i + 1}`} value={s} onChange={e => updateSeminar(i, e.target.value)} />
-              <Button variant="ghost" size="icon" onClick={() => removeSeminar(i)} className="text-destructive hover:bg-destructive/10 shrink-0">
-                <Trash2 className="h-4 w-4" />
-              </Button>
+        {selectedSubject && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Davamiyyət (Max 10)</Label>
+                <Input 
+                  type="text" 
+                  placeholder="Məs: 10"
+                  value={attendance} 
+                  onChange={(e) => setAttendance(e.target.value)} 
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Sərbəst İş (Max 10)</Label>
+                <Input 
+                  type="text" 
+                  placeholder="Məs: 10"
+                  value={independentWork} 
+                  onChange={(e) => setIndependentWork(e.target.value)} 
+                  className="h-11"
+                />
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Laboratoriya */}
-      <div className="space-y-3 p-4 rounded-xl border bg-muted/30">
-        <div className="flex items-center justify-between">
-          <Label className="font-bold text-sm">
-            Laboratoriya <span className="text-primary">{grades.laboratoriya.length} / 8</span>
-          </Label>
-          <Button variant="ghost" size="sm" onClick={() => setGrades(prev => ({ ...prev, laboratoriya: [] }))}
-            className="gap-1 text-muted-foreground hover:bg-muted text-xs">
-            <RotateCcw className="h-3 w-3" /> Sıfırla
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-            <button key={n} onClick={() => smartToggleLab(n)}
-              className={cn("h-10 w-10 rounded-full font-bold text-sm border-2 transition-all",
-                grades.laboratoriya.includes(n)
-                  ? "bg-primary border-primary text-white shadow-md scale-110"
-                  : "bg-background border-border text-foreground hover:border-primary/50")}>
-              {n}
-            </button>
-          ))}
-        </div>
-        {/* Lab max bal seçimi */}
-        <div className="flex items-center gap-3 pt-1">
-          <Label className="text-xs text-muted-foreground shrink-0">Maks. lab balı:</Label>
-          <div className="flex gap-2">
-            {[15, 20, 25, 30].map(v => (
-              <button key={v} onClick={() => setGrades(prev => ({ ...prev, labMax: v }))}
-                className={cn("px-3 py-1 rounded-lg text-xs font-bold border transition-all",
-                  grades.labMax === v ? "bg-primary text-white border-primary" : "border-border text-muted-foreground hover:border-primary/50")}>
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Seçilmiş maksimum: <span className="font-bold text-primary">{grades.labMax}</span></p>
-          <p className="text-xs text-red-500 font-medium">* Laboratoriya yoxdursa boş qoyun</p>
-        </div>
-      </div>
+            {!isOS && (
+              <>
+                <div className="space-y-3">
+                  <Label>Kollokvium Qiymətləri</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {colloquiums.map((val, idx) => (
+                      <Input 
+                        key={idx}
+                        type="text" 
+                        placeholder="Məs: 10" 
+                        value={val} 
+                        onChange={(e) => {
+                          const c = [...colloquiums];
+                          c[idx] = e.target.value;
+                          setColloquiums(c);
+                        }} 
+                        className="h-11"
+                      />
+                    ))}
+                  </div>
+                </div>
 
-      <Button className="w-full h-14 text-base font-bold gap-2" onClick={calculate}>
-        <Calculator className="h-5 w-5 shrink-0" /> Hesabla
-      </Button>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Seminar Qiymətləri</Label>
+                    <Button variant="outline" size="sm" onClick={() => setSeminars([...seminars, ''])} className="h-8 gap-1">
+                      <Plus className="h-4 w-4" /> Əlavə et
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {seminars.map((sem, idx) => (
+                      <div key={idx} className="relative group">
+                        <Input 
+                          type="text" 
+                          placeholder="Məs: 10" 
+                          value={sem} 
+                          onChange={(e) => {
+                            const s = [...seminars];
+                            s[idx] = e.target.value;
+                            setSeminars(s);
+                          }}
+                          className="pr-8 h-11"
+                        />
+                        <button 
+                          onClick={() => setSeminars(seminars.filter((_, i) => i !== idx))}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
-      {result !== null && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4">
-          <div className={cn("p-6 rounded-2xl text-center border-2 space-y-2",
-            result >= 56 ? "border-green-500/30 bg-green-500/10" : "border-red-500/30 bg-red-500/10")}>
-            <p className="text-sm text-muted-foreground font-medium">Cari Giriş Balınız</p>
-            <p className={cn("text-5xl font-bold", result >= 56 ? "text-green-500" : "text-red-500")}>{result}</p>
-            <div className={cn("inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold",
-              result >= 56 ? "bg-green-500/20 text-green-600" : "bg-red-500/20 text-red-600")}>
-              {result >= 56 ? '✓ İmtahana buraxılırsınız' : '⚠ Kafi deyil!'}
-            </div>
-          </div>
+            {maxLabs > 0 && (
+              <div className="space-y-4 p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <div className="flex flex-row items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <Label className="font-bold whitespace-nowrap">Laboratoriya</Label>
+                    <Badge variant="outline" className="font-bold text-primary bg-background h-6 px-2 text-[10px] sm:text-xs">
+                      {completedLabs} / {maxLabs}
+                    </Badge>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setCompletedLabs(0)}
+                    className="h-8 text-[10px] sm:text-xs gap-1 text-destructive hover:bg-destructive/10 shrink-0"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Sıfırla
+                  </Button>
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {Array.from({ length: maxLabs }).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCompletedLabs(idx + 1)}
+                      className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg border-2 transition-all flex items-center justify-center font-bold text-xs sm:text-sm ${
+                        idx < completedLabs 
+                          ? 'bg-primary border-primary text-white shadow-md' 
+                          : 'bg-background border-muted-foreground/20'
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 text-[9px] sm:text-[10px] text-muted-foreground font-medium">
+                  <Info className="h-3.5 w-3.5" />
+                  Maksimum laboratoriya balı: <b>{labTotalPoints}</b>
+                </div>
+              </div>
+            )}
 
-          {onSave && (
-            <Button variant="outline"
-              className={cn("w-full h-12 gap-2 font-bold border-2 transition-all",
-                saved ? "border-green-500/40 text-green-500 bg-green-500/10" : "border-primary/30 text-primary hover:bg-primary/5")}
-              onClick={handleSave} disabled={saved}>
-              <Save className="h-5 w-5 shrink-0" />
-              {saved ? 'Yadda Saxlanıldı ✓' : 'Kabinetdə Yadda Saxla'}
+            <Button onClick={calculateGrade} className="w-full text-lg h-14 gap-2 mt-4 shadow-lg font-bold">
+              <Calculator className="h-6 w-6" /> Hesabla
             </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
-export default GradeCalculator;
+            {result !== null && (
+              <div className="space-y-4 animate-in zoom-in-95 duration-300">
+                <div className={`p-5 sm:p-6 ${getResultMessage(result).color} text-white rounded-2xl text-center shadow-xl`}>
+                  <p className="text-[10px] sm:text-xs font-medium opacity-90 mb-1 uppercase tracking-wider">Sizin Giriş Balınız</p>
+                  <h2 className="text-4xl sm:text-6xl font-black mb-2 sm:mb-3 leading-none">{result}</h2>
+                  <div className="flex justify-center items-center gap-1.5 sm:gap-2 bg-white/20 py-1.5 px-3 sm:px-4 rounded-full w-fit mx-auto">
+                    {getResultMessage(result).icon}
+                    <span className="font-bold text-xs sm:text-sm">{getResultMessage(result).text}</span>
+                  </div>
+                </div>
+                <Button variant="outline" onClick={handleSave} className="w-full h-12 gap-2 border-primary text-primary hover:bg-primary/5 font-bold">
+                  <Save className="h-5 w-5" /> Kabinetdə Yadda Saxla
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!selectedSubject && (
+          <div className="py-16 text-center text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+            <Calculator className="h-16 w-16 mx-auto mb-4 opacity-10" />
+            <p className="text-lg font-medium">Zəhmət olmasa dərsi seçin</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
