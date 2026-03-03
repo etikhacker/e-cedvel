@@ -8,11 +8,11 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const SUBJECTS = [
-  'Komputer Şəbəkələri',
-  'Eməliyyat Sistemləri',
-  'Obyektyönlu Proqramlaşdirma',
-  'Verilenlərbazasi Sistemləri',
-  'Diskret Riyaziyyat',
+  'Əməliyyat sistemləri',
+  'Kompüter Şəbəkələri',
+  'Verilənlər bazası sistemləri',
+  'Obyektyönlü proqramlaşdırma',
+  'Diskret riyaziyyat',
 ];
 
 type Components = {
