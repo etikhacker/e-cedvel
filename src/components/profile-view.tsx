@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Camera, FileText, BookOpen, Pencil, ChevronDown, ChevronUp, Upload, Trash2, FileIcon, X, Plus } from 'lucide-react';
+import { User, Camera, FileText, BookOpen, Pencil, ChevronDown, ChevronUp, Upload, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserProfile } from '@/lib/types';
@@ -14,6 +14,15 @@ const SUBJECTS = [
   'Obyektyönlü proqramlaşdırma',
   'Diskret riyaziyyat',
 ];
+
+// Qayib limitlari: [1bal_cixilir, 2bal_cixilir, kesir]
+const ABSENCE_LIMITS: Record<string, [number, number, number]> = {
+  'Kompüter Şəbəkələri': [5, 8, 11],
+  'Əməliyyat sistemləri': [3, 6, 8],
+  'Verilənlər bazası sistemləri': [4, 8, 10],
+  'Diskret riyaziyyat': [3, 5, 6],
+  'Obyektyönlü proqramlaşdırma': [3, 6, 8],
+};
 
 type Material = {
   name: string;
@@ -37,17 +46,34 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   const [uploading, setUploading] = useState(false);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
 
-  // Load notes from localStorage
+  // Qayib saylari - profile-dan oxu
+  const getAbsences = (subject: string): number => {
+    return (profile as any).absences?.[subject] || 0;
+  };
+
+  const setAbsences = (subject: string, count: number) => {
+    const absences = { ...((profile as any).absences || {}), [subject]: Math.max(0, count) };
+    onUpdate({ ...profile, absences } as any);
+  };
+
+  const getAbsenceStatus = (subject: string) => {
+    const count = getAbsences(subject);
+    const limits = ABSENCE_LIMITS[subject];
+    if (!limits) return { label: 'Normal', color: 'text-green-500', bg: 'bg-green-500/10', penalty: 0 };
+    const [l1, l2, l3] = limits;
+    if (count >= l3) return { label: 'Kəsir!', color: 'text-red-600', bg: 'bg-red-500/20', penalty: -1 };
+    if (count >= l2) return { label: '-2 bal', color: 'text-orange-500', bg: 'bg-orange-500/10', penalty: 2 };
+    if (count >= l1) return { label: '-1 bal', color: 'text-yellow-500', bg: 'bg-yellow-500/10', penalty: 1 };
+    return { label: 'Normal', color: 'text-green-500', bg: 'bg-green-500/10', penalty: 0 };
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('it24_notes');
     if (saved) setNotes(saved);
   }, []);
 
-  // Load materials from Supabase
   useEffect(() => {
-    if (activePanel === 'materials') {
-      loadMaterials();
-    }
+    if (activePanel === 'materials') loadMaterials();
   }, [activePanel]);
 
   const loadMaterials = async () => {
@@ -55,17 +81,11 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-
       const userId = session.user.id;
       const { data, error } = await supabase.storage
         .from('materials')
         .list(`${userId}/`, { sortBy: { column: 'created_at', order: 'desc' } });
-
-      if (error || !data) {
-        setMaterials([]);
-        return;
-      }
-
+      if (error || !data) { setMaterials([]); return; }
       const mats: Material[] = data
         .filter(f => f.name !== '.emptyFolderPlaceholder')
         .map(f => ({
@@ -75,34 +95,22 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
           type: f.metadata?.mimetype || 'file',
           uploadedAt: f.created_at || '',
         }));
-
       setMaterials(mats);
-    } catch (e) {
-      setMaterials([]);
-    }
+    } catch (e) { setMaterials([]); }
     setLoadingMaterials(false);
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-
       const userId = session.user.id;
       const fileName = `${Date.now()}_${file.name}`;
-      const path = `${userId}/${fileName}`;
-
-      const { error } = await supabase.storage
-        .from('materials')
-        .upload(path, file);
-
-      if (!error) {
-        await loadMaterials();
-      }
+      const { error } = await supabase.storage.from('materials').upload(`${userId}/${fileName}`, file);
+      if (!error) await loadMaterials();
     } catch (e) {}
     setUploading(false);
     e.target.value = '';
@@ -110,9 +118,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
 
   const handleDelete = async (path: string) => {
     const { error } = await supabase.storage.from('materials').remove([path]);
-    if (!error) {
-      setMaterials(prev => prev.filter(m => m.path !== path));
-    }
+    if (!error) setMaterials(prev => prev.filter(m => m.path !== path));
   };
 
   const saveNotes = (val: string) => {
@@ -124,9 +130,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      onUpdate({ ...profile, photo: reader.result as string });
-    };
+    reader.onload = () => onUpdate({ ...profile, photo: reader.result as string });
     reader.readAsDataURL(file);
   };
 
@@ -135,7 +139,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
 
   const gradeColor = (grade?: number) => {
     if (grade === undefined) return 'text-muted-foreground';
-    if (grade >= 56) return 'text-green-500';
+    if (grade >= 28) return 'text-green-500';
     return 'text-red-500';
   };
 
@@ -147,13 +151,11 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     return '📎';
   };
 
-  const togglePanel = (panel: ActivePanel) => {
-    setActivePanel(prev => prev === panel ? 'none' : panel);
-  };
+  const togglePanel = (panel: ActivePanel) => setActivePanel(prev => prev === panel ? 'none' : panel);
 
   return (
     <div className="space-y-6">
-      {/* Profil kartı */}
+      {/* Profil karti */}
       <div className="relative rounded-2xl border overflow-hidden">
         <div className="h-24 bg-gradient-to-r from-primary/80 to-primary/40" />
         <div className="px-6 pb-6">
@@ -173,79 +175,55 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold text-foreground">{profile.name}</h2>
             <p className="text-xs font-bold text-primary uppercase tracking-widest">
-              {profile.subgroup === 'ust' ? 'Yuxarı' : 'Aşağı'} Altqrup
+              {profile.subgroup === 'ust' ? 'Yuxari' : 'Asagi'} Altqrup
             </p>
           </div>
 
-          {/* Qeydlər və Materiallar düymələri */}
           <div className="grid grid-cols-2 gap-3 mt-6">
-            <button
-              onClick={() => togglePanel('notes')}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-colors text-sm font-medium ${activePanel === 'notes' ? 'bg-primary text-white border-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}
-            >
-              <FileText className="h-4 w-4 shrink-0" /> Qeydlər
+            <button onClick={() => togglePanel('notes')}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-colors text-sm font-medium ${activePanel === 'notes' ? 'bg-primary text-white border-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}>
+              <FileText className="h-4 w-4 shrink-0" /> Qeydler
             </button>
-            <button
-              onClick={() => togglePanel('materials')}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-colors text-sm font-medium ${activePanel === 'materials' ? 'bg-primary text-white border-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}
-            >
+            <button onClick={() => togglePanel('materials')}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-colors text-sm font-medium ${activePanel === 'materials' ? 'bg-primary text-white border-primary' : 'hover:bg-muted/50 text-muted-foreground'}`}>
               <BookOpen className="h-4 w-4 shrink-0" /> Materiallar ({materials.length})
             </button>
           </div>
 
-          {/* Qeydlər paneli */}
           {activePanel === 'notes' && (
             <div className="mt-4 space-y-2 animate-in slide-in-from-top-2">
-              <textarea
-                value={notes}
-                onChange={e => saveNotes(e.target.value)}
-                placeholder="Qeydlərinizi buraya yazın..."
-                className="w-full h-40 p-3 rounded-xl border bg-muted/30 text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <p className="text-xs text-muted-foreground text-right">Avtomatik yadda saxlanılır</p>
+              <textarea value={notes} onChange={e => saveNotes(e.target.value)}
+                placeholder="Qeydlerinizi buraya yazin..."
+                className="w-full h-40 p-3 rounded-xl border bg-muted/30 text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary" />
+              <p className="text-xs text-muted-foreground text-right">Avtomatik yadda saxlanilir</p>
             </div>
           )}
 
-          {/* Materiallar paneli */}
           {activePanel === 'materials' && (
             <div className="mt-4 space-y-3 animate-in slide-in-from-top-2">
-              {/* Yüklə düyməsi */}
               <label className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl border-2 border-dashed border-primary/40 hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <Upload className="h-4 w-4 text-primary shrink-0" />
                 <span className="text-sm font-medium text-primary">
-                  {uploading ? 'Yüklənir...' : 'Fayl əlavə et (PDF, şəkil, sənəd)'}
+                  {uploading ? 'Yuklenilir...' : 'Fayl elave et (PDF, sekil, sened)'}
                 </span>
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                  disabled={uploading}
-                />
+                <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" className="hidden"
+                  onChange={handleUpload} disabled={uploading} />
               </label>
-
-              {/* Material siyahısı */}
               {loadingMaterials ? (
-                <p className="text-center text-sm text-muted-foreground py-4">Yüklənir...</p>
+                <p className="text-center text-sm text-muted-foreground py-4">Yuklenilir...</p>
               ) : materials.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-4">Hələ material yoxdur</p>
+                <p className="text-center text-sm text-muted-foreground py-4">Hele material yoxdur</p>
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {materials.map(m => (
                     <div key={m.path} className="flex items-center gap-3 p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
                       <span className="text-xl shrink-0">{getFileIcon(m.type)}</span>
-                      <a
-                        href={m.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 text-sm font-medium text-foreground hover:text-primary truncate"
-                      >
+                      <a href={m.url} target="_blank" rel="noopener noreferrer"
+                        className="flex-1 text-sm font-medium text-foreground hover:text-primary truncate">
                         {m.name.replace(/^\d+_/, '')}
                       </a>
-                      <button
-                        onClick={() => handleDelete(m.path)}
-                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                      >
+                      <button onClick={() => handleDelete(m.path)}
+                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -257,7 +235,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
         </div>
       </div>
 
-      {/* Giriş Balları */}
+      {/* Giris Ballari */}
       <div className="space-y-3">
         <h3 className="font-bold text-lg flex items-center gap-2">🎓 Giriş Ballarım:</h3>
         <div className="space-y-2">
@@ -265,6 +243,9 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
             const grade = getGrade(subject);
             const details = getDetails(subject);
             const isExpanded = expandedSubject === subject;
+            const absenceCount = getAbsences(subject);
+            const absenceStatus = getAbsenceStatus(subject);
+            const limits = ABSENCE_LIMITS[subject];
 
             return (
               <div key={subject} className="border rounded-xl overflow-hidden">
@@ -275,47 +256,111 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`font-bold text-sm ${gradeColor(grade)}`}>
-                      {grade !== undefined ? grade : 'Bal yoxdur'}
+                      {grade !== undefined ? grade : '-'}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => onEditGrade(subject)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary"
+                      onClick={() => onEditGrade(subject)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    {details && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setExpandedSubject(isExpanded ? null : subject)}>
-                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"
+                      onClick={() => setExpandedSubject(isExpanded ? null : subject)}>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
                   </div>
                 </div>
 
-                {isExpanded && details && (
-                  <div className="px-4 pb-4 pt-0 border-t bg-muted/20 space-y-2 text-sm">
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Davamiyyət:</span>
-                        <span className="font-medium">{details.davamiyyat || 0}</span>
+                {isExpanded && (
+                  <div className="px-4 pb-4 pt-0 border-t bg-muted/20 space-y-4 text-sm">
+                    
+                    {/* Bal detallari */}
+                    {details && (
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Davamiyyet:</span>
+                          <span className="font-medium">{details.davamiyyat || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Serbest is:</span>
+                          <span className="font-medium">{details.serbest || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Kollokvium:</span>
+                          <span className="font-medium">{details.kollokviumOrta?.toFixed(1) || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Seminar:</span>
+                          <span className="font-medium">{details.seminarOrta?.toFixed(1) || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Laboratoriya:</span>
+                          <span className="font-medium">{details.labBal?.toFixed(1) || 0}</span>
+                        </div>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-primary">Cemi:</span>
+                          <span className={gradeColor(details.total)}>{details.total}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Sərbəst iş:</span>
-                        <span className="font-medium">{details.serbest || 0}</span>
+                    )}
+
+                    {/* Qayib bolmesi */}
+                    <div className="mt-3 p-3 rounded-xl border bg-background space-y-3">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Qayıblar</p>
+                      
+                      {/* Sayac */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setAbsences(subject, absenceCount - 1)}
+                            className="h-8 w-8 rounded-full border-2 border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="text-2xl font-bold w-8 text-center">{absenceCount}</span>
+                          <button onClick={() => setAbsences(subject, absenceCount + 1)}
+                            className="h-8 w-8 rounded-full border-2 border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${absenceStatus.bg} ${absenceStatus.color}`}>
+                          {absenceStatus.label === 'Kəsir!' ? '✗ Kəsir!' : absenceStatus.label === 'Normal' ? '✓ Normal' : `⚠ ${absenceStatus.label}`}
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Kollokvium:</span>
-                        <span className="font-medium">{details.kollokviumOrta?.toFixed(1) || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Seminar:</span>
-                        <span className="font-medium">{details.seminarOrta?.toFixed(1) || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Laboratoriya:</span>
-                        <span className="font-medium">{details.labBal?.toFixed(1) || 0}</span>
-                      </div>
-                      <div className="flex justify-between font-bold">
-                        <span className="text-primary">Cəmi:</span>
-                        <span className={gradeColor(details.total)}>{details.total}</span>
-                      </div>
+
+                      {/* Limit gosterimi */}
+                      {limits && (
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">-1 bal:</span>
+                            <span className={`font-medium ${absenceCount >= limits[0] ? 'text-yellow-500' : 'text-muted-foreground'}`}>
+                              {limits[0]}+ qayıb {absenceCount >= limits[0] ? '✓' : ''}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">-2 bal:</span>
+                            <span className={`font-medium ${absenceCount >= limits[1] ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                              {limits[1]}+ qayıb {absenceCount >= limits[1] ? '✓' : ''}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-muted-foreground">Kəsir:</span>
+                            <span className={`font-medium ${absenceCount >= limits[2] ? 'text-red-600 font-bold' : 'text-muted-foreground'}`}>
+                              {limits[2]}+ qayıb {absenceCount >= limits[2] ? '✗' : ''}
+                            </span>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full rounded-full transition-all ${
+                              absenceCount >= limits[2] ? 'bg-red-500' :
+                              absenceCount >= limits[1] ? 'bg-orange-400' :
+                              absenceCount >= limits[0] ? 'bg-yellow-400' : 'bg-green-400'
+                            }`} style={{ width: `${Math.min(100, (absenceCount / limits[2]) * 100)}%` }} />
+                          </div>
+                          <p className="text-xs text-muted-foreground text-right">
+                            {Math.max(0, limits[2] - absenceCount)} qayıb qalıb (kəsirə)
+                          </p>
+                        </div>
+                      )}
                     </div>
+
                   </div>
                 )}
               </div>
