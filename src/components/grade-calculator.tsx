@@ -95,43 +95,47 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   };
 
   const calculate = () => {
-    if (!components) return;
-    const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
-    const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
+  if (!components) return;
+  const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
+  const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
 
-    const kollokviumVals = components.hasKollokvium
-      ? grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0))
-      : [];
-    const seminarVals = components.hasSeminar
-      ? grades.seminar.map(s => Math.min(10, parseFloat(s) || 0))
-      : [];
+  const kollokviumVals = components.hasKollokvium
+    ? grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0))
+    : [];
+  const seminarVals = components.hasSeminar
+    ? grades.seminar.map(s => Math.min(10, parseFloat(s) || 0))
+    : [];
 
-    let kombinOrta = 0;
-    let labBal = 0;
+  let kombinOrta = 0;
+  let labBal = 0;
 
-    if (components.hasLab && !components.hasSeminar && !components.hasKollokvium) {
-      // Yalniz lab: max 30
-      labBal = Math.min(30, (grades.laboratoriya.length / components.labCount) * 30);
-      kombinOrta = 0;
-    } else if (!components.hasLab) {
-      // Lab yoxdur: kollokvium+seminar orta, max 20
-      const allVals = [...kollokviumVals, ...seminarVals];
-      const orta = allVals.length > 0 ? allVals.reduce((a, b) => a + b, 0) / allVals.length : 0;
-      kombinOrta = Math.min(20, (orta / 10) * 20);
-      labBal = 0;
-    } else {
-      // Lab + (kollokvium ve/ve ya seminar): lab max 15, kombin max 10
-      const allVals = [...kollokviumVals, ...seminarVals];
-      const orta = allVals.length > 0 ? allVals.reduce((a, b) => a + b, 0) / allVals.length : 0;
-      kombinOrta = Math.min(10, orta);
-      labBal = Math.min(15, (grades.laboratoriya.length / components.labCount) * 15);
-    }
+  if (components.hasLab && !components.hasSeminar && !components.hasKollokvium) {
+    // Yalnız lab: max 30
+    labBal = Math.min(30, (grades.laboratoriya.length / components.labCount) * 30);
+    kombinOrta = 0;
+  } else if (!components.hasLab) {
+    // Lab yoxdur: (seminar+kollokvium) / say × 1.5
+    const allVals = [...kollokviumVals, ...seminarVals];
+    const orta = allVals.length > 0
+      ? allVals.reduce((a, b) => a + b, 0) / allVals.length
+      : 0;
+    kombinOrta = orta * 1.5;
+    labBal = 0;
+  } else {
+    // Lab + seminar/kollokvium: (seminar+kollokvium) / say × 1.5, lab max 15
+    const allVals = [...kollokviumVals, ...seminarVals];
+    const orta = allVals.length > 0
+      ? allVals.reduce((a, b) => a + b, 0) / allVals.length
+      : 0;
+    kombinOrta = orta * 1.5;
+    labBal = Math.min(15, (grades.laboratoriya.length / components.labCount) * 15);
+  }
 
-    const total = Math.round((davamiyyat + serbest + kombinOrta + labBal) * 10) / 10;
-    setResult(total);
-    setSaved(false);
-    setLastCalc({ total, davamiyyat, serbest, kollokviumOrta: kombinOrta, seminarOrta: kombinOrta, labBal });
-  };
+  const total = Math.round((davamiyyat + serbest + kombinOrta + labBal) * 10) / 10;
+  setResult(total);
+  setSaved(false);
+  setLastCalc({ total, davamiyyat, serbest, kollokviumOrta: kombinOrta, seminarOrta: kombinOrta, labBal });
+};
 
   const handleSave = () => {
     if (!onSave || !lastCalc || !subject) return;
