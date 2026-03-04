@@ -32,6 +32,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="İT24" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
