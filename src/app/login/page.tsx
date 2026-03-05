@@ -186,7 +186,7 @@ export default function LoginPage() {
             {mode !== 'forgot' && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-900 placeholder:text-gray-400">Şifrə</Label>
+                  <Label className="text-gray-900 text-sm">Şifrə</Label>
                   {mode === 'login' && (
                     <button onClick={() => setMode('forgot')} className="text-xs text-green-600 hover:underline">
                       Şifrəni unutmusunuz?
