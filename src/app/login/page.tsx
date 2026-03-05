@@ -186,7 +186,7 @@ export default function LoginPage() {
             {mode !== 'forgot' && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-900 text-sm">Şifrə</Label>
+                  <Label className="text-gray-600 text-sm">Şifrə</Label>
                   {mode === 'login' && (
                     <button onClick={() => setMode('forgot')} className="text-xs text-green-600 hover:underline">
                       Şifrəni unutmusunuz?
@@ -199,7 +199,7 @@ export default function LoginPage() {
                     onKeyDown={e => e.key === 'Enter' && mode === 'login' && handleLogin()}
                     className="h-11 rounded-xl border-gray-900 pr-11" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-900 hover:text-gray-600">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
