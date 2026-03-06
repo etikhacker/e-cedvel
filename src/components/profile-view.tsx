@@ -148,6 +148,7 @@ const { data } = supabase.storage
 // Cache-i keç üçün timestamp əlavə et
 const photoUrl = `${data.publicUrl}?t=${Date.now()}`;
 onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
+  };
 
   const getGrade = (subject: string) => profile.savedGrades?.[subject];
   const getDetails = (subject: string) => profile.savedDetails?.[subject];
