@@ -45,6 +45,8 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   const [notes, setNotes] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [materialsBySubject, setMaterialsBySubject] = useState<Record<string, Material[]>>({});
 
   // Qayib saylari - profile-dan oxu
   const getAbsences = (subject: string): number => {
@@ -77,44 +79,64 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   }, [activePanel]);
 
   const loadMaterials = async () => {
-    setLoadingMaterials(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const userId = session.user.id;
-      const { data, error } = await supabase.storage
-        .from('materials')
-        .list(`${userId}/`, { sortBy: { column: 'created_at', order: 'desc' } });
-      if (error || !data) { setMaterials([]); return; }
-      const mats: Material[] = data
-        .filter(f => f.name !== '.emptyFolderPlaceholder')
-        .map(f => ({
-          name: f.name,
-          url: supabase.storage.from('materials').getPublicUrl(`${userId}/${f.name}`).data.publicUrl,
-          path: `${userId}/${f.name}`,
-          type: f.metadata?.mimetype || 'file',
-          uploadedAt: f.created_at || '',
-        }));
-      setMaterials(mats);
-    } catch (e) { setMaterials([]); }
-    setLoadingMaterials(false);
-  };
+  setLoadingMaterials(true);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const userId = session.user.id;
+    const { data, error } = await supabase.storage
+      .from('materials')
+      .list(`${userId}/`, { sortBy: { column: 'created_at', order: 'desc' } });
+    if (error || !data) { setMaterials([]); setMaterialsBySubject({}); return; }
+
+    const allMats: Material[] = data
+      .filter(f => f.name !== '.emptyFolderPlaceholder')
+      .map(f => ({
+        name: f.name,
+        url: supabase.storage.from('materials').getPublicUrl(`${userId}/${f.name}`).data.publicUrl,
+        path: `${userId}/${f.name}`,
+        type: f.metadata?.mimetype || 'file',
+        uploadedAt: f.created_at || '',
+      }));
+
+    setMaterials(allMats);
+
+    // Fənnə görə qruplaşdır
+    const grouped: Record<string, Material[]> = {};
+    SUBJECTS.forEach(s => { grouped[s] = []; });
+    grouped['Digər'] = [];
+
+    allMats.forEach(m => {
+      const cleanName = m.name.replace(/^\d+_/, '');
+      const subject = SUBJECTS.find(s => m.name.includes(encodeSubject(s)));
+      if (subject) {
+        grouped[subject].push({ ...m, name: cleanName });
+      } else {
+        grouped['Digər'].push({ ...m, name: cleanName });
+      }
+    });
+
+    setMaterialsBySubject(grouped);
+  } catch (e) { setMaterials([]); }
+  setLoadingMaterials(false);
+};
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const userId = session.user.id;
-      const fileName = `${Date.now()}_${file.name}`;
-      const { error } = await supabase.storage.from('materials').upload(`${userId}/${fileName}`, file);
-      if (!error) await loadMaterials();
-    } catch (e) {}
-    setUploading(false);
-    e.target.value = '';
-  };
+  const file = e.target.files?.[0];
+  if (!file || !selectedSubject) return;
+  setUploading(true);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const userId = session.user.id;
+    const subjectPrefix = encodeSubject(selectedSubject);
+    const fileName = `${subjectPrefix}_${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from('materials').upload(`${userId}/${fileName}`, file);
+    if (!error) await loadMaterials();
+  } catch (e) {}
+  setUploading(false);
+  e.target.value = '';
+};
 
   const handleDelete = async (path: string) => {
     const { error } = await supabase.storage.from('materials').remove([path]);
@@ -166,7 +188,9 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
     if (type.includes('sheet') || type.includes('excel')) return '📊';
     return '📎';
   };
-
+  const encodeSubject = (subject: string) => {
+  return subject.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+};
   const togglePanel = (panel: ActivePanel) => setActivePanel(prev => prev === panel ? 'none' : panel);
 
   return (
@@ -216,38 +240,68 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
           )}
 
           {activePanel === 'materials' && (
-            <div className="mt-4 space-y-3 animate-in slide-in-from-top-2">
-              <label className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl border-2 border-dashed border-primary/40 hover:border-primary hover:bg-primary/5 cursor-pointer transition-colors ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
-                <Upload className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-sm font-medium text-primary">
-                  {uploading ? 'Yuklenilir...' : 'Fayl elave et (PDF, sekil, sened)'}
-                </span>
-                <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" className="hidden"
-                  onChange={handleUpload} disabled={uploading} />
-              </label>
-              {loadingMaterials ? (
-                <p className="text-center text-sm text-muted-foreground py-4">Yuklenilir...</p>
-              ) : materials.length === 0 ? (
-                <p className="text-center text-sm text-muted-foreground py-4">Hele material yoxdur</p>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {materials.map(m => (
-                    <div key={m.path} className="flex items-center gap-3 p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
-                      <span className="text-xl shrink-0">{getFileIcon(m.type)}</span>
-                      <a href={m.url} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 text-sm font-medium text-foreground hover:text-primary truncate">
-                        {m.name.replace(/^\d+_/, '')}
-                      </a>
-                      <button onClick={() => handleDelete(m.path)}
-                        className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
+  <div className="mt-4 space-y-3 animate-in slide-in-from-top-2">
+    
+    {/* Fənn seçimi dropdown */}
+    <div className="space-y-2">
+      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Fənn seçin:</p>
+      <select
+        value={selectedSubject}
+        onChange={e => setSelectedSubject(e.target.value)}
+        className="w-full p-2.5 rounded-xl border bg-muted/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+        <option value="">-- Fənn seçin --</option>
+        {SUBJECTS.map(s => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
+    </div>
+
+    {/* Fayl yüklə */}
+    <label className={`flex items-center justify-center gap-2 w-full p-3 rounded-xl border-2 border-dashed transition-colors
+      ${!selectedSubject ? 'opacity-40 pointer-events-none border-muted' : 'border-primary/40 hover:border-primary hover:bg-primary/5 cursor-pointer'}
+      ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+      <Upload className="h-4 w-4 text-primary shrink-0" />
+      <span className="text-sm font-medium text-primary">
+        {uploading ? 'Yüklənilir...' : selectedSubject ? `${selectedSubject} üçün fayl əlavə et` : 'Əvvəlcə fənn seçin'}
+      </span>
+      <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,image/*" className="hidden"
+        onChange={handleUpload} disabled={uploading || !selectedSubject} />
+    </label>
+
+    {/* Materiallar fənnə görə */}
+    {loadingMaterials ? (
+      <p className="text-center text-sm text-muted-foreground py-4">Yüklənilir...</p>
+    ) : (
+      <div className="space-y-3 max-h-64 overflow-y-auto">
+        {SUBJECTS.map(subject => {
+          const subMats = materialsBySubject[subject] || [];
+          if (subMats.length === 0) return null;
+          return (
+            <div key={subject} className="space-y-1">
+              <p className="text-xs font-bold text-primary uppercase tracking-wider px-1">{subject}</p>
+              {subMats.map(m => (
+                <div key={m.path} className="flex items-center gap-3 p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <span className="text-xl shrink-0">{getFileIcon(m.type)}</span>
+                  <a href={m.url} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-sm font-medium text-foreground hover:text-primary truncate">
+                    {m.name}
+                  </a>
+                  <button onClick={() => handleDelete(m.path)}
+                    className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
-              )}
+              ))}
             </div>
-          )}
+          );
+        })}
+        {Object.values(materialsBySubject).every(arr => arr.length === 0) && (
+          <p className="text-center text-sm text-muted-foreground py-4">Hələ material yoxdur</p>
+        )}
+      </div>
+    )}
+  </div>
+)}
         </div>
       </div>
 
