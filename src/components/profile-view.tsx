@@ -126,13 +126,29 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     localStorage.setItem('it24_notes', val);
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onUpdate({ ...profile, photo: reader.result as string });
-    reader.readAsDataURL(file);
-  };
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  // Storage-a yüklə
+  const filePath = `avatars/${session.user.id}`;
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true });
+
+  if (error) return;
+
+  // Public URL al
+  const { data } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath);
+
+  // Profili yenilə — photo_url DB-də saxlanır
+  onUpdate({ ...profile, photo: data.publicUrl, photo_url: data.publicUrl } as any);
+};
 
   const getGrade = (subject: string) => profile.savedGrades?.[subject];
   const getDetails = (subject: string) => profile.savedDetails?.[subject];
@@ -161,7 +177,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
         <div className="px-6 pb-6">
           <div className="relative -mt-12 mb-4 w-fit">
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-              <AvatarImage src={profile.photo} />
+              <AvatarImage src={(profile as any).photo_url || profile.photo} />
               <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                 <User className="h-10 w-10" />
               </AvatarFallback>

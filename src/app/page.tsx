@@ -112,42 +112,49 @@ export default function Home() {
       });
     }, 60000);
 
-    // ---- .then() İÇİNDƏ olan hər şey ----
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        window.location.replace('/login');
-        return;
-      }
-      const meta = session.user?.user_metadata;
-      const savedProfile = localStorage.getItem('it24_profile');
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile);
-          if (!parsed.notificationSettings?.firstChannel) {
-            parsed.notificationSettings = DEFAULT_NOTIF_SETTINGS;
-          }
-          if (meta?.full_name) parsed.name = meta.full_name;
-          if (meta?.group) parsed.group = meta.group;
-          if (meta?.subgroup) parsed.subgroup = meta.subgroup;
-          if (meta?.faculty) parsed.faculty = meta.faculty;
-          const savedGradesBackup = localStorage.getItem('it24_saved_grades');
-if (savedGradesBackup) {
-  try {
-    const backup = JSON.parse(savedGradesBackup);
-    if (!parsed.savedGrades || Object.keys(parsed.savedGrades).length === 0) {
-      parsed.savedGrades = backup.savedGrades;
-      parsed.savedDetails = backup.savedDetails;
-    }
-    localStorage.removeItem('it24_saved_grades');
-  } catch (e) {}
-}
-          setProfile(parsed);
-        } catch (e) {
-          localStorage.removeItem('it24_profile');
-        }
-      }
-      setIsReady(true); // ← .then() içində, ən sonda
-    });
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+  if (!session) {
+    window.location.replace('/login');
+    return;
+  }
+
+  const meta = session.user?.user_metadata;
+
+  // 1. DB-dən profili çək
+  const { data: dbProfile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  // 2. localStorage-dən çək (köhnə data üçün backup)
+  const savedProfile = localStorage.getItem('it24_profile');
+  let parsed: any = {};
+  if (savedProfile) {
+    try { parsed = JSON.parse(savedProfile); } catch (e) {}
+  }
+
+  // 3. DB data varsa, onu əsas got
+  if (dbProfile) {
+    parsed.savedGrades = dbProfile.saved_grades || parsed.savedGrades || {};
+    parsed.savedDetails = dbProfile.saved_details || parsed.savedDetails || {};
+    parsed.absences = dbProfile.absences || parsed.absences || {};
+    if (dbProfile.photo_url) (parsed as any).photo_url = dbProfile.photo_url;
+  }
+
+  // 4. Auth metadata-dan ad/qrup məlumatları
+  if (meta?.full_name) parsed.name = meta.full_name;
+  if (meta?.group) parsed.group = meta.group;
+  if (meta?.subgroup) parsed.subgroup = meta.subgroup;
+  if (meta?.faculty) parsed.faculty = meta.faculty;
+
+  if (!parsed.notificationSettings?.firstChannel) {
+    parsed.notificationSettings = DEFAULT_NOTIF_SETTINGS;
+  }
+
+  setProfile(parsed);
+  setIsReady(true);
+});
 
     return () => clearInterval(notifInterval); // ← useEffect-in ən sonu
   }, []);
@@ -190,10 +197,24 @@ if (savedGradesBackup) {
   c.subgroup === 'hamisi' || c.subgroup === profile.subgroup
 );
 
-  const updateProfile = (updatedProfile: UserProfile) => {
-    setProfile(updatedProfile);
-    localStorage.setItem('it24_profile', JSON.stringify(updatedProfile));
-  };
+  const updateProfile = async (updatedProfile: UserProfile) => {
+  setProfile(updatedProfile);
+  localStorage.setItem('it24_profile', JSON.stringify(updatedProfile));
+
+  // DB-ə də yaz
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  await supabase.from('profiles').upsert({
+    id: session.user.id,
+    name: updatedProfile.name,
+    photo_url: (updatedProfile as any).photo_url || null,
+    absences: (updatedProfile as any).absences || {},
+    saved_grades: updatedProfile.savedGrades || {},
+    saved_details: updatedProfile.savedDetails || {},
+    updated_at: new Date().toISOString(),
+  });
+};
 
   const handleSaveGrade = (data: { subject: string; total: number; davamiyyat: number; serbest: number; kollokviumOrta: number; seminarOrta: number; labBal: number }) => {
     const updatedProfile = {
@@ -436,7 +457,7 @@ if (savedGradesBackup) {
             <button aria-label="profil" onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="relative group transition-transform active:scale-95 ml-1">
               <Avatar className={`h-11 w-11 border-2 transition-all ${isProfileOpen ? 'border-primary ring-2 ring-primary/20' : 'border-white dark:border-gray-800 shadow-sm'}`}>
-                <AvatarImage src={profile.photo} />
+                <AvatarImage src={(profile as any).photo_url || profile.photo} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   <User className="h-6 w-6 shrink-0" />
                 </AvatarFallback>
