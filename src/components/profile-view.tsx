@@ -68,9 +68,13 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('it24_notes');
-    if (saved) setNotes(saved);
-  }, []);
+  if (profile.notes) setNotes(profile.notes);
+}, [profile.notes]);
+
+const saveNotes = (val: string) => {
+  setNotes(val);
+  onUpdate({ ...profile, notes: val });
+};
 
   useEffect(() => {
     if (activePanel === 'materials') loadMaterials();

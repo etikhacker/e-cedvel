@@ -34,4 +34,6 @@ export interface UserProfile {
   savedGrades?: Record<string, number>;
   savedDetails?: Record<string, GradeDetails>;
   notificationSettings?: NotificationSettings;
+  notes?: string;        // ← əlavə et
+  absences?: Record<string, number>;  // ← əlavə et
 }
