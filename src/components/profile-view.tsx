@@ -136,7 +136,7 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
 
   const filePath = `avatars/${session.user.id}`;
   console.log('Uploading to:', filePath);
-  
+
   const { error } = await supabase.storage
     .from('avatars')
     .upload(filePath, file, { upsert: true });
