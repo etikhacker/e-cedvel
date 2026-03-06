@@ -135,22 +135,19 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   if (!session) return;
 
   const filePath = `avatars/${session.user.id}`;
-  console.log('Uploading to:', filePath);
+const { error } = await supabase.storage
+  .from('avatars')
+  .upload(filePath, file, { upsert: true });
 
-  const { error } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, file, { upsert: true });
+if (error) return;
 
-  console.log('Upload error:', error);
-  if (error) return;
+const { data } = supabase.storage
+  .from('avatars')
+  .getPublicUrl(filePath);
 
-  const { data } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(filePath);
-
-  console.log('Public URL:', data.publicUrl);
-  onUpdate({ ...profile, photo: data.publicUrl, photo_url: data.publicUrl } as any);
-};
+// Cache-i keç üçün timestamp əlavə et
+const photoUrl = `${data.publicUrl}?t=${Date.now()}`;
+onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
 
   const getGrade = (subject: string) => profile.savedGrades?.[subject];
   const getDetails = (subject: string) => profile.savedDetails?.[subject];
