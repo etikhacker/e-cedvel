@@ -120,29 +120,29 @@ export default function Home() {
 
   const meta = session.user?.user_metadata;
 
-  // 1. DB-dən profili çək
+  // DB-dən profili çək
   const { data: dbProfile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
     .single();
 
-  // 2. localStorage-dən çək (köhnə data üçün backup)
+  // localStorage-dən çək
   const savedProfile = localStorage.getItem('it24_profile');
   let parsed: any = {};
   if (savedProfile) {
     try { parsed = JSON.parse(savedProfile); } catch (e) {}
   }
 
-  // 3. DB data varsa, onu əsas got
+  // DB data varsa üstünlük ver
   if (dbProfile) {
     parsed.savedGrades = dbProfile.saved_grades || parsed.savedGrades || {};
     parsed.savedDetails = dbProfile.saved_details || parsed.savedDetails || {};
     parsed.absences = dbProfile.absences || parsed.absences || {};
-    if (dbProfile.photo_url) (parsed as any).photo_url = dbProfile.photo_url;
+    if (dbProfile.photo_url) parsed.photo_url = dbProfile.photo_url;
+    if (dbProfile.photo_url) parsed.photo = dbProfile.photo_url;
   }
 
-  // 4. Auth metadata-dan ad/qrup məlumatları
   if (meta?.full_name) parsed.name = meta.full_name;
   if (meta?.group) parsed.group = meta.group;
   if (meta?.subgroup) parsed.subgroup = meta.subgroup;
@@ -201,7 +201,6 @@ export default function Home() {
   setProfile(updatedProfile);
   localStorage.setItem('it24_profile', JSON.stringify(updatedProfile));
 
-  // DB-ə də yaz
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
 
