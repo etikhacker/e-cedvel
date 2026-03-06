@@ -131,22 +131,24 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
   if (!file) return;
 
   const { data: { session } } = await supabase.auth.getSession();
+  console.log('Session:', session?.user?.id);
   if (!session) return;
 
-  // Storage-a yüklə
   const filePath = `avatars/${session.user.id}`;
+  console.log('Uploading to:', filePath);
+  
   const { error } = await supabase.storage
     .from('avatars')
     .upload(filePath, file, { upsert: true });
 
+  console.log('Upload error:', error);
   if (error) return;
 
-  // Public URL al
   const { data } = supabase.storage
     .from('avatars')
     .getPublicUrl(filePath);
 
-  // Profili yenilə — photo_url DB-də saxlanır
+  console.log('Public URL:', data.publicUrl);
   onUpdate({ ...profile, photo: data.publicUrl, photo_url: data.publicUrl } as any);
 };
 
