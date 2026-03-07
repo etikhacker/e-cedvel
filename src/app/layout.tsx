@@ -30,9 +30,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#4A90E2" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="İT24" />
+        <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+        <link rel="icon" type="image/png" href="/icon-192x192.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
