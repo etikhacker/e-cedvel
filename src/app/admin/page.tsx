@@ -45,8 +45,9 @@ export default function AdminPage() {
   }, []);
 
   const checkAdmin = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.replace('/login'); return; }
+  const { data: { session }, error } = await supabase.auth.getSession();
+  console.log('Admin session:', session?.user?.email, error);
+  if (!session) { window.location.replace('/login'); return; }
 
     const { data } = await supabase
       .from('university_admins')
