@@ -1,22 +1,24 @@
 {
-  "name": "İT24 Dərs Cədvəli",
-  "short_name": "İT24",
-  "description": "İT24 qrupu üçün dərs cədvəli tətbiqi",
+  "name": "E-Cədvəl",
+  "short_name": "E-Cədvəl",
+  "description": "Universitetlər üçün dərs cədvəli tətbiqi",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4A90E2",
+  "background_color": "#22aa55",
+  "theme_color": "#22aa55",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192x192.svg",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icon-512x512.svg",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
