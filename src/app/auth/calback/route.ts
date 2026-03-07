@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const type = searchParams.get('type');
+  const next = searchParams.get('next') || '/';
 
   if (code) {
     const cookieStore = await cookies();
@@ -27,5 +29,9 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code);
   }
 
-  return NextResponse.redirect(`${origin}/`);
+  if (type === 'recovery') {
+    return NextResponse.redirect(`${origin}/reset-password`);
+  }
+
+  return NextResponse.redirect(`${origin}${next}`);
 }
