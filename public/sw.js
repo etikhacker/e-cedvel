@@ -34,7 +34,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Supabase və API sorğularını cache-ləmə
   if (
-    event.request.url.includes('supabase.co') ||
+    (event.request.url.includes('supabase.co') && !event.request.url.includes('storage')) ||
     event.request.url.includes('api.') ||
     event.request.method !== 'GET'
   ) {
