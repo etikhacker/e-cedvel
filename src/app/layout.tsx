@@ -32,7 +32,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <link rel="icon" type="image/png" href="/icon-192x192.png" />
+        <link rel="icon" type="image/png" href="/icon-192x192.png?v=3" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
