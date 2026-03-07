@@ -107,14 +107,13 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     grouped['Digər'] = [];
 
     allMats.forEach(m => {
-      const cleanName = m.name.replace(/^\d+_/, '');
-      const subject = SUBJECTS.find(s => m.name.includes(encodeSubject(s)));
-      if (subject) {
-        grouped[subject].push({ ...m, name: cleanName });
-      } else {
-        grouped['Digər'].push({ ...m, name: cleanName });
-      }
-    });
+  const subject = SUBJECTS.find(s => m.name.startsWith(encodeSubject(s) + '_'));
+  if (subject) {
+    grouped[subject].push({ ...m, name: m.name.replace(/^\d+_/, '').replace(encodeSubject(subject) + '_', '') });
+  } else {
+    grouped['Digər'].push({ ...m, name: m.name.replace(/^\d+_/, '') });
+  }
+});
 
     setMaterialsBySubject(grouped);
   } catch (e) { setMaterials([]); }
@@ -189,8 +188,8 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
     return '📎';
   };
   const encodeSubject = (subject: string) => {
-  return subject.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
-};
+  return encodeURIComponent(subject).replace(/%/g, '');
+  };
   const togglePanel = (panel: ActivePanel) => setActivePanel(prev => prev === panel ? 'none' : panel);
 
   return (
@@ -246,14 +245,14 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
     <div className="space-y-2">
       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Fənn seçin:</p>
       <select
-        value={selectedSubject}
-        onChange={e => setSelectedSubject(e.target.value)}
-        className="w-full p-2.5 rounded-xl border bg-muted/30 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-        <option value="">-- Fənn seçin --</option>
-        {SUBJECTS.map(s => (
-          <option key={s} value={s}>{s}</option>
-        ))}
-      </select>
+    value={selectedSubject}
+    onChange={e => setSelectedSubject(e.target.value)}
+    className="w-full p-2.5 rounded-xl border border-primary/20 bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+    <option value="" className="bg-background text-foreground">-- Fənn seçin --</option>
+    {SUBJECTS.map(s => (
+    <option key={s} value={s} className="bg-background text-foreground">{s}</option>
+      ))}
+    </select>
     </div>
 
     {/* Fayl yüklə */}
