@@ -58,7 +58,11 @@ self.addEventListener('fetch', (event) => {
         return caches.match(event.request).then((cached) => {
           if (cached) return cached;
           // Əsas səhifəni qaytar (offline fallback)
-          return caches.match('/');
+          // Naviqasiya sorğuları üçün cache-dən qaytar, yoxdursa network-ə get
+if (event.request.mode === 'navigate') {
+  return fetch(event.request);
+}
+return caches.match('/');
         });
       })
   );
