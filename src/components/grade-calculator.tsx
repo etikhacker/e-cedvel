@@ -114,12 +114,10 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
     labBal = Math.min(30, (grades.laboratoriya.length / components.labCount) * 30);
     kombinOrta = 0;
   } else if (!components.hasLab) {
-    // Lab yoxdur: (seminar+kollokvium) / say × 1.5
+    // Lab yoxdur: (kollokvium+seminar) / say × 3
     const allVals = [...kollokviumVals, ...seminarVals];
-    const orta = allVals.length > 0
-      ? allVals.reduce((a, b) => a + b, 0) / allVals.length
-      : 0;
-    kombinOrta = orta * 1.5;
+    const sum = allVals.reduce((a, b) => a + b, 0);
+    kombinOrta = allVals.length > 0 ? (sum / allVals.length) * 3 : 0;
     labBal = 0;
   } else {
     // Lab + seminar/kollokvium: (seminar+kollokvium) / say × 1.5, lab max 15
