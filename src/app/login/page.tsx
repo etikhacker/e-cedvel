@@ -133,7 +133,7 @@ export default function LoginPage() {
     }
   };
 
-  const selectClass = "w-full h-11 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const selectClass = "w-full h-11 px-3 rounded-xl border border-white/10 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
   const inputClass = "h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:ring-blue-500";
   const labelClass = "text-white/60 text-sm";
 
