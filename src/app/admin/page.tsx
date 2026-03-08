@@ -96,20 +96,20 @@ export default function AdminPage() {
 
   const addFaculty = async () => {
     if (!newFaculty || !selectedUni) return;
-    const { error } = await supabase.from('faculties').insert({ name: newFaculty, university_id: selectedUni });
+    const { data, error } = await supabase.from('faculties').insert({ name: newFaculty, university_id: selectedUni }).select().single();
     if (error) { toast({ variant: 'destructive', title: 'Xəta', description: error.message }); return; }
     toast({ title: 'Uğurlu', description: 'Fakültə əlavə edildi' });
     setNewFaculty('');
-    await loadData(null);
+    if (data) setFaculties(prev => [...prev, data]);
   };
 
   const addGroup = async () => {
     if (!newGroup || !selectedFaculty || !selectedUni) return;
-    const { error } = await supabase.from('groups').insert({ name: newGroup, faculty_id: selectedFaculty, university_id: selectedUni });
+    const { data, error } = await supabase.from('groups').insert({ name: newGroup, faculty_id: selectedFaculty, university_id: selectedUni }).select().single();
     if (error) { toast({ variant: 'destructive', title: 'Xəta', description: error.message }); return; }
     toast({ title: 'Uğurlu', description: 'Qrup əlavə edildi' });
     setNewGroup('');
-    await loadData(null);
+    if (data) setGroups(prev => [...prev, data]);
   };
 
   const addLesson = async () => {
