@@ -25,13 +25,13 @@ export default function AdminPage() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [requests, setRequests] = useState<any[]>([]);
 
   const [selectedUni, setSelectedUni] = useState<string>('');
   const [selectedFaculty, setSelectedFaculty] = useState<string>('');
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [expandedSection, setExpandedSection] = useState<string>('universities');
 
-  // Yeni əlavə formaları
   const [newUni, setNewUni] = useState({ name: '', short_name: '', city: '' });
   const [newFaculty, setNewFaculty] = useState('');
   const [newGroup, setNewGroup] = useState('');
@@ -45,9 +45,8 @@ export default function AdminPage() {
   }, []);
 
   const checkAdmin = async () => {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  console.log('Admin session:', session?.user?.email, error);
-  if (!session) { window.location.replace('/login'); return; }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.replace('/login'); return; }
 
     const { data } = await supabase
       .from('university_admins')
@@ -57,8 +56,15 @@ export default function AdminPage() {
 
     if (!data) { window.location.replace('/'); return; }
 
-    setIsSuperadmin(data.role === 'superadmin');
-    await loadData(data.role === 'superadmin' ? null : data.university_id);
+    const superadmin = data.role === 'superadmin';
+    setIsSuperadmin(superadmin);
+    await loadData(superadmin ? null : data.university_id);
+
+    if (superadmin) {
+      const { data: reqs } = await supabase.from('university_requests').select('*').eq('status', 'pending');
+      setRequests(reqs || []);
+    }
+
     setLoading(false);
   };
 
@@ -126,6 +132,16 @@ export default function AdminPage() {
     if (selectedGroup === id) { setSelectedGroup(''); setLessons([]); }
   };
 
+  const approveRequest = async (r: any) => {
+    const { data: uni } = await supabase.from('universities').insert({
+      name: r.name, short_name: r.short_name, city: r.city
+    }).select().single();
+    await supabase.from('university_requests').update({ status: 'approved' }).eq('id', r.id);
+    setRequests(prev => prev.filter(x => x.id !== r.id));
+    if (uni) await loadData(null);
+    toast({ title: 'Təsdiqləndi', description: `${r.name} əlavə edildi` });
+  };
+
   const Section = ({ id, title, icon: Icon, children }: any) => (
     <div className="border rounded-xl overflow-hidden">
       <button onClick={() => setExpandedSection(expandedSection === id ? '' : id)}
@@ -154,6 +170,25 @@ export default function AdminPage() {
             <LogOut className="h-4 w-4" /> Çıx
           </Button>
         </header>
+
+        {/* Gözləyən müraciətlər */}
+        {isSuperadmin && requests.length > 0 && (
+          <div className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 space-y-3">
+            <p className="font-bold text-yellow-600">🔔 Gözləyən Müraciətlər ({requests.length})</p>
+            {requests.map(r => (
+              <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-background">
+                <div>
+                  <p className="font-medium">{r.name}</p>
+                  <p className="text-xs text-muted-foreground">{r.contact_name} · {r.contact_email} · {r.city}</p>
+                </div>
+                <Button size="sm" className="bg-green-500 hover:bg-green-400 text-white"
+                  onClick={() => approveRequest(r)}>
+                  Təsdiqlə
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Universitetlər */}
         {isSuperadmin && (
@@ -279,7 +314,7 @@ export default function AdminPage() {
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-        ))}
+            ))}
           </div>
         </Section>
       </div>
