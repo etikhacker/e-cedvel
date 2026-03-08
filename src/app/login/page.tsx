@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,9 @@ import { cn } from '@/lib/utils';
 
 type Mode = 'login' | 'register' | 'forgot';
 
-const FACULTIES: Record<string, string[]> = {
-  'Təhsil fakültəsi': ['İS24.1','İS24.2','RI23','TPX24','Sİ24','Sİ25','MT24','MT25'],
-  'Mühəndislik fakültəsi': ['İT24.1','İT24.2','İT23.1','İT23.2','EN24','EN23','KM24','KM23'],
-  'İqtisadiyyat fakültəsi': ['İQTİSAD24.1','İQTİSAD24.2','İQTİSAD23.1','İQTİSAD23.2','MUHASİBAT24','MUHASİBAT23','MENECMENt24','MENECMENt23'],
-};
+type University = { id: string; name: string; short_name: string };
+type Faculty = { id: string; name: string };
+type Group = { id: string; name: string };
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -25,9 +23,59 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [faculty, setFaculty] = useState('');
-  const [group, setGroup] = useState('');
+
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [hasSubgroups, setHasSubgroups] = useState(false);
+
+  const [selectedUni, setSelectedUni] = useState<University | null>(null);
+  const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [subgroup, setSubgroup] = useState<'ust' | 'alt' | ''>('');
+
+  useEffect(() => {
+    supabase.from('universities').select('id, name, short_name').eq('is_active', true).then(({ data }) => {
+      setUniversities(data || []);
+    });
+  }, []);
+
+  const handleUniChange = async (uniId: string) => {
+    const uni = universities.find(u => u.id === uniId) || null;
+    setSelectedUni(uni);
+    setSelectedFaculty(null);
+    setSelectedGroup(null);
+    setSubgroup('');
+    setHasSubgroups(false);
+    if (!uniId) return;
+    const { data } = await supabase.from('faculties').select('id, name').eq('university_id', uniId);
+    setFaculties(data || []);
+  };
+
+  const handleFacultyChange = async (facId: string) => {
+    const fac = faculties.find(f => f.id === facId) || null;
+    setSelectedFaculty(fac);
+    setSelectedGroup(null);
+    setSubgroup('');
+    setHasSubgroups(false);
+    if (!facId) return;
+    const { data } = await supabase.from('groups').select('id, name').eq('faculty_id', facId);
+    setGroups(data || []);
+  };
+
+  const handleGroupChange = async (grpId: string) => {
+    const grp = groups.find(g => g.id === grpId) || null;
+    setSelectedGroup(grp);
+    setSubgroup('');
+    if (!grpId) return;
+    const { data } = await supabase
+      .from('schedule_lessons')
+      .select('subgroup')
+      .eq('group_id', grpId)
+      .neq('subgroup', 'hamisi')
+      .limit(1);
+    setHasSubgroups(!!(data && data.length > 0));
+  };
 
   const handleLogin = async () => {
     setLoading(true);
@@ -42,17 +90,28 @@ export default function LoginPage() {
 
   const handleRegister = async () => {
     if (!fullName.trim()) { toast({ variant: 'destructive', title: 'Xəta', description: 'Ad Soyad daxil edin.' }); return; }
-    if (!faculty) { toast({ variant: 'destructive', title: 'Xəta', description: 'Fakültə seçin.' }); return; }
-    if (!group) { toast({ variant: 'destructive', title: 'Xəta', description: 'Qrup seçin.' }); return; }
-    if (!subgroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Alt/Üst qrup seçin.' }); return; }
+    if (!selectedUni) { toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet seçin.' }); return; }
+    if (!selectedFaculty) { toast({ variant: 'destructive', title: 'Xəta', description: 'Fakültə seçin.' }); return; }
+    if (!selectedGroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Qrup seçin.' }); return; }
+    if (hasSubgroups && !subgroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Alt/Üst qrup seçin.' }); return; }
+
     setLoading(true);
     const { error } = await supabase.auth.signUp({
-  email, password,
-  options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`,
-    data: { full_name: fullName, faculty, group, subgroup },
-  },
-});
+      email, password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          full_name: fullName,
+          university_id: selectedUni.id,
+          university_name: selectedUni.name,
+          faculty_id: selectedFaculty.id,
+          faculty_name: selectedFaculty.name,
+          group_id: selectedGroup.id,
+          group: selectedGroup.name,
+          subgroup: hasSubgroups ? subgroup : 'hamisi',
+        },
+      },
+    });
     setLoading(false);
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: error.message });
@@ -65,7 +124,7 @@ export default function LoginPage() {
   const handleForgot = async () => {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     });
     setLoading(false);
     if (error) {
@@ -75,8 +134,6 @@ export default function LoginPage() {
       setMode('login');
     }
   };
-
-  const groups = faculty ? FACULTIES[faculty] || [] : [];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -123,7 +180,7 @@ export default function LoginPage() {
         </div>
 
         {/* Sağ - Form */}
-        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto">
+        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
               <div className="bg-green-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">E</div>
@@ -142,25 +199,39 @@ export default function LoginPage() {
                   <Input placeholder="Məs: Əli Həsənov" value={fullName} onChange={e => setFullName(e.target.value)}
                     className="h-11 rounded-xl border-gray-200 text-gray-900 placeholder:text-gray-400" />
                 </div>
+
                 <div className="space-y-1.5">
-                  <Label className="text-gray-600 text-sm">Fakültə</Label>
-                  <select value={faculty} onChange={e => { setFaculty(e.target.value); setGroup(''); }}
+                  <Label className="text-gray-600 text-sm">Universitet</Label>
+                  <select value={selectedUni?.id || ''} onChange={e => handleUniChange(e.target.value)}
                     className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                    <option value="" disabled>Fakültə seçin</option>
-                    {Object.keys(FACULTIES).map(f => <option key={f} value={f}>{f}</option>)}
+                    <option value="" disabled>Universitet seçin</option>
+                    {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
-                {faculty && (
+
+                {selectedUni && (
                   <div className="space-y-1.5">
-                    <Label className="text-gray-600 text-sm">Qrup</Label>
-                    <select value={group} onChange={e => setGroup(e.target.value)}
+                    <Label className="text-gray-600 text-sm">Fakültə</Label>
+                    <select value={selectedFaculty?.id || ''} onChange={e => handleFacultyChange(e.target.value)}
                       className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
-                      <option value="" disabled>Qrup seçin</option>
-                      {groups.map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="" disabled>Fakültə seçin</option>
+                      {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
                 )}
-                {group && (
+
+                {selectedFaculty && (
+                  <div className="space-y-1.5">
+                    <Label className="text-gray-600 text-sm">Qrup</Label>
+                    <select value={selectedGroup?.id || ''} onChange={e => handleGroupChange(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                      <option value="" disabled>Qrup seçin</option>
+                      {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {selectedGroup && hasSubgroups && (
                   <div className="space-y-1.5">
                     <Label className="text-gray-600 text-sm">Alt/Üst Qrup</Label>
                     <div className="grid grid-cols-2 gap-3">
@@ -180,7 +251,7 @@ export default function LoginPage() {
             <div className="space-y-1.5">
               <Label className="text-gray-600 text-sm">E-poçt</Label>
               <Input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)}
-                className="h-11 rounded-xl border-gray-900 text-gray-900 placeholder:text-gray-400" />
+                className="h-11 rounded-xl border-gray-200 text-gray-900 placeholder:text-gray-400" />
             </div>
 
             {mode !== 'forgot' && (
@@ -197,9 +268,9 @@ export default function LoginPage() {
                   <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password}
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && mode === 'login' && handleLogin()}
-                    className="h-11 rounded-xl border-gray-900 pr-11" />
+                    className="h-11 rounded-xl border-gray-200 pr-11" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-900 hover:text-gray-600">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -223,7 +294,6 @@ export default function LoginPage() {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );
