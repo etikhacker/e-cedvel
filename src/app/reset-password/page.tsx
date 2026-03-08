@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
       <div className="w-full max-w-sm space-y-8 bg-gray-900 p-8 rounded-2xl border border-gray-800 shadow-2xl">
         <div className="text-center space-y-2">
-          <div className="bg-primary p-3 rounded-xl text-white font-bold text-2xl inline-block shadow-md">E-cədvəl</div>
+          <div className="bg-primary p-3 rounded-xl text-white font-bold text-2xl inline-block shadow-md">E-cədvəl_QrupTap</div>
           <h1 className="text-2xl font-bold text-white">Yeni Şifrə</h1>
           <p className="text-gray-400 text-sm">Yeni şifrənizi daxil edin</p>
         </div>
