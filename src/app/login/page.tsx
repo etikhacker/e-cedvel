@@ -170,7 +170,7 @@ export default function LoginPage() {
             <ellipse cx="83" cy="217" rx="13" ry="9" fill="#2563eb" opacity="0.6"/>
           </svg>
           <h2 className="text-lg font-bold text-white mb-1">Dərs Cədvəli Portalı</h2>
-          <p className="text-white/40 text-sm">QrupTap</p>
+          <p className="text-white/40 text-sm">E-cədvəl</p>
           <div className="flex gap-2 mt-5">
             {[0,1,2,3].map(i => (
               <div key={i} className={`h-2 rounded-full ${i===1?'w-6 bg-blue-500':'w-2 bg-blue-900'}`}/>
@@ -182,8 +182,8 @@ export default function LoginPage() {
         <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
-              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">Q</div>
-              <span className="text-xl font-bold text-white">rupTap</span>
+              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">E-C</div>
+              <span className="text-xl font-bold text-white">E-Cədvəl</span>
             </div>
             <p className="text-white/40 text-sm">
               {mode === 'login' ? 'Hesabınıza daxil olun' : mode === 'register' ? 'Yeni hesab yaradın' : 'Şifrə bərpası'}
