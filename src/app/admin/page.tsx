@@ -160,17 +160,17 @@ export default function AdminPage() {
     setRequests(prev => prev.filter(x => x.id !== r.id));
     await loadData(null);
 
-    // 4. İnvite linkini göstər (email sistemi sonra əlavə ediləcək)
+    // 4. Email göndər
     const inviteLink = `${window.location.origin}/admin/setup?token=${invite.token}`;
-    toast({
-      title: 'Təsdiqləndi! ✅',
-      description: `Dəvət linki: ${inviteLink}`,
+    await supabase.functions.invoke('send-invite', {
+      body: {
+        email: r.contact_email,
+        invite_link: inviteLink,
+        university_name: r.name,
+      },
     });
-
-    // Linki clipboard-a kopyala
-    navigator.clipboard.writeText(inviteLink);
-  };
-
+    toast({ title: 'Təsdiqləndi! ✅', description: `${r.name} əlavə edildi, email göndərildi` });
+  }
   const Section = ({ id, title, icon: Icon, children }: any) => (
     <div className="border rounded-xl overflow-hidden">
       <button onClick={() => setExpandedSection(expandedSection === id ? '' : id)}
