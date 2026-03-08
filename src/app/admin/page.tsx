@@ -318,14 +318,24 @@ export default function AdminPage() {
                   className="p-2.5 rounded-xl border bg-background text-foreground text-sm">
                   {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <select value={newLesson.week} onChange={e => setNewLesson(p => ({ ...p, week: e.target.value }))}
-                  className="p-2.5 rounded-xl border bg-background text-foreground text-sm">
-                  {WEEKS.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-                <select value={newLesson.subgroup} onChange={e => setNewLesson(p => ({ ...p, subgroup: e.target.value }))}
-                  className="p-2.5 rounded-xl border bg-background text-foreground text-sm">
-                  {SUBGROUPS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground px-1">Həftə</p>
+                  <select value={newLesson.week} onChange={e => setNewLesson(p => ({ ...p, week: e.target.value }))}
+                    className="w-full p-2.5 rounded-xl border bg-background text-foreground text-sm">
+                    <option value="hamisi">Hər həftə</option>
+                    <option value="ust">Üst həftə</option>
+                    <option value="alt">Alt həftə</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground px-1">Subqrup</p>
+                  <select value={newLesson.subgroup} onChange={e => setNewLesson(p => ({ ...p, subgroup: e.target.value }))}
+                    className="w-full p-2.5 rounded-xl border bg-background text-foreground text-sm">
+                    <option value="hamisi">Bütün qrup</option>
+                    <option value="ust">Üst qrup</option>
+                    <option value="alt">Alt qrup</option>
+                  </select>
+                </div>
               </div>
               <Button onClick={addLesson} className="w-full gap-2"><Plus className="h-4 w-4" /> Dərs Əlavə Et</Button>
             </div>
