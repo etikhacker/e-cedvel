@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +9,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Mode = 'login' | 'register' | 'forgot';
-
 type University = { id: string; name: string; short_name: string };
 type Faculty = { id: string; name: string };
 type Group = { id: string; name: string };
@@ -135,46 +133,47 @@ export default function LoginPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl overflow-hidden flex min-h-[520px]">
+  const selectClass = "w-full h-11 px-3 rounded-xl border border-white/10 bg-white/5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const inputClass = "h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:ring-blue-500";
+  const labelClass = "text-white/60 text-sm";
 
-        {/* Sol - Illustration */}
-        <div className="hidden md:flex flex-col items-center justify-center w-1/2 bg-green-50 p-12 text-center">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
+      <div className="w-full max-w-4xl bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex min-h-[520px] border border-white/5">
+
+        {/* Sol */}
+        <div className="hidden md:flex flex-col items-center justify-center w-1/2 bg-gradient-to-br from-blue-950 to-gray-900 p-12 text-center border-r border-white/5">
           <svg viewBox="0 0 360 300" className="w-64 h-52 mb-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="180" cy="150" r="120" fill="#dcfce7"/>
-            <rect x="100" y="218" width="160" height="9" rx="4" fill="#16a34a" opacity="0.25"/>
-            <rect x="112" y="226" width="7" height="32" rx="3" fill="#16a34a" opacity="0.2"/>
-            <rect x="241" y="226" width="7" height="32" rx="3" fill="#16a34a" opacity="0.2"/>
-            <rect x="186" y="177" width="58" height="44" rx="7" fill="#16a34a" opacity="0.5"/>
-            <rect x="182" y="216" width="66" height="7" rx="3" fill="#15803d" opacity="0.5"/>
-            <rect x="188" y="222" width="6" height="24" rx="3" fill="#15803d" opacity="0.4"/>
-            <rect x="240" y="222" width="6" height="24" rx="3" fill="#15803d" opacity="0.4"/>
+            <circle cx="180" cy="150" r="120" fill="#1e3a5f" opacity="0.6"/>
+            <rect x="100" y="218" width="160" height="9" rx="4" fill="#3b82f6" opacity="0.25"/>
+            <rect x="112" y="226" width="7" height="32" rx="3" fill="#3b82f6" opacity="0.2"/>
+            <rect x="241" y="226" width="7" height="32" rx="3" fill="#3b82f6" opacity="0.2"/>
+            <rect x="186" y="177" width="58" height="44" rx="7" fill="#2563eb" opacity="0.5"/>
+            <rect x="182" y="216" width="66" height="7" rx="3" fill="#1d4ed8" opacity="0.5"/>
+            <rect x="188" y="222" width="6" height="24" rx="3" fill="#1d4ed8" opacity="0.4"/>
+            <rect x="240" y="222" width="6" height="24" rx="3" fill="#1d4ed8" opacity="0.4"/>
             <circle cx="196" cy="148" r="18" fill="#fde68a"/>
             <path d="M178 143 Q196 130 214 143" stroke="#92400e" strokeWidth="2.5" fill="none"/>
-            <rect x="178" y="166" width="36" height="40" rx="8" fill="#4ade80"/>
-            <rect x="156" y="170" width="26" height="9" rx="4" fill="#4ade80"/>
-            <rect x="214" y="170" width="26" height="9" rx="4" fill="#4ade80"/>
-            <rect x="105" y="168" width="52" height="64" rx="5" fill="white" stroke="#16a34a" strokeWidth="1.5"/>
-            <line x1="114" y1="184" x2="147" y2="184" stroke="#16a34a" strokeWidth="1.5"/>
-            <line x1="114" y1="196" x2="147" y2="196" stroke="#16a34a" strokeWidth="1.5"/>
-            <line x1="114" y1="208" x2="138" y2="208" stroke="#16a34a" strokeWidth="1.5"/>
-            <line x1="114" y1="220" x2="143" y2="220" stroke="#d1d5db" strokeWidth="1.5"/>
-            <text x="65" y="100" fontSize="14" fill="#16a34a" opacity="0.6">f(x)</text>
-            <text x="265" y="88" fontSize="13" fill="#16a34a" opacity="0.6">x+y</text>
-            <text x="272" y="140" fontSize="16" fill="#16a34a" opacity="0.4">x</text>
-            <text x="60" y="155" fontSize="12" fill="#16a34a" opacity="0.4">y</text>
-            <circle cx="280" cy="112" r="15" fill="white" stroke="#16a34a" strokeWidth="1.5" opacity="0.8"/>
-            <line x1="280" y1="102" x2="280" y2="112" stroke="#16a34a" strokeWidth="1.5"/>
-            <line x1="280" y1="112" x2="288" y2="116" stroke="#16a34a" strokeWidth="1.5"/>
-            <rect x="78" y="223" width="11" height="20" rx="3" fill="#92400e" opacity="0.4"/>
-            <ellipse cx="83" cy="217" rx="13" ry="9" fill="#22c55e" opacity="0.6"/>
+            <rect x="178" y="166" width="36" height="40" rx="8" fill="#3b82f6"/>
+            <rect x="156" y="170" width="26" height="9" rx="4" fill="#3b82f6"/>
+            <rect x="214" y="170" width="26" height="9" rx="4" fill="#3b82f6"/>
+            <rect x="105" y="168" width="52" height="64" rx="5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5"/>
+            <line x1="114" y1="184" x2="147" y2="184" stroke="#3b82f6" strokeWidth="1.5"/>
+            <line x1="114" y1="196" x2="147" y2="196" stroke="#3b82f6" strokeWidth="1.5"/>
+            <line x1="114" y1="208" x2="138" y2="208" stroke="#3b82f6" strokeWidth="1.5"/>
+            <line x1="114" y1="220" x2="143" y2="220" stroke="#334155" strokeWidth="1.5"/>
+            <text x="65" y="100" fontSize="14" fill="#3b82f6" opacity="0.6">f(x)</text>
+            <text x="265" y="88" fontSize="13" fill="#3b82f6" opacity="0.6">x+y</text>
+            <circle cx="280" cy="112" r="15" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" opacity="0.8"/>
+            <line x1="280" y1="102" x2="280" y2="112" stroke="#3b82f6" strokeWidth="1.5"/>
+            <line x1="280" y1="112" x2="288" y2="116" stroke="#3b82f6" strokeWidth="1.5"/>
+            <ellipse cx="83" cy="217" rx="13" ry="9" fill="#2563eb" opacity="0.6"/>
           </svg>
-          <h2 className="text-lg font-bold text-gray-700 mb-1">Dərs Cədvəli Portalı</h2>
-          <p className="text-gray-400 text-sm">Mingəçevir Dövlət Universiteti</p>
+          <h2 className="text-lg font-bold text-white mb-1">Dərs Cədvəli Portalı</h2>
+          <p className="text-white/40 text-sm">QrupTap</p>
           <div className="flex gap-2 mt-5">
             {[0,1,2,3].map(i => (
-              <div key={i} className={`h-2 rounded-full ${i===1?'w-6 bg-green-500':'w-2 bg-green-200'}`}/>
+              <div key={i} className={`h-2 rounded-full ${i===1?'w-6 bg-blue-500':'w-2 bg-blue-900'}`}/>
             ))}
           </div>
         </div>
@@ -183,10 +182,10 @@ export default function LoginPage() {
         <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
-              <div className="bg-green-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">E</div>
-              <span className="text-xl font-bold text-gray-800">-Cədvəl</span>
+              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">Q</div>
+              <span className="text-xl font-bold text-white">rupTap</span>
             </div>
-            <p className="text-gray-400 text-sm">
+            <p className="text-white/40 text-sm">
               {mode === 'login' ? 'Hesabınıza daxil olun' : mode === 'register' ? 'Yeni hesab yaradın' : 'Şifrə bərpası'}
             </p>
           </div>
@@ -195,50 +194,42 @@ export default function LoginPage() {
             {mode === 'register' && (
               <>
                 <div className="space-y-1.5">
-                  <Label className="text-gray-600 text-sm">Ad Soyad</Label>
-                  <Input placeholder="Məs: Əli Həsənov" value={fullName} onChange={e => setFullName(e.target.value)}
-                    className="h-11 rounded-xl border-gray-200 text-gray-900 placeholder:text-gray-400" />
+                  <Label className={labelClass}>Ad Soyad</Label>
+                  <Input placeholder="Məs: Əli Həsənov" value={fullName} onChange={e => setFullName(e.target.value)} className={inputClass} />
                 </div>
-
                 <div className="space-y-1.5">
-                  <Label className="text-gray-600 text-sm">Universitet</Label>
-                  <select value={selectedUni?.id || ''} onChange={e => handleUniChange(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                  <Label className={labelClass}>Universitet</Label>
+                  <select value={selectedUni?.id || ''} onChange={e => handleUniChange(e.target.value)} className={selectClass}>
                     <option value="" disabled>Universitet seçin</option>
                     {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
-
                 {selectedUni && (
                   <div className="space-y-1.5">
-                    <Label className="text-gray-600 text-sm">Fakültə</Label>
-                    <select value={selectedFaculty?.id || ''} onChange={e => handleFacultyChange(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                    <Label className={labelClass}>Fakültə</Label>
+                    <select value={selectedFaculty?.id || ''} onChange={e => handleFacultyChange(e.target.value)} className={selectClass}>
                       <option value="" disabled>Fakültə seçin</option>
                       {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
                 )}
-
                 {selectedFaculty && (
                   <div className="space-y-1.5">
-                    <Label className="text-gray-600 text-sm">Qrup</Label>
-                    <select value={selectedGroup?.id || ''} onChange={e => handleGroupChange(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 bg-white text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-400">
+                    <Label className={labelClass}>Qrup</Label>
+                    <select value={selectedGroup?.id || ''} onChange={e => handleGroupChange(e.target.value)} className={selectClass}>
                       <option value="" disabled>Qrup seçin</option>
                       {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
                   </div>
                 )}
-
                 {selectedGroup && hasSubgroups && (
                   <div className="space-y-1.5">
-                    <Label className="text-gray-600 text-sm">Alt/Üst Qrup</Label>
+                    <Label className={labelClass}>Alt/Üst Qrup</Label>
                     <div className="grid grid-cols-2 gap-3">
                       {(['ust', 'alt'] as const).map(s => (
                         <button key={s} type="button" onClick={() => setSubgroup(s)}
                           className={cn("h-11 rounded-xl border-2 font-semibold text-sm transition-all",
-                            subgroup === s ? "border-green-500 bg-green-500 text-white" : "border-gray-200 text-gray-600 hover:border-green-300")}>
+                            subgroup === s ? "border-blue-500 bg-blue-600 text-white" : "border-white/10 text-white/60 hover:border-blue-500/50")}>
                           {s === 'ust' ? 'ÜST QRUP' : 'ALT QRUP'}
                         </button>
                       ))}
@@ -249,17 +240,16 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-gray-600 text-sm">E-poçt</Label>
-              <Input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)}
-                className="h-11 rounded-xl border-gray-200 text-gray-900 placeholder:text-gray-400" />
+              <Label className={labelClass}>E-poçt</Label>
+              <Input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
             </div>
 
             {mode !== 'forgot' && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-gray-600 text-sm">Şifrə</Label>
+                  <Label className={labelClass}>Şifrə</Label>
                   {mode === 'login' && (
-                    <button onClick={() => setMode('forgot')} className="text-xs text-green-600 hover:underline">
+                    <button onClick={() => setMode('forgot')} className="text-xs text-blue-400 hover:underline">
                       Şifrəni unutmusunuz?
                     </button>
                   )}
@@ -268,9 +258,9 @@ export default function LoginPage() {
                   <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password}
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && mode === 'login' && handleLogin()}
-                    className="h-11 rounded-xl border-gray-200 pr-11" />
+                    className={cn(inputClass, "pr-11")} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
@@ -279,18 +269,18 @@ export default function LoginPage() {
 
             <button disabled={loading}
               onClick={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot}
-              className="w-full h-11 bg-gray-900 hover:bg-gray-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50">
+              className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50">
               {loading ? 'Gözləyin...' : mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Email Göndər'}
             </button>
           </div>
 
-          <div className="mt-5 text-center text-sm text-gray-500">
+          <div className="mt-5 text-center text-sm text-white/40">
             {mode === 'login' ? (
               <>Hesabınız yoxdur?{' '}
-                <button onClick={() => setMode('register')} className="text-green-600 font-semibold hover:underline">Qeydiyyat</button>
+                <button onClick={() => setMode('register')} className="text-blue-400 font-semibold hover:underline">Qeydiyyat</button>
               </>
             ) : (
-              <button onClick={() => setMode('login')} className="text-green-600 font-semibold hover:underline">← Geri qayıt</button>
+              <button onClick={() => setMode('login')} className="text-blue-400 font-semibold hover:underline">← Geri qayıt</button>
             )}
           </div>
         </div>
