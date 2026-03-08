@@ -169,6 +169,7 @@ export default function AdminPage() {
         university_name: r.name,
       },
     });
+    navigator.clipboard.writeText(inviteLink);
     toast({ title: 'Təsdiqləndi! ✅', description: `${r.name} əlavə edildi, email göndərildi` });
   };
   const Section = ({ id, title, icon: Icon, children }: any) => (
