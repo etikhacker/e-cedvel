@@ -262,13 +262,17 @@ export default function AdminPage() {
         </Section>
 
         <Section id="schedule" title="Cədvəl Dərsləri" icon={BookOpen} expanded={expandedSection === 'schedule'} onToggle={() => toggle('schedule')}>
-          <select value={selectedUni} onChange={e => { setSelectedUni(e.target.value); setSelectedGroup(''); setLessons([]); }} className={`w-full ${SEL}`}>
+          <select value={selectedUni} onChange={e => { setSelectedUni(e.target.value); setSelectedFaculty(''); setSelectedGroup(''); setLessons([]); }} className={`w-full ${SEL}`}>
             <option value="">-- Universitet --</option>
             {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
+          <select value={selectedFaculty} onChange={e => { setSelectedFaculty(e.target.value); setSelectedGroup(''); setLessons([]); }} className={`w-full ${SEL}`}>
+            <option value="">-- Fakültə --</option>
+            {faculties.filter(f => f.university_id === selectedUni).map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
           <select value={selectedGroup} onChange={e => { setSelectedGroup(e.target.value); loadLessons(e.target.value); }} className={`w-full ${SEL}`}>
             <option value="">-- Qrup seçin --</option>
-            {groups.filter(g => g.university_id === selectedUni).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            {groups.filter(g => g.faculty_id === selectedFaculty).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
 
           {selectedGroup && (
