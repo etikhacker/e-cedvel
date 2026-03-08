@@ -170,7 +170,7 @@ export default function AdminPage() {
       },
     });
     toast({ title: 'Təsdiqləndi! ✅', description: `${r.name} əlavə edildi, email göndərildi` });
-  }
+  };
   const Section = ({ id, title, icon: Icon, children }: any) => (
     <div className="border rounded-xl overflow-hidden">
       <button onClick={() => setExpandedSection(expandedSection === id ? '' : id)}
