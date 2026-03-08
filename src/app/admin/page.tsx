@@ -236,6 +236,13 @@ export default function AdminPage() {
                     <p className="font-medium">{u.name}</p>
                     <p className="text-xs text-muted-foreground">{u.short_name} — {u.city}</p>
                   </div>
+                  <button onClick={async () => {
+                    await supabase.from('universities').delete().eq('id', u.id);
+                    await loadData(null);
+                    toast({ title: 'Silindi', description: `${u.name} silindi` });
+                  }} className="text-muted-foreground hover:text-destructive ml-2">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>
