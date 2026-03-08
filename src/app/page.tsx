@@ -37,6 +37,7 @@ export default function Home() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [dbSchedule, setDbSchedule] = useState<any[]>([]);
 
   useEffect(() => {
     // ---- .then() XARICINDƏ olan hər şey ----
@@ -153,6 +154,14 @@ export default function Home() {
   }
 
   setProfile(parsed);
+  // DB-dən cədvəl çək
+  if (parsed.group_id) {
+    const { data: lessons } = await supabase
+      .from('schedule_lessons')
+      .select('*')
+      .eq('group_id', parsed.group_id);
+    setDbSchedule(lessons || []);
+  }
   setIsReady(true);
 });
 
@@ -186,7 +195,9 @@ export default function Home() {
     }} />;
   }
 
-  const schedule = getSchedule(profile.group || 'IT24.1');
+  const schedule = (profile as any).group_id && dbSchedule.length > 0
+  ? dbSchedule
+  : getSchedule(profile.group || 'IT24.1');
 
   const dailyClasses = schedule.filter(c =>
     (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
