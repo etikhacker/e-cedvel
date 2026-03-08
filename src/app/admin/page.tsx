@@ -133,13 +133,42 @@ export default function AdminPage() {
   };
 
   const approveRequest = async (r: any) => {
-    const { data: uni } = await supabase.from('universities').insert({
+    // 1. Universiteti əlavə et
+    const { data: uni, error: uniError } = await supabase.from('universities').insert({
       name: r.name, short_name: r.short_name, city: r.city
     }).select().single();
+
+    if (uniError || !uni) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet əlavə edilmədi' });
+      return;
+    }
+
+    // 2. Dəvət token yarat
+    const { data: invite, error: inviteError } = await supabase
+      .from('university_invites')
+      .insert({ email: r.contact_email, university_id: uni.id })
+      .select()
+      .single();
+
+    if (inviteError || !invite) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət yaradılmadı' });
+      return;
+    }
+
+    // 3. Müraciəti təsdiqlənmiş işarələ
     await supabase.from('university_requests').update({ status: 'approved' }).eq('id', r.id);
     setRequests(prev => prev.filter(x => x.id !== r.id));
-    if (uni) await loadData(null);
-    toast({ title: 'Təsdiqləndi', description: `${r.name} əlavə edildi` });
+    await loadData(null);
+
+    // 4. İnvite linkini göstər (email sistemi sonra əlavə ediləcək)
+    const inviteLink = `${window.location.origin}/admin/setup?token=${invite.token}`;
+    toast({
+      title: 'Təsdiqləndi! ✅',
+      description: `Dəvət linki: ${inviteLink}`,
+    });
+
+    // Linki clipboard-a kopyala
+    navigator.clipboard.writeText(inviteLink);
   };
 
   const Section = ({ id, title, icon: Icon, children }: any) => (
