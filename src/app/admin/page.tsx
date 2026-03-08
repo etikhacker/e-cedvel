@@ -17,6 +17,23 @@ const TIMES = ['08:00-09:20', '09:30-10:50', '11:00-12:20', '12:30-13:50', '14:0
 const WEEKS = ['hamisi', 'ust', 'alt'];
 const SUBGROUPS = ['hamisi', 'ust', 'alt'];
 
+function Section({ id, title, icon: Icon, expanded, onToggle, children }: {
+  id: string; title: string; icon: any; expanded: boolean; onToggle: () => void; children: React.ReactNode;
+}) {
+  return (
+    <div className="border rounded-xl overflow-hidden">
+      <button onClick={onToggle}
+        className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors">
+        <div className="flex items-center gap-2 font-bold">
+          <Icon className="h-5 w-5 text-primary" /> {title}
+        </div>
+        {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+      </button>
+      {expanded && <div className="p-4 space-y-4">{children}</div>}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -27,10 +44,10 @@ export default function AdminPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
 
-  const [selectedUni, setSelectedUni] = useState<string>('');
-  const [selectedFaculty, setSelectedFaculty] = useState<string>('');
-  const [selectedGroup, setSelectedGroup] = useState<string>('');
-  const [expandedSection, setExpandedSection] = useState<string>('universities');
+  const [selectedUni, setSelectedUni] = useState('');
+  const [selectedFaculty, setSelectedFaculty] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState('');
+  const [expandedSection, setExpandedSection] = useState('universities');
 
   const [newUni, setNewUni] = useState({ name: '', short_name: '', city: '' });
   const [newFaculty, setNewFaculty] = useState('');
@@ -40,9 +57,7 @@ export default function AdminPage() {
     day: DAYS[0], time: TIMES[0], week: 'hamisi', subgroup: 'hamisi'
   });
 
-  useEffect(() => {
-    checkAdmin();
-  }, []);
+  useEffect(() => { checkAdmin(); }, []);
 
   const checkAdmin = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -64,18 +79,16 @@ export default function AdminPage() {
       const { data: reqs } = await supabase.from('university_requests').select('*').eq('status', 'pending');
       setRequests(reqs || []);
     }
-
     setLoading(false);
   };
 
   const loadData = async (uniId: string | null) => {
-    const uniQuery = supabase.from('universities').select('*');
-    const { data: unis } = uniId ? await uniQuery.eq('id', uniId) : await uniQuery;
+    const { data: unis } = uniId
+      ? await supabase.from('universities').select('*').eq('id', uniId)
+      : await supabase.from('universities').select('*');
     setUniversities(unis || []);
-
     const { data: facs } = await supabase.from('faculties').select('*');
     setFaculties(facs || []);
-
     const { data: grps } = await supabase.from('groups').select('*');
     setGroups(grps || []);
   };
@@ -87,11 +100,11 @@ export default function AdminPage() {
 
   const addUniversity = async () => {
     if (!newUni.name) return;
-    const { error } = await supabase.from('universities').insert(newUni);
+    const { data, error } = await supabase.from('universities').insert(newUni).select().single();
     if (error) { toast({ variant: 'destructive', title: 'Xəta', description: error.message }); return; }
     toast({ title: 'Uğurlu', description: 'Universitet əlavə edildi' });
     setNewUni({ name: '', short_name: '', city: '' });
-    await loadData(null);
+    if (data) setUniversities(prev => [...prev, data]);
   };
 
   const addFaculty = async () => {
@@ -114,16 +127,23 @@ export default function AdminPage() {
 
   const addLesson = async () => {
     if (!newLesson.subject || !selectedGroup) return;
-    const { error } = await supabase.from('schedule_lessons').insert({ ...newLesson, group_id: selectedGroup });
+    const { data, error } = await supabase.from('schedule_lessons').insert({ ...newLesson, group_id: selectedGroup }).select().single();
     if (error) { toast({ variant: 'destructive', title: 'Xəta', description: error.message }); return; }
     toast({ title: 'Uğurlu', description: 'Dərs əlavə edildi' });
     setNewLesson({ subject: '', teacher: '', room: '', day: DAYS[0], time: TIMES[0], week: 'hamisi', subgroup: 'hamisi' });
-    await loadLessons(selectedGroup);
+    if (data) setLessons(prev => [...prev, data]);
   };
 
-  const deleteLesson = async (id: string) => {
-    await supabase.from('schedule_lessons').delete().eq('id', id);
-    setLessons(prev => prev.filter(l => l.id !== id));
+  const deleteUniversity = async (id: string, name: string) => {
+    await supabase.from('universities').delete().eq('id', id);
+    setUniversities(prev => prev.filter(u => u.id !== id));
+    toast({ title: 'Silindi', description: `${name} silindi` });
+  };
+
+  const deleteFaculty = async (id: string, name: string) => {
+    await supabase.from('faculties').delete().eq('id', id);
+    setFaculties(prev => prev.filter(f => f.id !== id));
+    toast({ title: 'Silindi', description: `${name} silindi` });
   };
 
   const deleteGroup = async (id: string) => {
@@ -132,58 +152,34 @@ export default function AdminPage() {
     if (selectedGroup === id) { setSelectedGroup(''); setLessons([]); }
   };
 
+  const deleteLesson = async (id: string) => {
+    await supabase.from('schedule_lessons').delete().eq('id', id);
+    setLessons(prev => prev.filter(l => l.id !== id));
+  };
+
   const approveRequest = async (r: any) => {
-    // 1. Universiteti əlavə et
     const { data: uni, error: uniError } = await supabase.from('universities').insert({
       name: r.name, short_name: r.short_name, city: r.city
     }).select().single();
+    if (uniError || !uni) { toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet əlavə edilmədi' }); return; }
 
-    if (uniError || !uni) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet əlavə edilmədi' });
-      return;
-    }
-
-    // 2. Dəvət token yarat
     const { data: invite, error: inviteError } = await supabase
-      .from('university_invites')
-      .insert({ email: r.contact_email, university_id: uni.id })
-      .select()
-      .single();
+      .from('university_invites').insert({ email: r.contact_email, university_id: uni.id }).select().single();
+    if (inviteError || !invite) { toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət yaradılmadı' }); return; }
 
-    if (inviteError || !invite) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət yaradılmadı' });
-      return;
-    }
-
-    // 3. Müraciəti təsdiqlənmiş işarələ
     await supabase.from('university_requests').update({ status: 'approved' }).eq('id', r.id);
     setRequests(prev => prev.filter(x => x.id !== r.id));
-    await loadData(null);
+    setUniversities(prev => [...prev, uni]);
 
-    // 4. Email göndər
     const inviteLink = `${window.location.origin}/admin/setup?token=${invite.token}`;
     await supabase.functions.invoke('send-invite', {
-      body: {
-        email: r.contact_email,
-        invite_link: inviteLink,
-        university_name: r.name,
-      },
+      body: { email: r.contact_email, invite_link: inviteLink, university_name: r.name },
     });
     navigator.clipboard.writeText(inviteLink);
-    toast({ title: 'Təsdiqləndi! ✅', description: `${r.name} əlavə edildi, email göndərildi` });
+    toast({ title: 'Təsdiqləndi! ✅', description: `Dəvət linki kopyalandı — universitetə göndərin` });
   };
-  const Section = ({ id, title, icon: Icon, children }: any) => (
-    <div className="border rounded-xl overflow-hidden">
-      <button onClick={() => setExpandedSection(expandedSection === id ? '' : id)}
-        className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors">
-        <div className="flex items-center gap-2 font-bold">
-          <Icon className="h-5 w-5 text-primary" /> {title}
-        </div>
-        {expandedSection === id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </button>
-      {expandedSection === id && <div className="p-4 space-y-4">{children}</div>}
-    </div>
-  );
+
+  const toggle = (id: string) => setExpandedSection(prev => prev === id ? '' : id);
 
   if (loading) return <div className="min-h-screen bg-background flex items-center justify-center"><p>Yüklənir...</p></div>;
 
@@ -201,7 +197,6 @@ export default function AdminPage() {
           </Button>
         </header>
 
-        {/* Gözləyən müraciətlər */}
         {isSuperadmin && requests.length > 0 && (
           <div className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 space-y-3">
             <p className="font-bold text-yellow-600">🔔 Gözləyən Müraciətlər ({requests.length})</p>
@@ -211,8 +206,7 @@ export default function AdminPage() {
                   <p className="font-medium">{r.name}</p>
                   <p className="text-xs text-muted-foreground">{r.contact_name} · {r.contact_email} · {r.city}</p>
                 </div>
-                <Button size="sm" className="bg-green-500 hover:bg-green-400 text-white"
-                  onClick={() => approveRequest(r)}>
+                <Button size="sm" className="bg-green-500 hover:bg-green-400 text-white" onClick={() => approveRequest(r)}>
                   Təsdiqlə
                 </Button>
               </div>
@@ -220,9 +214,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Universitetlər */}
         {isSuperadmin && (
-          <Section id="universities" title="Universitetlər" icon={University}>
+          <Section id="universities" title="Universitetlər" icon={University} expanded={expandedSection === 'universities'} onToggle={() => toggle('universities')}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <Input placeholder="Universitet adı" value={newUni.name} onChange={e => setNewUni(p => ({ ...p, name: e.target.value }))} />
               <Input placeholder="Qısa ad (MDU)" value={newUni.short_name} onChange={e => setNewUni(p => ({ ...p, short_name: e.target.value }))} />
@@ -236,11 +229,7 @@ export default function AdminPage() {
                     <p className="font-medium">{u.name}</p>
                     <p className="text-xs text-muted-foreground">{u.short_name} — {u.city}</p>
                   </div>
-                  <button onClick={async () => {
-                    await supabase.from('universities').delete().eq('id', u.id);
-                    await loadData(null);
-                    toast({ title: 'Silindi', description: `${u.name} silindi` });
-                  }} className="text-muted-foreground hover:text-destructive ml-2">
+                  <button onClick={() => deleteUniversity(u.id, u.name)} className="text-muted-foreground hover:text-destructive ml-2">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -249,28 +238,30 @@ export default function AdminPage() {
           </Section>
         )}
 
-        {/* Fakültələr */}
-        <Section id="faculties" title="Fakültələr" icon={Users}>
+        <Section id="faculties" title="Fakültələr" icon={Users} expanded={expandedSection === 'faculties'} onToggle={() => toggle('faculties')}>
           <select value={selectedUni} onChange={e => setSelectedUni(e.target.value)}
             className="w-full p-2.5 rounded-xl border bg-background text-foreground text-sm">
             <option value="">-- Universitet seçin --</option>
             {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
           <div className="flex gap-2">
-            <Input placeholder="Fakültə adı" value={newFaculty} onChange={e => setNewFaculty(e.target.value)} />
+            <Input placeholder="Fakültə adı" value={newFaculty} onChange={e => setNewFaculty(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addFaculty()} />
             <Button onClick={addFaculty} className="gap-2 shrink-0"><Plus className="h-4 w-4" /> Əlavə et</Button>
           </div>
           <div className="space-y-2">
             {faculties.filter(f => f.university_id === selectedUni).map(f => (
-              <div key={f.id} className="p-3 rounded-xl border bg-muted/10">
+              <div key={f.id} className="flex items-center justify-between p-3 rounded-xl border bg-muted/10">
                 <p className="font-medium">{f.name}</p>
+                <button onClick={() => deleteFaculty(f.id, f.name)} className="text-muted-foreground hover:text-destructive ml-2">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
         </Section>
 
-        {/* Qruplar */}
-        <Section id="groups" title="Qruplar" icon={Users}>
+        <Section id="groups" title="Qruplar" icon={Users} expanded={expandedSection === 'groups'} onToggle={() => toggle('groups')}>
           <div className="grid grid-cols-2 gap-2">
             <select value={selectedUni} onChange={e => { setSelectedUni(e.target.value); setSelectedFaculty(''); }}
               className="p-2.5 rounded-xl border bg-background text-foreground text-sm">
@@ -284,7 +275,8 @@ export default function AdminPage() {
             </select>
           </div>
           <div className="flex gap-2">
-            <Input placeholder="Qrup adı (IT24.1)" value={newGroup} onChange={e => setNewGroup(e.target.value)} />
+            <Input placeholder="Qrup adı (IT24.1)" value={newGroup} onChange={e => setNewGroup(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addGroup()} />
             <Button onClick={addGroup} className="gap-2 shrink-0"><Plus className="h-4 w-4" /> Əlavə et</Button>
           </div>
           <div className="space-y-2">
@@ -299,8 +291,7 @@ export default function AdminPage() {
           </div>
         </Section>
 
-        {/* Cədvəl */}
-        <Section id="schedule" title="Cədvəl Dərsləri" icon={BookOpen}>
+        <Section id="schedule" title="Cədvəl Dərsləri" icon={BookOpen} expanded={expandedSection === 'schedule'} onToggle={() => toggle('schedule')}>
           <select value={selectedUni} onChange={e => { setSelectedUni(e.target.value); setSelectedGroup(''); setLessons([]); }}
             className="w-full p-2.5 rounded-xl border bg-background text-foreground text-sm">
             <option value="">-- Universitet --</option>
