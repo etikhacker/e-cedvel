@@ -182,7 +182,7 @@ export default function LoginPage() {
         <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
           <div className="mb-6 text-center">
             <div className="inline-flex items-center gap-2 mb-2">
-              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">E-C</div>
+              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">EC</div>
               <span className="text-xl font-bold text-white">E-Cədvəl</span>
             </div>
             <p className="text-white/40 text-sm">
