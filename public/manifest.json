@@ -1,11 +1,11 @@
 {
-  "name": "E-Cədvəl",
-  "short_name": "E-Cədvəl",
+  "name": "E-cədvəl",
+  "short_name": "e-cədvəl",
   "description": "Universitetlər üçün dərs cədvəli tətbiqi",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#22aa55",
-  "theme_color": "#22aa55",
+  "background_color": "#1d4ed8",
+  "theme_color": "#1d4ed8",
   "orientation": "portrait",
   "icons": [
     {

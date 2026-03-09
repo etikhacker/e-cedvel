@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "E-Cədvəl",
-  description: "Mingəçevir Dövlət Universiteti dərs cədvəli",
+  title: "E-cədvəl",
+  description: "Universitetlər üçün dərs cədvəli tətbiqi",
 };
 
 export default function RootLayout({
@@ -27,8 +27,8 @@ export default function RootLayout({
     <html lang="az" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#4A90E2" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#1d4ed8" />
+        <meta name="apple-mobile-web-app-title" content="E-cədvəl" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
