@@ -495,7 +495,7 @@ export default function Home() {
             <Info className="h-4 w-4 text-primary shrink-0" />
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Cari Həftə:</span>
-              <Badge variant={currentWeek === 'ust' ? 'default' : 'secondary'} className="font-bold text-[10px]">
+              <Badge variant="default" className="font-bold text-[10px]">
                 {currentWeek === 'ust' ? 'ÜST' : 'ALT'}
               </Badge>
             </div>
