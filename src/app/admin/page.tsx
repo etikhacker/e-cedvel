@@ -298,7 +298,7 @@ export default function AdminPage() {
                 </LabeledSelect>
                 <LabeledSelect label="Dərs növü" value={newLesson.type} onChange={v => setNewLesson(p => ({ ...p, type: v }))}>
                   <option value="mesqele">Məşğələ</option>
-                  <option value="seminar">Seminar</option>
+                  <option value="seminar">Mühazirə</option>
                   <option value="laboratoriya">Laboratoriya</option>
                 </LabeledSelect>
               </div>
