@@ -285,9 +285,7 @@ export default function AdminPage() {
                 <select value={newLesson.day} onChange={e => setNewLesson(p => ({ ...p, day: e.target.value }))} className={SEL}>
                   {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
-                <select value={newLesson.time} onChange={e => setNewLesson(p => ({ ...p, time: e.target.value }))} className={SEL}>
-                  {TIMES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <Input placeholder="Vaxt (09:00-10:20)" value={newLesson.time} onChange={e => setNewLesson(p => ({ ...p, time: e.target.value }))} />
                 <LabeledSelect label="Həftə" value={newLesson.week} onChange={v => setNewLesson(p => ({ ...p, week: v }))}>
                   <option value="hamisi">Hər həftə</option>
                   <option value="ust">Üst həftə</option>
