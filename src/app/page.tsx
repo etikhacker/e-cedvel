@@ -137,7 +137,7 @@ export default function LandingPage() {
           <li><a href="#contact">Əlaqə</a></li>
         </ul>
         <div className={s.navCtas}>
-          <Link href="/auth/login" className={s.btnGhost}>Daxil Ol</Link>
+          <Link href="/login" className={s.btnGhost}>Daxil Ol</Link>
           <a href="#contact" className={s.btnTeal}>Müraciət et →</a>
         </div>
       </nav>
@@ -160,7 +160,7 @@ export default function LandingPage() {
             cədvəlini rahatlıqla yaradın, paylaşın və konflikt olmadan idarə edin.
           </p>
           <div className={s.heroBtns}>
-            <Link href="/auth/login" className={s.btnTealLg}>Başla →</Link>
+            <Link href="/login" className={s.btnTealLg}>Başla →</Link>
             <a href="#how" className={s.btnOutlineLg}>
               <PlayIcon /> Demo İzlə
             </a>
@@ -306,7 +306,7 @@ export default function LandingPage() {
         <div className={s.fLinks}>
           <a href="#">Gizlilik Siyasəti</a>
           <a href="#">İstifadə Şərtləri</a>
-          <Link href="/auth/login">Daxil Ol</Link>
+          <Link href="/login">Daxil Ol</Link>
         </div>
       </footer>
 
