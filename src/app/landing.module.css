@@ -1,12 +1,12 @@
 /* ── Root & CSS Vars ─────────────────────────────────────── */
 .page {
-  --teal: #0ecfb0;
-  --teal-h: #0ab89c;
+  --teal: #3b82f6;
+  --teal-h: #2563eb;
   --bg: #0d1117;
   --card: rgba(255, 255, 255, 0.04);
   --card-b: rgba(255, 255, 255, 0.08);
-  --teal-card: rgba(14, 207, 176, 0.06);
-  --teal-b: rgba(14, 207, 176, 0.15);
+  --teal-card: rgba(59, 130, 246, 0.06);
+  --teal-b: rgba(59, 130, 246, 0.15);
   --gray: rgba(255, 255, 255, 0.55);
   --muted: rgba(255, 255, 255, 0.28);
 
@@ -23,8 +23,8 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(14, 207, 176, 0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 80% 90%, rgba(14, 207, 176, 0.05) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(59, 130, 246, 0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 90%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -58,7 +58,7 @@
   width: 32px; height: 32px;
   border-radius: 8px;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,7 +108,7 @@
 .btnTeal {
   padding: 8px 18px;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -145,8 +145,8 @@
   gap: 8px;
   padding: 5px 13px;
   border-radius: 100px;
-  background: rgba(14, 207, 176, 0.09);
-  border: 1px solid rgba(14, 207, 176, 0.2);
+  background: rgba(59, 130, 246, 0.09);
+  border: 1px solid rgba(59, 130, 246, 0.2);
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--teal);
@@ -196,7 +196,7 @@
 .btnTealLg {
   padding: 12px 24px;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
   border: none;
   border-radius: 10px;
   font-size: 0.925rem;
@@ -213,7 +213,7 @@
 .btnTealLg:hover {
   background: var(--teal-h);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(14, 207, 176, 0.22);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.22);
 }
 
 .btnOutlineLg {
@@ -277,7 +277,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(14, 207, 176, 0.04) 0%, transparent 50%);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.04) 0%, transparent 50%);
   pointer-events: none;
 }
 
@@ -311,7 +311,7 @@
   font-size: 0.62rem;
   font-weight: 600;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
 }
 
 .scGrid {
@@ -351,8 +351,8 @@
   justify-content: center;
   font-size: 0.57rem;
   font-weight: 600;
-  background: rgba(14, 207, 176, 0.15);
-  border: 1px solid rgba(14, 207, 176, 0.25);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   color: var(--teal);
 }
 
@@ -364,9 +364,9 @@
   justify-content: center;
   font-size: 0.57rem;
   font-weight: 600;
-  background: rgba(14, 207, 176, 0.07);
-  border: 1px solid rgba(14, 207, 176, 0.13);
-  color: rgba(14, 207, 176, 0.65);
+  background: rgba(59, 130, 246, 0.07);
+  border: 1px solid rgba(59, 130, 246, 0.13);
+  color: rgba(59, 130, 246, 0.7);
 }
 
 .scY {
@@ -458,7 +458,7 @@
 .statIco {
   width: 36px; height: 36px;
   border-radius: 9px;
-  background: rgba(14, 207, 176, 0.08);
+  background: rgba(59, 130, 246, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -554,7 +554,7 @@
 .featIco {
   width: 44px; height: 44px;
   border-radius: 10px;
-  background: rgba(14, 207, 176, 0.08);
+  background: rgba(59, 130, 246, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -598,7 +598,7 @@
   top: 28px;
   left: 20%; right: 20%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(14, 207, 176, 0.22), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.22), transparent);
 }
 
 .howStep { padding: 28px 20px; text-align: center; }
@@ -607,7 +607,7 @@
   width: 46px; height: 46px;
   border-radius: 50%;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -704,7 +704,7 @@
 
 .finput:focus {
   border-color: var(--teal);
-  background: rgba(14, 207, 176, 0.03);
+  background: rgba(59, 130, 246, 0.03);
 }
 
 .finput::placeholder { color: var(--muted); }
@@ -714,7 +714,7 @@
   padding: 12px;
   margin-top: 16px;
   background: var(--teal);
-  color: #0d1117;
+  color: #fff;
   border: none;
   border-radius: 9px;
   font-size: 0.925rem;
@@ -731,7 +731,7 @@
 .fsubmit:hover {
   background: var(--teal-h);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(14, 207, 176, 0.22);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.22);
 }
 
 .fnote {
