@@ -276,22 +276,52 @@ export default function LandingPage() {
             </ul>
           </div>
           <div className={s.cR}>
-            <div className={s.fg}>
-              <label className={s.flabel}>Tam ad</label>
-              <input type="text" className={s.finput} placeholder="Ad Soyad" />
+            <div className={s.formBlock}>
+
+              {/* Universitet Məlumatları */}
+              <div className={s.formSectionHead}>
+                <span className={s.formSectionIcon}>🏫</span>
+                <span className={s.formSectionTitle}>Universitet Məlumatları</span>
+              </div>
+
+              <div className={s.fg}>
+                <label className={s.flabel}>Universitet Adı <span className={s.req}>*</span></label>
+                <input type="text" className={s.finput} placeholder="Mingəçevir Dövlət Universiteti" />
+              </div>
+
+              <div className={s.frow}>
+                <div className={s.fg}>
+                  <label className={s.flabel}>Qısa Ad</label>
+                  <input type="text" className={s.finput} placeholder="MDU" />
+                </div>
+                <div className={s.fg}>
+                  <label className={s.flabel}>Şəhər</label>
+                  <input type="text" className={s.finput} placeholder="Mingəçevir" />
+                </div>
+              </div>
+
+              <div className={s.fsep} />
+
+              {/* Əlaqə Məlumatları */}
+              <div className={s.formSectionLabel}>Əlaqə Məlumatları</div>
+
+              <div className={s.fg}>
+                <label className={s.flabel}>Ad Soyad <span className={s.req}>*</span></label>
+                <input type="text" className={s.finput} placeholder="Əli Həsənov" />
+              </div>
+
+              <div className={s.fg}>
+                <label className={s.flabel}>Email <span className={s.req}>*</span></label>
+                <input type="email" className={s.finput} placeholder="info@university.edu.az" />
+              </div>
+
+              <div className={s.fg}>
+                <label className={s.flabel}>Telefon</label>
+                <input type="tel" className={s.finput} placeholder="+994 XX XXX XX XX" />
+              </div>
+
+              <button className={s.fsubmit}>Müraciət Göndər</button>
             </div>
-            <div className={s.fg}>
-              <label className={s.flabel}>E-mail</label>
-              <input type="email" className={s.finput} placeholder="ad@nümunə.az" />
-            </div>
-            <div className={s.fg}>
-              <label className={s.flabel}>Mobil nömrə</label>
-              <input type="tel" className={s.finput} placeholder="+994 50 000 00 00" />
-            </div>
-            <button className={s.fsubmit}>Müraciət et →</button>
-            <p className={s.fnote}>
-              Göndərməklə <a href="#">İstifadə Şərtləri</a> ilə razılaşırsınız.
-            </p>
           </div>
         </div>
       </section>

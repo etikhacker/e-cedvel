@@ -793,3 +793,55 @@
 @keyframes fadeUp {
   to { opacity: 1; transform: none; }
 }
+
+/* ── Form Block (new 2-section form) ────────────────────── */
+.formBlock {
+  background: rgba(22, 27, 34, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.formSectionHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.formSectionIcon {
+  font-size: 1.1rem;
+}
+
+.formSectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.formSectionLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 14px;
+  margin-top: 4px;
+}
+
+.frow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.frow .fg { margin-bottom: 0; }
+
+.fsep {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: 18px 0;
+}
+
+.req {
+  color: #ef4444;
+  margin-left: 2px;
+}
