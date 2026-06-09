@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import s from './landing.module.css';
@@ -112,14 +111,13 @@ function PlayIcon() {
 /* ─── Page ──────────────────────────────────────────────── */
 
 export default function LandingPage() {
-  const router = useRouter();
-
-  // Əgər istifadəçi artıq daxil olubsa → dashboard-a yönləndir
+  // Logged-in users: nav-da "Dashboard" düyməsi göstər
+  const [loggedIn, setLoggedIn] = useState(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard');
+      setLoggedIn(!!session);
     });
-  }, [router]);
+  }, []);
 
   // ── Form state ──────────────────────────────────────────
   const [form, setForm] = useState({
@@ -143,14 +141,18 @@ export default function LandingPage() {
     setError('');
     const { error: dbErr } = await supabase.from('muracietler').insert([{
       universitet: form.universitet,
-      qisa_ad:     form.qisa_ad,
-      seher:       form.seher,
+      qisa_ad:     form.qisa_ad || null,
+      seher:       form.seher   || null,
       ad_soyad:    form.ad_soyad,
       email:       form.email,
-      telefon:     form.telefon,
+      telefon:     form.telefon  || null,
     }]);
     setLoading(false);
-    if (dbErr) { setError('Xəta baş verdi. Yenidən cəhd edin.'); return; }
+    if (dbErr) {
+      console.error('Supabase error:', dbErr);
+      setError(`Xəta: ${dbErr.message}`);
+      return;
+    }
     setSent(true);
   };
 
@@ -170,8 +172,14 @@ export default function LandingPage() {
           <li><a href="#contact">Əlaqə</a></li>
         </ul>
         <div className={s.navCtas}>
-          <Link href="/login" className={s.btnGhost}>Daxil Ol</Link>
-          <a href="#contact" className={s.btnTeal}>Müraciət et →</a>
+          {loggedIn ? (
+            <Link href="/dashboard" className={s.btnTeal}>Dashboarda Keç →</Link>
+          ) : (
+            <>
+              <Link href="/login" className={s.btnGhost}>Daxil Ol</Link>
+              <a href="#contact" className={s.btnTeal}>Müraciət et →</a>
+            </>
+          )}
         </div>
       </nav>
 
