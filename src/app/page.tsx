@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -120,6 +120,39 @@ export default function LandingPage() {
       if (session) router.replace('/dashboard');
     });
   }, [router]);
+
+  // ── Form state ──────────────────────────────────────────
+  const [form, setForm] = useState({
+    universitet: '', qisa_ad: '', seher: '',
+    ad_soyad: '', email: '', telefon: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.universitet || !form.ad_soyad || !form.email) {
+      setError('Zəhmət olmasa məcburi sahələri doldurun.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const { error: dbErr } = await supabase.from('muracietler').insert([{
+      universitet: form.universitet,
+      qisa_ad:     form.qisa_ad,
+      seher:       form.seher,
+      ad_soyad:    form.ad_soyad,
+      email:       form.email,
+      telefon:     form.telefon,
+    }]);
+    setLoading(false);
+    if (dbErr) { setError('Xəta baş verdi. Yenidən cəhd edin.'); return; }
+    setSent(true);
+  };
 
   return (
     <div className={s.page}>
@@ -277,50 +310,72 @@ export default function LandingPage() {
           </div>
           <div className={s.cR}>
             <div className={s.formBlock}>
-
-              {/* Universitet Məlumatları */}
-              <div className={s.formSectionHead}>
-                <span className={s.formSectionIcon}>🏫</span>
-                <span className={s.formSectionTitle}>Universitet Məlumatları</span>
-              </div>
-
-              <div className={s.fg}>
-                <label className={s.flabel}>Universitet Adı <span className={s.req}>*</span></label>
-                <input type="text" className={s.finput} placeholder="Mingəçevir Dövlət Universiteti" />
-              </div>
-
-              <div className={s.frow}>
-                <div className={s.fg}>
-                  <label className={s.flabel}>Qısa Ad</label>
-                  <input type="text" className={s.finput} placeholder="MDU" />
+              {sent ? (
+                <div className={s.successBox}>
+                  <div className={s.successIcon}>✓</div>
+                  <div className={s.successTitle}>Müraciətiniz qəbul edildi!</div>
+                  <p className={s.successDesc}>
+                    Ən qısa zamanda <b>{form.email}</b> ünvanına cavab göndəriləcək.
+                  </p>
                 </div>
-                <div className={s.fg}>
-                  <label className={s.flabel}>Şəhər</label>
-                  <input type="text" className={s.finput} placeholder="Mingəçevir" />
-                </div>
-              </div>
+              ) : (
+                <>
+                  {/* Universitet Məlumatları */}
+                  <div className={s.formSectionHead}>
+                    <span className={s.formSectionIcon}>🏫</span>
+                    <span className={s.formSectionTitle}>Universitet Məlumatları</span>
+                  </div>
 
-              <div className={s.fsep} />
+                  <div className={s.fg}>
+                    <label className={s.flabel}>Universitet Adı <span className={s.req}>*</span></label>
+                    <input name="universitet" type="text" className={s.finput}
+                      placeholder="Mingəçevir Dövlət Universiteti"
+                      value={form.universitet} onChange={handleChange} />
+                  </div>
 
-              {/* Əlaqə Məlumatları */}
-              <div className={s.formSectionLabel}>Əlaqə Məlumatları</div>
+                  <div className={s.frow}>
+                    <div className={s.fg}>
+                      <label className={s.flabel}>Qısa Ad</label>
+                      <input name="qisa_ad" type="text" className={s.finput}
+                        placeholder="MDU" value={form.qisa_ad} onChange={handleChange} />
+                    </div>
+                    <div className={s.fg}>
+                      <label className={s.flabel}>Şəhər</label>
+                      <input name="seher" type="text" className={s.finput}
+                        placeholder="Mingəçevir" value={form.seher} onChange={handleChange} />
+                    </div>
+                  </div>
 
-              <div className={s.fg}>
-                <label className={s.flabel}>Ad Soyad <span className={s.req}>*</span></label>
-                <input type="text" className={s.finput} placeholder="Əli Həsənov" />
-              </div>
+                  <div className={s.fsep} />
 
-              <div className={s.fg}>
-                <label className={s.flabel}>Email <span className={s.req}>*</span></label>
-                <input type="email" className={s.finput} placeholder="info@university.edu.az" />
-              </div>
+                  {/* Əlaqə Məlumatları */}
+                  <div className={s.formSectionLabel}>Əlaqə Məlumatları</div>
 
-              <div className={s.fg}>
-                <label className={s.flabel}>Telefon</label>
-                <input type="tel" className={s.finput} placeholder="+994 XX XXX XX XX" />
-              </div>
+                  <div className={s.fg}>
+                    <label className={s.flabel}>Ad Soyad <span className={s.req}>*</span></label>
+                    <input name="ad_soyad" type="text" className={s.finput}
+                      placeholder="Əli Həsənov" value={form.ad_soyad} onChange={handleChange} />
+                  </div>
 
-              <button className={s.fsubmit}>Müraciət Göndər</button>
+                  <div className={s.fg}>
+                    <label className={s.flabel}>Email <span className={s.req}>*</span></label>
+                    <input name="email" type="email" className={s.finput}
+                      placeholder="info@university.edu.az" value={form.email} onChange={handleChange} />
+                  </div>
+
+                  <div className={s.fg}>
+                    <label className={s.flabel}>Telefon</label>
+                    <input name="telefon" type="tel" className={s.finput}
+                      placeholder="+994 XX XXX XX XX" value={form.telefon} onChange={handleChange} />
+                  </div>
+
+                  {error && <p className={s.formError}>{error}</p>}
+
+                  <button className={s.fsubmit} onClick={handleSubmit} disabled={loading}>
+                    {loading ? 'Göndərilir...' : 'Müraciət Göndər'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

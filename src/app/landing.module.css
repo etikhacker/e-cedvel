@@ -845,3 +845,52 @@
   color: #ef4444;
   margin-left: 2px;
 }
+
+/* ── Form success & error ────────────────────────────────── */
+.successBox {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.successIcon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.15);
+  border: 2px solid rgba(34, 197, 94, 0.4);
+  color: #22c55e;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.successTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.successDesc {
+  font-size: 0.85rem;
+  color: var(--gray);
+  line-height: 1.6;
+}
+
+.formError {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 7px;
+}
+
+.fsubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}

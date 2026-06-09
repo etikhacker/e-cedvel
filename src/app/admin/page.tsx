@@ -5,8 +5,10 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { MuracietlerSection } from '@/components/MuracietlerSection';
 import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut } from 'lucide-react';
 
+<MuracietlerSection />
 type University = { id: string; name: string; short_name: string; city: string };
 type Faculty = { id: string; name: string; university_id: string };
 type Group = { id: string; name: string; faculty_id: string; university_id: string };
