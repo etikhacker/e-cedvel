@@ -30,12 +30,12 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { title: 'Qeydiyyat & Konfiqurasiya',
-    desc: 'Universitetinizi qeydiyyatdan keçirin, fakültə və kafedra strukturunu qurun. İlk dəfə 5 dəqiqədə hazır olursunuz.' },
-  { title: 'Dərs & Müəllim Yükləyin',
-    desc: 'Müəllimlər, fənlər, otaqlar və qrupları sisteme əlavə edin. Excel ilə toplu yükləmə dəstəklənir.' },
-  { title: 'Cədvəl Yayımlayın',
-    desc: 'Konfliktsiz cədvəli təsdiqləyib bütün istifadəçilərlə paylaşın. PDF export avtomatik işləyir.' },
+  { title: 'Qeydiyyat & Quraşdırma',
+    desc: 'Universitetinizi qeydiyyatdan keçirin, fakültə, kafedra və qrup strukturunu admin paneldən qurun.' },
+  { title: 'Müəllim & Dərsləri Əlavə Edin',
+    desc: 'Müəllimlər, fənlər, otaqlar və qrupları sistem üzərindən əlavə edin. Toqquşmalar avtomatik aşkarlanır.' },
+  { title: 'Cədvəli Paylaşın',
+    desc: 'Konfliktsiz cədvəl bütün tələbə və müəllimlərə avtomatik görünür. Həftəlik və günlük baxış dəstəklənir.' },
 ];
 
 /* ─── Schedule Grid ─────────────────────────────────────── */

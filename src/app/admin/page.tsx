@@ -43,6 +43,10 @@ function LabeledSelect({ label, value, onChange, children }: { label: string; va
   );
 }
 
+<a href="/admin/muracietler"
+   style={{ color: "#3b82f6", fontWeight: 700 }}>
+  📬 Müraciətlərə bax
+</a>
 export default function AdminPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
