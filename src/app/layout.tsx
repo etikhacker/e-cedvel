@@ -1,21 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "E-cədvəl",
-  description: "Universitetlər üçün dərs cədvəli tətbiqi",
+  title: "E-Cədvəl — Ağıllı Dərs Cədvəli İdarəetməsi",
+  description:
+    "Multi-tenant cədvəl sistemi ilə universitetin bütün fakültə, qrup və müəllim cədvəlini rahatlıqla yaradın, paylaşın və konflikt olmadan idarə edin.",
 };
 
 export default function RootLayout({
@@ -27,10 +24,9 @@ export default function RootLayout({
     <html lang="az" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#1d4ed8" />
-        <meta name="apple-mobile-web-app-title" content="E-cədvəl" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="theme-color" content="#050505" />
         <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="icon" type="image/svg+xml" href="/ec-icon.svg" />
         <script
@@ -48,7 +44,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${plusJakartaSans.variable} antialiased`}>
         {children}
         <Toaster />
       </body>
