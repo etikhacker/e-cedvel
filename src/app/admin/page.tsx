@@ -5,11 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut } from 'lucide-react';
-import { MuracietlerSection } from '@/components/MuracietlerSection'
-
-// JSX-in içinə əlavə et:
-<MuracietlerSection />
+import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut, Mail } from 'lucide-react';
 type University = { id: string; name: string; short_name: string; city: string };
 type Faculty = { id: string; name: string; university_id: string };
 type Group = { id: string; name: string; faculty_id: string; university_id: string };
@@ -43,10 +39,6 @@ function LabeledSelect({ label, value, onChange, children }: { label: string; va
   );
 }
 
-<a href="/admin/muracietler"
-   style={{ color: "#3b82f6", fontWeight: 700 }}>
-  📬 Müraciətlərə bax
-</a>
 export default function AdminPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -181,10 +173,16 @@ export default function AdminPage() {
             <h1 className="text-2xl font-bold text-primary">QrupTap Admin</h1>
             <p className="text-sm text-muted-foreground">{isSuperadmin ? 'Superadmin' : 'Universitet Admin'}</p>
           </div>
-          <Button variant="outline" className="gap-2 text-destructive border-destructive/20"
-            onClick={() => supabase.auth.signOut().then(() => window.location.replace('/login'))}>
-            <LogOut className="h-4 w-4" /> Çıx
-          </Button>
+          <div className="flex items-center gap-2">
+            <a href="/admin/muracietler"
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg border border-primary/20 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
+              <Mail className="h-4 w-4" /> Müraciətlər
+            </a>
+            <Button variant="outline" className="gap-2 text-destructive border-destructive/20"
+              onClick={() => supabase.auth.signOut().then(() => window.location.replace('/login'))}>
+              <LogOut className="h-4 w-4" /> Çıx
+            </Button>
+          </div>
         </header>
 
         {isSuperadmin && requests.length > 0 && (
