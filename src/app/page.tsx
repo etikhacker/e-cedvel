@@ -399,13 +399,13 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#050505] text-white overflow-x-hidden font-sans">
+    <div className="relative min-h-[100dvh] bg-[#0d1117] text-white overflow-x-hidden font-sans">
 
       {/* ── Background Orbs ── */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">
-        <div className="absolute top-[-8%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-[#4F8CFF]/[0.07] blur-[140px]" />
-        <div className="absolute bottom-[15%] right-[-15%] w-[500px] h-[500px] rounded-full bg-[#8B5CF6]/[0.05] blur-[140px]" />
-        <div className="absolute top-[45%] left-[-10%] w-[350px] h-[350px] rounded-full bg-[#34D399]/[0.025] blur-[120px]" />
+        <div className="absolute top-[-8%] left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-[#3b82f6]/[0.07] blur-[140px]" />
+        <div className="absolute bottom-[15%] right-[-15%] w-[500px] h-[500px] rounded-full bg-[#2563eb]/[0.05] blur-[140px]" />
+        <div className="absolute top-[45%] left-[-10%] w-[350px] h-[350px] rounded-full bg-[#22c55e]/[0.025] blur-[120px]" />
       </div>
 
       {/* ── Noise Grain ── */}
@@ -423,7 +423,7 @@ export default function LandingPage() {
       <section className="relative z-[2] max-w-6xl mx-auto px-4 pt-36 pb-20 md:pt-40 md:pb-28 flex flex-col lg:flex-row items-center gap-12 lg:gap-16 min-h-[100dvh]">
         <RevealSection className="flex-1 w-full max-w-[520px] lg:max-w-none">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] border border-white/[0.08] px-4 py-1.5 mb-6">
-            <span className="w-[5px] h-[5px] rounded-full bg-[#4F8CFF] animate-pulse" />
+            <span className="w-[5px] h-[5px] rounded-full bg-[#3b82f6] animate-pulse" />
             <span className="text-[11px] font-medium tracking-wide text-white/50 uppercase">
               Universitet üçün SaaS · Beta v1.0
             </span>
@@ -431,7 +431,7 @@ export default function LandingPage() {
 
           <h1 className="text-[40px] sm:text-[52px] md:text-[64px] font-bold leading-[1.05] tracking-[-0.03em] mb-5">
             Dərs Cədvəlini
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#4F8CFF] to-[#8B5CF6] mt-1">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#2563eb] mt-1">
               Ağıllı İdarə Et
             </span>
           </h1>
@@ -468,7 +468,7 @@ export default function LandingPage() {
               { icon: CheckBadge, text: 'Kart tələb olunmur' },
             ].map((item) => (
               <span key={item.text} className="flex items-center gap-2 text-[12px] font-medium text-white/35">
-                <item.icon className="w-3.5 h-3.5 text-[#4F8CFF]" />
+                <item.icon className="w-3.5 h-3.5 text-[#3b82f6]" />
                 {item.text}
               </span>
             ))}
@@ -501,12 +501,12 @@ export default function LandingPage() {
             </DoubleBezel>
 
             <div className="absolute -top-[12px] -left-[8px] sm:-left-[16px] bg-black/90 backdrop-blur-xl border border-white/[0.08] rounded-xl px-3.5 py-2.5 animate-[float_4s_ease-in-out_infinite]">
-              <div className="text-[18px] font-bold text-[#4F8CFF] leading-none">+18%</div>
+              <div className="text-[18px] font-bold text-[#3b82f6] leading-none">+18%</div>
               <div className="text-[10px] font-medium text-white/40 mt-0.5">vaxt effektivliyi</div>
             </div>
 
             <div className="absolute -bottom-[12px] -right-[8px] sm:-right-[16px] bg-black/90 backdrop-blur-xl border border-white/[0.08] rounded-xl px-3.5 py-2.5 animate-[float_4s_ease-in-out_infinite_2s]">
-              <div className="text-[18px] font-bold text-[#34D399] leading-none">0 konflikt</div>
+              <div className="text-[18px] font-bold text-[#22c55e] leading-none">0 konflikt</div>
               <div className="text-[10px] font-medium text-white/40 mt-0.5">cədvəl toqquşması</div>
             </div>
           </div>
@@ -538,7 +538,7 @@ export default function LandingPage() {
                   <span className="text-[28px] sm:text-[36px] font-extrabold tracking-[-0.03em] text-white">
                     {stat.value}
                   </span>
-                  <span className="text-[10px] font-semibold text-[#4F8CFF] bg-[#4F8CFF]/[0.08] rounded-full px-2 py-0.5 whitespace-nowrap">
+                  <span className="text-[10px] font-semibold text-[#3b82f6] bg-[#3b82f6]/[0.08] rounded-full px-2 py-0.5 whitespace-nowrap">
                     {stat.trend}
                   </span>
                 </div>
@@ -564,7 +564,7 @@ export default function LandingPage() {
           </div>
           <h2 className="text-[32px] sm:text-[44px] md:text-[52px] font-bold leading-[1.08] tracking-[-0.03em] mb-4">
             Cədvəl idarəetməsini
-            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#4F8CFF] to-[#8B5CF6]">
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#2563eb]">
               yenidən düşünün
             </span>
           </h2>
@@ -612,7 +612,7 @@ export default function LandingPage() {
             </div>
             <h2 className="text-[32px] sm:text-[44px] md:text-[52px] font-bold leading-[1.08] tracking-[-0.03em] mb-4">
               3 addımda
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#4F8CFF] to-[#8B5CF6]">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#2563eb]">
                 hazır cədvəl
               </span>
             </h2>
@@ -656,7 +656,7 @@ export default function LandingPage() {
               </div>
               <h2 className="text-[28px] sm:text-[36px] font-bold leading-[1.12] tracking-[-0.03em] mb-4">
                 Demo versiya üçün
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#4F8CFF] to-[#8B5CF6]">
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-[#3b82f6] to-[#2563eb]">
                   qeydiyyat
                 </span>
               </h2>
@@ -671,8 +671,8 @@ export default function LandingPage() {
                   'Tam funksionallıq açıqdır',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-[13px] font-medium text-white/40">
-                    <span className="w-5 h-5 rounded-full bg-[#4F8CFF]/[0.1] flex items-center justify-center">
-                      <CheckBadge className="w-3 h-3 text-[#4F8CFF]" />
+                    <span className="w-5 h-5 rounded-full bg-[#3b82f6]/[0.1] flex items-center justify-center">
+                      <CheckBadge className="w-3 h-3 text-[#3b82f6]" />
                     </span>
                     {item}
                   </li>
@@ -684,8 +684,8 @@ export default function LandingPage() {
               <DoubleBezel outerClass="w-full" innerClass="bg-white/[0.02] p-6 sm:p-8">
                 {sent ? (
                   <div className="text-center py-8">
-                    <div className="w-14 h-14 rounded-full bg-[#34D399]/[0.12] border-2 border-[#34D399]/[0.25] flex items-center justify-center mx-auto mb-5">
-                      <CheckBadge className="w-6 h-6 text-[#34D399]" />
+                    <div className="w-14 h-14 rounded-full bg-[#22c55e]/[0.12] border-2 border-[#22c55e]/[0.25] flex items-center justify-center mx-auto mb-5">
+                      <CheckBadge className="w-6 h-6 text-[#22c55e]" />
                     </div>
                     <h3 className="text-[18px] font-bold text-white/80 mb-2">Müraciətiniz qəbul edildi!</h3>
                     <p className="text-[13px] text-white/40 font-normal">
@@ -695,11 +695,8 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2.5 mb-6">
-                      <span className="text-[13px] font-semibold text-white/60">
-                        Universitet Məlumatları
-                      </span>
-                      <div className="flex-1 h-px bg-white/[0.06]" />
+                    <div className="text-[12px] font-semibold text-white/50 tracking-wide mb-5">
+                      Universitet Məlumatları
                     </div>
 
                     <div className="space-y-4">
@@ -707,16 +704,14 @@ export default function LandingPage() {
                         <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                           Universitet Adı <span className="text-[#EF4444]">*</span>
                         </label>
-                        <DoubleBezel innerClass="bg-white/[0.03]">
-                          <input
-                            name="universitet"
-                            type="text"
-                            className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                            placeholder="Mingəçevir Dövlət Universiteti"
-                            value={form.universitet}
-                            onChange={handleChange}
-                          />
-                        </DoubleBezel>
+                        <input
+                          name="universitet"
+                          type="text"
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                          placeholder="Mingəçevir Dövlət Universiteti"
+                          value={form.universitet}
+                          onChange={handleChange}
+                        />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -724,40 +719,35 @@ export default function LandingPage() {
                           <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                             Qısa Ad
                           </label>
-                          <DoubleBezel innerClass="bg-white/[0.03]">
-                            <input
-                              name="qisa_ad"
-                              type="text"
-                              className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                              placeholder="MDU"
-                              value={form.qisa_ad}
-                              onChange={handleChange}
-                            />
-                          </DoubleBezel>
+                          <input
+                            name="qisa_ad"
+                            type="text"
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                            placeholder="MDU"
+                            value={form.qisa_ad}
+                            onChange={handleChange}
+                          />
                         </div>
                         <div>
                           <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                             Şəhər
                           </label>
-                          <DoubleBezel innerClass="bg-white/[0.03]">
-                            <input
-                              name="seher"
-                              type="text"
-                              className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                              placeholder="Mingəçevir"
-                              value={form.seher}
-                              onChange={handleChange}
-                            />
-                          </DoubleBezel>
+                          <input
+                            name="seher"
+                            type="text"
+                            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                            placeholder="Mingəçevir"
+                            value={form.seher}
+                            onChange={handleChange}
+                          />
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5 my-6">
-                      <span className="text-[13px] font-semibold text-white/60">
-                        Əlaqə Məlumatları
-                      </span>
-                      <div className="flex-1 h-px bg-white/[0.06]" />
+                    <div className="border-t border-white/[0.06] my-6" />
+
+                    <div className="text-[12px] font-semibold text-white/50 tracking-wide mb-5">
+                      Əlaqə Məlumatları
                     </div>
 
                     <div className="space-y-4">
@@ -765,48 +755,42 @@ export default function LandingPage() {
                         <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                           Ad Soyad <span className="text-[#EF4444]">*</span>
                         </label>
-                        <DoubleBezel innerClass="bg-white/[0.03]">
-                          <input
-                            name="ad_soyad"
-                            type="text"
-                            className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                            placeholder="Əli Həsənov"
-                            value={form.ad_soyad}
-                            onChange={handleChange}
-                          />
-                        </DoubleBezel>
+                        <input
+                          name="ad_soyad"
+                          type="text"
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                          placeholder="Əli Həsənov"
+                          value={form.ad_soyad}
+                          onChange={handleChange}
+                        />
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                           Email <span className="text-[#EF4444]">*</span>
                         </label>
-                        <DoubleBezel innerClass="bg-white/[0.03]">
-                          <input
-                            name="email"
-                            type="email"
-                            className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                            placeholder="info@university.edu.az"
-                            value={form.email}
-                            onChange={handleChange}
-                          />
-                        </DoubleBezel>
+                        <input
+                          name="email"
+                          type="email"
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                          placeholder="info@university.edu.az"
+                          value={form.email}
+                          onChange={handleChange}
+                        />
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-medium text-white/40 mb-2 tracking-wide">
                           Telefon
                         </label>
-                        <DoubleBezel innerClass="bg-white/[0.03]">
-                          <input
-                            name="telefon"
-                            type="tel"
-                            className="w-full bg-transparent px-4 py-2.5 text-[13px] text-white/80 outline-none placeholder:text-white/15"
-                            placeholder="+994 XX XXX XX XX"
-                            value={form.telefon}
-                            onChange={handleChange}
-                          />
-                        </DoubleBezel>
+                        <input
+                          name="telefon"
+                          type="tel"
+                          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-[13px] text-white/80 outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/20 focus:border-[#3b82f6]/50 focus:bg-[#3b82f6]/[0.03]"
+                          placeholder="+994 XX XXX XX XX"
+                          value={form.telefon}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
 
@@ -819,7 +803,7 @@ export default function LandingPage() {
                     <button
                       onClick={handleSubmit}
                       disabled={loading}
-                      className="group rounded-full bg-white w-full mt-6 px-6 py-3.5 flex items-center justify-center gap-3 text-[13px] font-semibold text-black transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="group rounded-full bg-white w-full mt-6 px-6 py-3.5 flex items-center justify-center gap-3 text-[13px] font-semibold text-black transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Göndərilir...' : 'Müraciət Göndər'}
                       {!loading && (
