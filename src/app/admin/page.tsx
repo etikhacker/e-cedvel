@@ -30,7 +30,7 @@ function Section({ id, title, icon: Icon, expanded, onToggle, children }: {
     </div>
   );
 }
-<InviteSection />
+
 function LabeledSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
@@ -222,7 +222,7 @@ export default function AdminPage() {
             </div>
           </Section>
         )}
-
+        {isSuperadmin && <InviteSection />}
         <Section id="faculties" title="Fakültələr" icon={Users} expanded={expandedSection === 'faculties'} onToggle={() => toggle('faculties')}>
           <select value={selectedUni} onChange={e => setSelectedUni(e.target.value)} className={`w-full ${SEL}`}>
             <option value="">-- Universitet seçin --</option>
