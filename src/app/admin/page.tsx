@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { InviteSection } from '@/components/InviteSection'
 import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut, Mail } from 'lucide-react';
 type University = { id: string; name: string; short_name: string; city: string };
 type Faculty = { id: string; name: string; university_id: string };
@@ -29,7 +30,7 @@ function Section({ id, title, icon: Icon, expanded, onToggle, children }: {
     </div>
   );
 }
-
+<InviteSection />
 function LabeledSelect({ label, value, onChange, children }: { label: string; value: string; onChange: (v: string) => void; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
