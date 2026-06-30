@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // 4. Email göndər
     const { error: emailErr } = await resend.emails.send({
-      from: 'noreply@ecedvel.az',  // ← Resend-də verify edilmiş domain
+      from: 'onboarding@resend.dev',  // ← Resend-də verify edilmiş domain
       to: email,
       subject: `${university_name} — Admin Dəvəti`,
       html: emailTemplate({ email, university_name, inviteLink, expires_at }),
