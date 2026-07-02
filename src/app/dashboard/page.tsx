@@ -183,7 +183,7 @@ export default function Home() {
   if (!isReady) return <div className="min-h-screen bg-background" />;
 
   if (!profile) {
-    return <Onboarding onComplete={(p: any) => {
+    return <Onboarding onComplete={async (p: any) => {
       const newProfile: UserProfile = {
         ...p,
         savedGrades: {},
@@ -192,7 +192,17 @@ export default function Home() {
       };
       setProfile(newProfile);
       localStorage.setItem('it24_profile', JSON.stringify(newProfile));
-    }} />;
+      const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await supabase.from('profiles').upsert({
+      id: session.user.id,
+      name: p.name,
+      group_id: p.group_id || null,
+      university_id: p.university_id || null,
+      subgroup: p.subgroup || null,
+      updated_at: new Date().toISOString(),
+    });}
+    }} />
   }
 
   const schedule = (profile as any).group_id && dbSchedule.length > 0
@@ -216,14 +226,17 @@ export default function Home() {
   if (!session) return;
 
   await supabase.from('profiles').upsert({
-    id: session.user.id,
-    name: updatedProfile.name,
-    photo_url: (updatedProfile as any).photo_url || null,
-    absences: (updatedProfile as any).absences || {},
-    saved_grades: updatedProfile.savedGrades || {},
-    saved_details: updatedProfile.savedDetails || {},
-    updated_at: new Date().toISOString(),
-  });
+  id: session.user.id,
+  name: updatedProfile.name,
+  photo_url: (updatedProfile as any).photo_url || null,
+  absences: (updatedProfile as any).absences || {},
+  saved_grades: updatedProfile.savedGrades || {},
+  saved_details: updatedProfile.savedDetails || {},
+  group_id: (updatedProfile as any).group_id || null,
+  university_id: (updatedProfile as any).university_id || null,
+  subgroup: (updatedProfile as any).subgroup || null,
+  updated_at: new Date().toISOString(),
+});
 };
 
   const handleSaveGrade = (data: { subject: string; total: number; davamiyyat: number; serbest: number; kollokviumOrta: number; seminarOrta: number; labBal: number }) => {

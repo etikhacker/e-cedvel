@@ -326,6 +326,34 @@ function SubjectsTab({subjects,uniId,reload}:{subjects:Subject[];uniId:string;re
 const EL={group_id:'',day:'Bazar ertəsi',time:'08:00-09:30',
   subject:'',teacher:'',room:'',week:'hamisi',subgroup:'hamisi'};
 
+// 'hamisi' hər şey ilə üst-üstə düşür; 'ust'/'alt' yalnız özü ilə və 'hamisi' ilə
+function overlaps(a: string, b: string) {
+  if (a === 'hamisi' || b === 'hamisi') return true;
+  return a === b;
+}
+
+type Conflict = { type: 'teacher' | 'room' | 'group'; with: Lesson };
+
+function findConflicts(form: typeof EL, lessons: Lesson[]): Conflict[] {
+  const conflicts: Conflict[] = [];
+  for (const l of lessons) {
+    if (l.day !== form.day || l.time !== form.time) continue;
+    if (!overlaps(l.week, form.week)) continue;
+    if (!overlaps(l.subgroup, form.subgroup)) continue;
+
+    if (form.teacher && l.teacher.trim().toLowerCase() === form.teacher.trim().toLowerCase()) {
+      conflicts.push({ type: 'teacher', with: l });
+    }
+    if (form.room && l.room.trim() && l.room.trim().toLowerCase() === form.room.trim().toLowerCase()) {
+      conflicts.push({ type: 'room', with: l });
+    }
+    if (l.group_id === form.group_id) {
+      conflicts.push({ type: 'group', with: l });
+    }
+  }
+  return conflicts;
+}
+
 function LessonsTab({lessons,groups,subjects,uniId,reload}:{
   lessons:Lesson[];groups:Group[];subjects:Subject[];uniId:string;reload:()=>void;
 }) {
@@ -333,13 +361,23 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
   const [saving,setSaving]=useState(false);
   const [delId,setDelId]=useState<string|null>(null);
   const [filt,setFilt]=useState('all');
-  const s=(k:string,v:string)=>setForm(p=>({...p,[k]:v}));
+  const [conflicts,setConflicts]=useState<Conflict[]>([]);
+  const [forceAdd,setForceAdd]=useState(false);
+  const s=(k:string,v:string)=>{setForm(p=>({...p,[k]:v}));setConflicts([]);setForceAdd(false);};
+
+  const groupName=(id:string)=>groups.find(g=>g.id===id)?.name??'—';
 
   const add=async()=>{
     if(!form.group_id||!form.subject||!form.teacher)return;
+
+    if(!forceAdd){
+      const found=findConflicts(form,lessons);
+      if(found.length>0){ setConflicts(found); return; }
+    }
+
     setSaving(true);
     await supabase.from('schedule_lessons').insert({...form,university_id:uniId});
-    setForm({...EL});setSaving(false);reload();
+    setForm({...EL});setConflicts([]);setForceAdd(false);setSaving(false);reload();
   };
 
   const shown=filt==='all'?lessons:lessons.filter(l=>l.group_id===filt);
@@ -392,10 +430,33 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
               <option value="2">2-ci yarımqrup</option>
             </select></div>
         </div>
+        {conflicts.length>0 && (
+          <div style={{marginTop:14,padding:'14px 16px',
+            background:'rgba(239,68,68,0.08)',border:'1px solid rgba(239,68,68,0.25)',
+            borderRadius:10}}>
+            <p style={{fontSize:'0.82rem',fontWeight:700,color:'#ef4444',marginBottom:8}}>
+              ⚠ Toqquşma aşkarlandı:
+            </p>
+            <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+              {conflicts.map((c,i)=>(
+                <div key={i} style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.7)'}}>
+                  {c.type==='teacher' && `👤 Müəllim "${c.with.teacher}" artıq bu vaxtda ${groupName(c.with.group_id)} qrupunda dərs deyir.`}
+                  {c.type==='room' && `🚪 Otaq "${c.with.room}" artıq bu vaxtda ${groupName(c.with.group_id)} qrupu tərəfindən istifadə olunur.`}
+                  {c.type==='group' && `📚 Bu qrupun artıq bu vaxtda "${c.with.subject}" dərsi var.`}
+                </div>
+              ))}
+            </div>
+            <button onClick={()=>{setForceAdd(true);}}
+              style={btn('#f59e0b',true)}>
+              Yenə də əlavə et
+            </button>
+          </div>
+        )}
+
         <button onClick={add}
           disabled={saving||!form.group_id||!form.subject||!form.teacher}
-          style={{...btn('#3b82f6'),marginTop:14,opacity:saving?0.6:1}}>
-          {saving?'Əlavə edilir...':'+ Dərs Əlavə Et'}
+          style={{...btn(conflicts.length>0?'#f59e0b':'#3b82f6'),marginTop:14,opacity:saving?0.6:1}}>
+          {saving?'Əlavə edilir...':conflicts.length>0?'⚠ Hər halda əlavə et':'+ Dərs Əlavə Et'}
         </button>
       </div>
 
