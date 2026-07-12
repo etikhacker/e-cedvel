@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   title: "E-Cədvəl — Ağıllı Dərs Cədvəli İdarəetməsi",
   description:
     "Multi-tenant cədvəl sistemi ilə universitetin bütün fakültə, qrup və müəllim cədvəlini rahatlıqla yaradın, paylaşın və konflikt olmadan idarə edin.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0d1117",
 };
 
 export default function RootLayout({

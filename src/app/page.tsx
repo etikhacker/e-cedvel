@@ -121,6 +121,7 @@ export default function LandingPage() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [darkNav, setDarkNav] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [form, setForm] = useState({ universitet: '', qisa_ad: '', seher: '', ad_soyad: '', email: '', telefon: '' });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -195,12 +196,12 @@ export default function LandingPage() {
       `}</style>
 
       {/* ── NAV ── */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 100, padding: scrolled ? '12px 0' : '20px 0', transition: 'padding 0.6s cubic-bezier(0.16,1,0.3,1)' }}>
-        <div className="liq-glass" style={{ maxWidth: 1200, margin: '0 auto', padding: '14px 40px', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <nav className="nav-container" style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 100, padding: scrolled ? '12px 0' : '20px 0' }}>
+        <div className="liq-glass nav-inner">
           <Link href="/" style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 20, fontWeight: 500, color: navTxt, letterSpacing: '2px', textDecoration: 'none', textTransform: 'uppercase', transition: 'color 0.6s' }}>
             E-Cədvəl
           </Link>
-          <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+          <div className="nav-links-desktop">
             {[['#platform', 'Platforma'], ['#contact', 'Müraciət'], ['#manifesto', 'Haqqımızda']].map(([h, l]) => (
               <a key={h} href={h} className="nav-link" style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: navTxt, letterSpacing: '1.3px', textDecoration: 'none', textTransform: 'uppercase', opacity: 0.8, transition: 'color 0.6s, opacity 0.6s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = navHov; }}
@@ -213,11 +214,31 @@ export default function LandingPage() {
               : <Link href="/login" style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: navTxt, letterSpacing: '1.3px', textDecoration: 'none', textTransform: 'uppercase', opacity: 0.8 }}>Daxil Ol</Link>
             }
           </div>
+          <button
+            className="nav-hamburger"
+            aria-label="Menyunu aç"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen(o => !o)}
+            style={{ color: navTxt, borderColor: mobileMenuOpen ? navTxt : 'rgba(252,250,238,0.25)' }}
+          >
+            {mobileMenuOpen ? '✕' : '☰'}
+          </button>
         </div>
       </nav>
 
+      {/* ── MOBILE MENU ── */}
+      <div className={`nav-mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
+        {[['#platform', 'Platforma'], ['#contact', 'Müraciət'], ['#manifesto', 'Haqqımızda']].map(([h, l]) => (
+          <a key={h} href={h} onClick={() => setMobileMenuOpen(false)}>{l}</a>
+        ))}
+        {loggedIn
+          ? <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>Dashboard →</Link>
+          : <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Daxil Ol</Link>
+        }
+      </div>
+
       {/* ── HERO (dark) ── */}
-      <section id="hero" style={{ position: 'relative', minHeight: '100vh', background: '#0e0a06', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '10vh', overflow: 'hidden' }}>
+      <section id="hero" className="hero-section" style={{ background: '#0e0a06' }}>
         {/* Gradient overlay */}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(147,137,119,0.08) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 80% 90%, rgba(147,137,119,0.05) 0%, transparent 50%)', pointerEvents: 'none' }} />
 
@@ -230,11 +251,11 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(14,10,6,0) 0%, rgba(14,10,6,0.3) 50%, rgba(14,10,6,0.92) 80%, #0e0a06 100%)', pointerEvents: 'none' }} />
 
         {/* Content panel */}
-        <div className="liq-glass" style={{ position: 'relative', zIndex: 10, maxWidth: 620, width: '90%', padding: '52px 44px 44px', borderRadius: 2, textAlign: 'center' }}>
+        <div className="liq-glass hero-content-panel">
           <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 24 }}>
             Universitetlər üçün · Beta v1.0
           </p>
-          <h1 style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 'clamp(38px,5.5vw,66px)', fontWeight: 400, color: '#fcfaee', lineHeight: 1.1, marginBottom: 24 }}>
+          <h1 className="hero-h1">
             Dərs cədvəli,<br /><em style={{ fontStyle: 'italic' }}>ağıllı idarə edilmiş</em>
           </h1>
           <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 14, fontWeight: 400, color: 'rgba(252,250,238,0.65)', lineHeight: 1.75, marginBottom: 36, maxWidth: 440, margin: '0 auto 36px' }}>
@@ -251,10 +272,10 @@ export default function LandingPage() {
 
       {/* ── MANIFESTO (dark) ── */}
       <section id="manifesto" style={{ backgroundColor: '#180c04', position: 'relative', zIndex: 2 }}>
-        <div style={{ maxWidth: '78vw', margin: '0 auto', padding: '120px 0', textAlign: 'center' }}>
+        <div className="manifesto-section">
           <Reveal>
             <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 52 }}>Fəlsəfəmiz</p>
-            <p style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 'clamp(1.4rem,3.5vw,2.8rem)', fontWeight: 400, lineHeight: 1.22, color: '#fcfaee' }}>
+            <p className="manifesto-quote">
               Universitetdə cədvəl idarəetməsi gərgin, vaxt aparan bir proses olmamalıdır.
               E-Cədvəl bu yükü aradan qaldırmaq üçün yaradıldı — sadəcə sistemi qur,
               strukturunu daxil et, qalan işi o görsün.
@@ -274,18 +295,18 @@ export default function LandingPage() {
           </Reveal>
         </div>
 
-        <div style={{ display: 'flex', maxWidth: 1360, margin: '0 auto', minHeight: '100vh' }}>
+        <div className="platform-section-inner">
           {/* Left sticky */}
-          <div style={{ width: '45%', position: 'sticky', top: 0, height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 48px' }}>
+          <div className="platform-left">
             <Reveal>
-              <div style={{ background: '#180c04', borderRadius: 4, padding: 28, boxShadow: '0 20px 60px rgba(24,12,4,0.2)' }}>
+              <div style={{ background: '#180c04', borderRadius: 4, padding: 28, boxShadow: '0 20px 60px rgba(24,12,4,0.2)', maxWidth: 520, width: '100%' }}>
                 <ScheduleCard />
               </div>
             </Reveal>
           </div>
 
           {/* Right scroll */}
-          <div style={{ width: '55%', padding: '0 48px' }}>
+          <div className="platform-right">
             <Pillar
               label="Struktur"
               title="Çox universitetli izolyasiya"
@@ -307,7 +328,7 @@ export default function LandingPage() {
 
       {/* ── CONTACT (cream) ── */}
       <section id="contact" style={{ backgroundColor: '#fcfaee', position: 'relative', zIndex: 2, padding: '100px 24px 120px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div className="contact-section-inner">
           <Reveal>
             <div style={{ textAlign: 'center', marginBottom: 72 }}>
               <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '3px', textTransform: 'uppercase', marginBottom: 20 }}>Müraciət</p>
@@ -317,10 +338,10 @@ export default function LandingPage() {
             </div>
           </Reveal>
 
-          <div style={{ display: 'flex', gap: 80, alignItems: 'flex-start' }}>
+          <div className="contact-flex">
             {/* Left */}
             <Reveal delay={100}>
-              <div style={{ flex: '0 0 340px' }}>
+              <div className="contact-left">
                 <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 14, color: '#696969', lineHeight: 1.7, marginBottom: 40 }}>
                   14 gün ərzində platformanın bütün xüsusiyyətlərini tam açıq şəkildə sınayın. Kart məlumatı tələb olunmur.
                 </p>
@@ -344,7 +365,7 @@ export default function LandingPage() {
 
             {/* Right — form */}
             <Reveal delay={200}>
-              <div style={{ flex: 1 }}>
+              <div className="contact-right">
                 {sent ? (
                   <div style={{ padding: '60px 0', textAlign: 'center' }}>
                     <p style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 36, fontWeight: 400, fontStyle: 'italic', color: '#180c04', marginBottom: 16 }}>Təşəkkür edirik</p>
@@ -359,7 +380,7 @@ export default function LandingPage() {
                       <label style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 500, color: '#938977', marginBottom: 8, letterSpacing: '0.5px' }}>Universitet Adı *</label>
                       <input name="universitet" type="text" className="inp" placeholder="Mingəçevir Dövlət Universiteti" value={form.universitet} onChange={hc} />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
+                    <div className="contact-form-row">
                       {[['qisa_ad','Qısa Ad','MDU'],['seher','Şəhər','Mingəçevir']].map(([n,l,p]) => (
                         <div key={n}>
                           <label style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 500, color: '#938977', marginBottom: 8, letterSpacing: '0.5px' }}>{l}</label>
@@ -393,12 +414,12 @@ export default function LandingPage() {
       {/* ── FOOTER ── */}
       <footer id="site-footer" style={{ backgroundColor: '#f0ecd7', borderTop: '1px solid rgba(24,12,4,0.1)', position: 'relative', zIndex: 2 }}>
         <div style={{ textAlign: 'center', padding: '72px 24px 56px' }}>
-          <p style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 'clamp(22px,3vw,34px)', fontWeight: 400, fontStyle: 'italic', color: '#180c04', lineHeight: 1.3, maxWidth: 480, margin: '0 auto' }}>
+          <p className="footer-quote">
             Vaxtınız dəyərlidir. Cədvəl işini bizə buraxın.
           </p>
         </div>
 
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 72px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 40 }}>
+        <div className="footer-grid">
           <div>
             <p style={{ fontFamily: '"Cormorant Garamond",Georgia,serif', fontSize: 18, fontWeight: 500, color: '#180c04', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 14 }}>E-Cədvəl</p>
             <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: '#696969', lineHeight: 1.65 }}>

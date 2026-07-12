@@ -23,16 +23,16 @@ const TYPE_COLORS: Record<string, string> = {
 
 function ClassCard({ c }: { c: ScheduleItem }) {
   return (
-    <div className="p-4 border rounded-xl bg-card hover:shadow-md transition-shadow space-y-2">
+    <div className="p-3 sm:p-4 border rounded-xl bg-card hover:shadow-md transition-shadow space-y-2">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="font-semibold text-foreground">{c.subject}</h3>
+        <h3 className="font-semibold text-foreground text-sm sm:text-base break-words">{c.subject}</h3>
         {c.type && (
           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${TYPE_COLORS[c.type] || 'bg-muted text-muted-foreground'}`}>
             {c.type}
           </span>
         )}
       </div>
-      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
         <span className="flex items-center gap-1">
           <Clock className="h-3.5 w-3.5 shrink-0" /> {c.time}
         </span>
@@ -70,8 +70,8 @@ export const DailyView = ({ classes }: { classes: ScheduleItem[] }) => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-2">
-        <h2 className="font-bold text-lg text-foreground">{todayName}</h2>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <h2 className="font-bold text-base sm:text-lg text-foreground">{todayName}</h2>
         <Badge variant="outline" className="text-xs">{today.toLocaleDateString('az-AZ')}</Badge>
       </div>
       {sorted.length === 0 ? (
@@ -95,12 +95,12 @@ export const WeeklyView = ({ classes }: { classes: ScheduleItem[] }) => {
         const dayClasses = classes
           .filter(c => c.day === day)
           .sort((a, b) => a.time.localeCompare(b.time));
-        
+
         if (dayClasses.length === 0) return null;
 
         return (
           <div key={day} className="space-y-2">
-            <h3 className="font-bold text-primary border-b border-primary/20 pb-1">{day}</h3>
+            <h3 className="font-bold text-primary border-b border-primary/20 pb-1 text-sm sm:text-base">{day}</h3>
             {dayClasses.map((c, i) => <ClassCard key={i} c={c} />)}
           </div>
         );

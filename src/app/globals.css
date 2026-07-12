@@ -146,3 +146,201 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Landing page mobile-first responsive utilities ─────────
+   page.tsx bütün inline stillərdən istifadə edir — bu class adları
+   həmin stilləri mobil/tablet cihazlarda düzəltmək üçündür.
+   Desktop default, mobil @media içində override edilir.        */
+
+.nav-container {
+  transition: padding 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 40px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-links-desktop {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+}
+
+.nav-hamburger {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(252,250,238,0.25);
+  border-radius: 2px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.nav-mobile-menu {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: rgba(14, 10, 6, 0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(252,250,238,0.1);
+  border-bottom: 1px solid rgba(252,250,238,0.1);
+  padding: 16px 24px 24px;
+  flex-direction: column;
+  gap: 4px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
+
+.nav-mobile-menu.open { display: flex; }
+
+.nav-mobile-menu a {
+  display: block;
+  padding: 14px 0;
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fcfaee;
+  border-bottom: 1px solid rgba(252,250,238,0.06);
+  opacity: 0.9;
+}
+
+.hero-section { position: relative; min-height: 100vh; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 10vh; overflow: hidden; }
+
+.hero-content-panel {
+  position: relative;
+  z-index: 10;
+  max-width: 620px;
+  width: 90%;
+  padding: 52px 44px 44px;
+  border-radius: 2px;
+  text-align: center;
+}
+
+.hero-h1 {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 400;
+  color: #fcfaee;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  font-size: clamp(32px, 5.5vw, 66px);
+}
+
+.manifesto-section { max-width: 78vw; margin: 0 auto; padding: 120px 0; text-align: center; }
+.manifesto-quote {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 400;
+  line-height: 1.22;
+  color: #fcfaee;
+  font-size: clamp(1.25rem, 3.5vw, 2.8rem);
+}
+
+.platform-section-inner {
+  display: flex;
+  max-width: 1360px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.platform-left {
+  width: 45%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 48px;
+}
+
+.platform-right { width: 55%; padding: 0 48px; }
+
+.contact-section-inner { max-width: 1100px; margin: 0 auto; }
+.contact-flex { display: flex; gap: 80px; align-items: flex-start; }
+.contact-left { flex: 0 0 340px; }
+.contact-right { flex: 1; }
+.contact-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+
+.footer-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 72px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 40px;
+}
+
+.footer-quote {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 400;
+  font-style: italic;
+  color: #180c04;
+  line-height: 1.3;
+  max-width: 480px;
+  margin: 0 auto;
+  font-size: clamp(22px, 3vw, 34px);
+}
+
+/* ── Tablet (≤ 1024px) ───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .nav-inner { padding: 12px 24px; }
+
+  .platform-section-inner { flex-direction: column; min-height: auto; }
+  .platform-left {
+    width: 100%;
+    position: relative;
+    height: auto;
+    padding: 60px 24px 20px;
+  }
+  .platform-right { width: 100%; padding: 0 24px 60px; }
+
+  .contact-flex { gap: 48px; }
+  .contact-left { flex: 0 0 280px; }
+}
+
+/* ── Mobile (≤ 768px) ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav-inner { padding: 10px 16px; }
+  .nav-links-desktop { display: none; }
+  .nav-hamburger { display: inline-flex; align-items: center; justify-content: center; }
+
+  .hero-section { min-height: 90vh; padding-bottom: 6vh; align-items: center; padding-top: 80px; }
+  .hero-content-panel { padding: 32px 22px 28px; width: 92%; }
+  .hero-h1 { font-size: clamp(28px, 9vw, 42px); }
+
+  .manifesto-section { padding: 60px 20px; max-width: 100%; }
+  .manifesto-quote { font-size: clamp(1.1rem, 5vw, 1.6rem); }
+
+  .contact-section-inner { padding: 0 8px; }
+  .contact-flex { flex-direction: column; gap: 40px; }
+  .contact-left { flex: 0 0 auto; width: 100%; }
+  .contact-right { width: 100%; }
+  .contact-form-row { grid-template-columns: 1fr; }
+
+  .footer-grid { padding: 0 16px 48px; gap: 28px; grid-template-columns: 1fr 1fr; }
+  .footer-quote { font-size: clamp(18px, 6vw, 26px); }
+}
+
+/* ── Small mobile (≤ 480px) ──────────────────────────────── */
+@media (max-width: 480px) {
+  .hero-content-panel { padding: 24px 18px 22px; }
+  .hero-h1 { font-size: clamp(24px, 9vw, 34px); }
+
+  .footer-grid { grid-template-columns: 1fr; }
+  .footer-quote { font-size: 20px; }
+}
