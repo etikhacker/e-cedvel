@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type Mode = 'login' | 'register' | 'forgot';
 type University = { id: string; name: string; short_name: string };
@@ -133,103 +134,205 @@ export default function LoginPage() {
     }
   };
 
-  const selectClass = "w-full h-11 px-3 rounded-xl border border-white/10 bg-gray-900 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const inputClass = "h-11 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-white/30 focus:ring-blue-500";
-  const labelClass = "text-white/60 text-sm";
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4">
-      <div className="w-full max-w-4xl bg-gray-900 rounded-3xl shadow-2xl overflow-hidden flex min-h-[520px] border border-white/5">
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap');
+        .login-input {
+          width: 100%;
+          padding: 12px 16px;
+          background: rgba(24,12,4,0.04);
+          border: 1px solid rgba(24,12,4,0.12);
+          border-radius: 2px;
+          font-family: Inter, sans-serif;
+          font-size: 13px;
+          color: #180c04;
+          outline: none;
+          transition: border-color 0.4s;
+          box-sizing: border-box;
+        }
+        .login-input:focus {
+          border-color: rgba(24,12,4,0.4);
+        }
+        .login-input::placeholder {
+          color: rgba(24,12,4,0.3);
+        }
+        .login-select {
+          width: 100%;
+          padding: 12px 16px;
+          background: rgba(24,12,4,0.04);
+          border: 1px solid rgba(24,12,4,0.12);
+          border-radius: 2px;
+          font-family: Inter, sans-serif;
+          font-size: 13px;
+          color: #180c04;
+          outline: none;
+          transition: border-color 0.4s;
+          box-sizing: border-box;
+          appearance: none;
+          cursor: pointer;
+        }
+        .login-select:focus {
+          border-color: rgba(24,12,4,0.4);
+        }
+        .login-btn {
+          width: 100%;
+          padding: 14px;
+          background: #180c04;
+          color: #fcfaee;
+          border: none;
+          border-radius: 2px;
+          font-family: Inter, sans-serif;
+          font-size: 13px;
+          font-weight: 600;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: background 0.4s, transform 0.2s;
+        }
+        .login-btn:hover:not(:disabled) {
+          background: #2a1e10;
+          transform: translateY(-1px);
+        }
+        .login-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .subgroup-btn {
+          padding: 12px;
+          border: 1px solid rgba(24,12,4,0.12);
+          border-radius: 2px;
+          font-family: Inter, sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.3s;
+          background: transparent;
+          color: #938977;
+        }
+        .subgroup-btn.active {
+          background: #180c04;
+          color: #fcfaee;
+          border-color: #180c04;
+        }
+        .subgroup-btn:not(.active):hover {
+          border-color: rgba(24,12,4,0.3);
+        }
+      `}</style>
 
-        {/* Sol */}
-        <div className="hidden md:flex flex-col items-center justify-center w-1/2 bg-gradient-to-br from-blue-950 to-gray-900 p-12 text-center border-r border-white/5">
-          <svg viewBox="0 0 360 300" className="w-64 h-52 mb-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="180" cy="150" r="120" fill="#1e3a5f" opacity="0.6"/>
-            <rect x="100" y="218" width="160" height="9" rx="4" fill="#3b82f6" opacity="0.25"/>
-            <rect x="112" y="226" width="7" height="32" rx="3" fill="#3b82f6" opacity="0.2"/>
-            <rect x="241" y="226" width="7" height="32" rx="3" fill="#3b82f6" opacity="0.2"/>
-            <rect x="186" y="177" width="58" height="44" rx="7" fill="#2563eb" opacity="0.5"/>
-            <rect x="182" y="216" width="66" height="7" rx="3" fill="#1d4ed8" opacity="0.5"/>
-            <rect x="188" y="222" width="6" height="24" rx="3" fill="#1d4ed8" opacity="0.4"/>
-            <rect x="240" y="222" width="6" height="24" rx="3" fill="#1d4ed8" opacity="0.4"/>
-            <circle cx="196" cy="148" r="18" fill="#fde68a"/>
-            <path d="M178 143 Q196 130 214 143" stroke="#92400e" strokeWidth="2.5" fill="none"/>
-            <rect x="178" y="166" width="36" height="40" rx="8" fill="#3b82f6"/>
-            <rect x="156" y="170" width="26" height="9" rx="4" fill="#3b82f6"/>
-            <rect x="214" y="170" width="26" height="9" rx="4" fill="#3b82f6"/>
-            <rect x="105" y="168" width="52" height="64" rx="5" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5"/>
-            <line x1="114" y1="184" x2="147" y2="184" stroke="#3b82f6" strokeWidth="1.5"/>
-            <line x1="114" y1="196" x2="147" y2="196" stroke="#3b82f6" strokeWidth="1.5"/>
-            <line x1="114" y1="208" x2="138" y2="208" stroke="#3b82f6" strokeWidth="1.5"/>
-            <line x1="114" y1="220" x2="143" y2="220" stroke="#334155" strokeWidth="1.5"/>
-            <text x="65" y="100" fontSize="14" fill="#3b82f6" opacity="0.6">f(x)</text>
-            <text x="265" y="88" fontSize="13" fill="#3b82f6" opacity="0.6">x+y</text>
-            <circle cx="280" cy="112" r="15" fill="#1e293b" stroke="#3b82f6" strokeWidth="1.5" opacity="0.8"/>
-            <line x1="280" y1="102" x2="280" y2="112" stroke="#3b82f6" strokeWidth="1.5"/>
-            <line x1="280" y1="112" x2="288" y2="116" stroke="#3b82f6" strokeWidth="1.5"/>
-            <ellipse cx="83" cy="217" rx="13" ry="9" fill="#2563eb" opacity="0.6"/>
-          </svg>
-          <h2 className="text-lg font-bold text-white mb-1">Dərs Cədvəli Portalı</h2>
-          <p className="text-white/40 text-sm">E-cədvəl</p>
-          <div className="flex gap-2 mt-5">
-            {[0,1,2,3].map(i => (
-              <div key={i} className={`h-2 rounded-full ${i===1?'w-6 bg-blue-500':'w-2 bg-blue-900'}`}/>
-            ))}
-          </div>
-        </div>
-
-        {/* Sağ - Form */}
-        <div className="w-full md:w-1/2 p-10 flex flex-col justify-center overflow-y-auto max-h-screen">
-          <div className="mb-6 text-center">
-            <div className="inline-flex items-center gap-2 mb-2">
-              <div className="bg-blue-600 text-white font-bold text-base px-3 py-1.5 rounded-xl">EC</div>
-              <span className="text-xl font-bold text-white">E-Cədvəl</span>
-            </div>
-            <p className="text-white/40 text-sm">
+      <div style={{
+        minHeight: '100vh',
+        background: '#fcfaee',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 20px',
+        fontFamily: 'Inter, system-ui, sans-serif',
+      }}>
+        <div style={{ width: '100%', maxWidth: 420 }}>
+          {/* Logo / Brand */}
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <h1 style={{
+                fontFamily: '"Cormorant Garamond", Georgia, serif',
+                fontSize: 28,
+                fontWeight: 500,
+                color: '#180c04',
+                letterSpacing: '3px',
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}>
+                E-Cədvəl
+              </h1>
+            </Link>
+            <p style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: 12,
+              fontWeight: 500,
+              color: '#938977',
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+            }}>
               {mode === 'login' ? 'Hesabınıza daxil olun' : mode === 'register' ? 'Yeni hesab yaradın' : 'Şifrə bərpası'}
             </p>
           </div>
 
-          <div className="space-y-3.5">
+          {/* Divider line */}
+          <div style={{ width: 40, height: 1, background: 'rgba(24,12,4,0.15)', margin: '0 auto 40px' }} />
+
+          {/* Form */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {mode === 'register' && (
               <>
-                <div className="space-y-1.5">
-                  <Label className={labelClass}>Ad Soyad</Label>
-                  <Input placeholder="Məs: Əli Həsənov" value={fullName} onChange={e => setFullName(e.target.value)} className={inputClass} />
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Ad Soyad
+                  </label>
+                  <input
+                    className="login-input"
+                    placeholder="Məs: Əli Həsənov"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className={labelClass}>Universitet</Label>
-                  <select value={selectedUni?.id || ''} onChange={e => handleUniChange(e.target.value)} className={selectClass}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                    Universitet
+                  </label>
+                  <select
+                    className="login-select"
+                    value={selectedUni?.id || ''}
+                    onChange={e => handleUniChange(e.target.value)}
+                  >
                     <option value="" disabled>Universitet seçin</option>
                     {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                   </select>
                 </div>
                 {selectedUni && (
-                  <div className="space-y-1.5">
-                    <Label className={labelClass}>Fakültə</Label>
-                    <select value={selectedFaculty?.id || ''} onChange={e => handleFacultyChange(e.target.value)} className={selectClass}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Fakültə
+                    </label>
+                    <select
+                      className="login-select"
+                      value={selectedFaculty?.id || ''}
+                      onChange={e => handleFacultyChange(e.target.value)}
+                    >
                       <option value="" disabled>Fakültə seçin</option>
                       {faculties.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                     </select>
                   </div>
                 )}
                 {selectedFaculty && (
-                  <div className="space-y-1.5">
-                    <Label className={labelClass}>Qrup</Label>
-                    <select value={selectedGroup?.id || ''} onChange={e => handleGroupChange(e.target.value)} className={selectClass}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Qrup
+                    </label>
+                    <select
+                      className="login-select"
+                      value={selectedGroup?.id || ''}
+                      onChange={e => handleGroupChange(e.target.value)}
+                    >
                       <option value="" disabled>Qrup seçin</option>
                       {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                     </select>
                   </div>
                 )}
                 {selectedGroup && hasSubgroups && (
-                  <div className="space-y-1.5">
-                    <Label className={labelClass}>Alt/Üst Qrup</Label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                      Alt/Üst Qrup
+                    </label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                       {(['ust', 'alt'] as const).map(s => (
-                        <button key={s} type="button" onClick={() => setSubgroup(s)}
-                          className={cn("h-11 rounded-xl border-2 font-semibold text-sm transition-all",
-                            subgroup === s ? "border-blue-500 bg-blue-600 text-white" : "border-white/10 text-white/60 hover:border-blue-500/50")}>
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSubgroup(s)}
+                          className={`subgroup-btn ${subgroup === s ? 'active' : ''}`}
+                        >
                           {s === 'ust' ? 'ÜST QRUP' : 'ALT QRUP'}
                         </button>
                       ))}
@@ -239,52 +342,115 @@ export default function LoginPage() {
               </>
             )}
 
-            <div className="space-y-1.5">
-              <Label className={labelClass}>E-poçt</Label>
-              <Input type="email" placeholder="email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} />
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>
+                E-poçt
+              </label>
+              <input
+                className="login-input"
+                type="email"
+                placeholder="email@example.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
             </div>
 
             {mode !== 'forgot' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label className={labelClass}>Şifrə</Label>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+                    Şifrə
+                  </label>
                   {mode === 'login' && (
-                    <button onClick={() => setMode('forgot')} className="text-xs text-blue-400 hover:underline">
+                    <button
+                      onClick={() => setMode('forgot')}
+                      style={{
+                        background: 'none', border: 'none', padding: 0,
+                        fontSize: 11, color: '#938977', cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif', fontWeight: 500,
+                        textDecoration: 'underline', textUnderlineOffset: '2px',
+                      }}
+                    >
                       Şifrəni unutmusunuz?
                     </button>
                   )}
                 </div>
-                <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password}
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className="login-input"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && mode === 'login' && handleLogin()}
-                    className={cn(inputClass, "pr-11")} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    style={{ paddingRight: 44 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                      color: '#938977',
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
             )}
 
-            <button disabled={loading}
-              onClick={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot}
-              className="w-full h-11 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition-all disabled:opacity-50">
-              {loading ? 'Gözləyin...' : mode === 'login' ? 'Daxil ol' : mode === 'register' ? 'Qeydiyyat' : 'Email Göndər'}
-            </button>
+            <div style={{ marginTop: 8 }}>
+              <button
+                className="login-btn"
+                disabled={loading}
+                onClick={mode === 'login' ? handleLogin : mode === 'register' ? handleRegister : handleForgot}
+              >
+                {loading ? 'Gözləyin...' : mode === 'login' ? 'Daxil Ol' : mode === 'register' ? 'Qeydiyyat' : 'Email Göndər'}
+              </button>
+            </div>
           </div>
 
-          <div className="mt-5 text-center text-sm text-white/40">
+          {/* Mode switch */}
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
             {mode === 'login' ? (
-              <>Hesabınız yoxdur?{' '}
-                <button onClick={() => setMode('register')} className="text-blue-400 font-semibold hover:underline">Qeydiyyat</button>
-              </>
+              <p style={{ fontSize: 13, color: '#938977' }}>
+                Hesabınız yoxdur?{' '}
+                <button
+                  onClick={() => setMode('register')}
+                  style={{
+                    background: 'none', border: 'none', padding: 0,
+                    fontSize: 13, color: '#180c04', cursor: 'pointer',
+                    fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                    textDecoration: 'underline', textUnderlineOffset: '3px',
+                  }}
+                >
+                  Qeydiyyat
+                </button>
+              </p>
             ) : (
-              <button onClick={() => setMode('login')} className="text-blue-400 font-semibold hover:underline">← Geri qayıt</button>
+              <button
+                onClick={() => setMode('login')}
+                style={{
+                  background: 'none', border: 'none', padding: 0,
+                  fontSize: 13, color: '#180c04', cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', fontWeight: 600,
+                  textDecoration: 'underline', textUnderlineOffset: '3px',
+                }}
+              >
+                ← Geri qayıt
+              </button>
             )}
+          </div>
+
+          {/* Footer */}
+          <div style={{ textAlign: 'center', marginTop: 48 }}>
+            <p style={{ fontSize: 11, color: '#b8a98e', letterSpacing: '1px' }}>
+              © 2026 E-Cədvəl
+            </p>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

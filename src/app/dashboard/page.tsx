@@ -479,13 +479,13 @@ export default function Home() {
 
             <button aria-label="profil" onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="relative group transition-transform active:scale-95 ml-1">
-              <Avatar className={`h-11 w-11 border-2 transition-all ${isProfileOpen ? 'border-primary ring-2 ring-primary/20' : 'border-white dark:border-gray-800 shadow-sm'}`}>
+              <Avatar className={`h-11 w-11 border-2 transition-all ${isProfileOpen ? 'border-primary ring-2 ring-primary/20' : 'border-background shadow-sm'}`}>
                 <AvatarImage src={(profile as any).photo_url || profile.photo} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   <User className="h-6 w-6 shrink-0" />
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1 rounded-full border-2 border-white dark:border-gray-800">
+              <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground p-1 rounded-full border-2 border-background">
                 <User className="h-3 w-3 shrink-0" />
               </div>
             </button>
@@ -496,7 +496,7 @@ export default function Home() {
           <div className="flex gap-2 sm:absolute sm:left-0">
             <Button variant={notifPermission === 'granted' ? "ghost" : "default"} size="sm"
               onClick={requestPermission} disabled={notifPermission === 'granted'} className="gap-2">
-              {notifPermission === 'granted' ? <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> : <Bell className="h-4 w-4 shrink-0" />}
+              {notifPermission === 'granted' ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" /> : <Bell className="h-4 w-4 shrink-0" />}
               {notifPermission === 'granted' ? 'Aktivdir' : 'Aktiv Et'}
             </Button>
             <Button variant="outline" size="sm" onClick={triggerTestNotification}

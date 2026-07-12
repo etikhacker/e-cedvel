@@ -19,7 +19,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#0d1117",
+  themeColor: "#fcfaee",
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="az" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0d1117" />
+        <meta name="theme-color" content="#fcfaee" />
         <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
