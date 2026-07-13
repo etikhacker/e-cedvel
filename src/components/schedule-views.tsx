@@ -16,9 +16,10 @@ const DAYS_OF_WEEK = [
 ];
 
 const TYPE_COLORS: Record<string, string> = {
-  'müh': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  'məş': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  'lab': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  // Brand palitrası ilə uyğun — isti tonlar, heç bir standart mavi/yaşıl yoxdur
+  'müh': 'bg-primary/10 text-primary border border-primary/20',
+  'məş': 'bg-accent text-accent-foreground border border-accent',
+  'lab': 'bg-muted text-muted-foreground border border-muted-foreground/20',
 };
 
 function ClassCard({ c }: { c: ScheduleItem }) {
