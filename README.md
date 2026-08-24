@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📅 E-Cədvəl (QrupTap)
 
-## Getting Started
+> Multi-tenant university scheduling SaaS — built for faculties to generate, manage, and share class schedules without conflicts.
 
-First, run the development server:
+🔗 **Live demo:** [e-cedvel.vercel.app](https://e-cedvel.vercel.app)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<!-- 📸 Add 2–3 screenshots or a short GIF here: landing page, admin panel, schedule generator in action -->
+<!-- ![screenshot](./docs/screenshot-1.png) -->
+
+---
+
+## 🧩 Problem
+
+University faculties often build class schedules manually in spreadsheets — a slow process prone to room and instructor conflicts, with no easy way to share updates with students. E-Cədvəl automates this for multiple universities at once, each with its own isolated data and admins.
+
+## ✨ Features
+
+- 🏫 **Multi-tenant architecture** — each university operates in an isolated workspace with its own admins and data
+- 👥 **Role-based access** — superadmin (platform owner) vs. university-admin roles, enforced via Postgres Row Level Security (RLS)
+- ⚡ **Real-time conflict detection** — flags overlapping rooms/instructors/time slots as schedules are built
+- 📤 **Export** — schedules can be exported to CSV and PDF
+- ✉️ **Email invite system** — university admins invite staff via Resend-powered transactional emails
+- 🖥️ **Admin dashboard** — dedicated tabs for managing faculties, groups, courses, and instructors
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐      ┌──────────────────────┐      ┌────────────────┐
+│   Next.js App    │ ───▶ │  Supabase (Postgres)  │ ───▶ │  Row Level      │
+│  (App Router,     │      │  Auth + Database +     │      │  Security per   │
+│   TypeScript)     │      │  Realtime               │      │  tenant         │
+└─────────────────┘      └──────────────────────┘      └────────────────┘
+        │                                                        
+        ▼                                                        
+┌─────────────────┐      ┌──────────────────────┐
+│  Resend (email    │      │  CSV / PDF export     │
+│  invites)          │      │  generation             │
+└─────────────────┘      └──────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Frontend:** Next.js (App Router) + TypeScript, deployed on Vercel
+- **Backend/DB:** Supabase (Postgres, Auth, Realtime subscriptions)
+- **Multi-tenancy:** enforced at the database layer via RLS policies keyed on `university_id`, not just in application code
+- **Email:** Resend for admin invite flows
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+![Next.js](https://img.shields.io/badge/-Next.js-000000?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/-TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
+![Vercel](https://img.shields.io/badge/-Vercel-000000?style=flat-square&logo=vercel)
+![Resend](https://img.shields.io/badge/-Resend-000000?style=flat-square&logo=resend&logoColor=white)
 
-## Learn More
+## 🚀 Getting Started
 
-To learn more about Next.js, take a look at the following resources:
+### Prerequisites
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Node.js 18+
+- A Supabase project (free tier is enough for local dev)
+- A Resend API key (for email invites)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Setup
 
-## Deploy on Vercel
+```bash
+# 1. Clone the repo
+git clone https://github.com/etikhacker/e-cedvel.git
+cd e-cedvel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# 2. Install dependencies
+npm install
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 3. Configure environment variables
+cp .env.example .env.local
+```
+
+Fill in `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+RESEND_API_KEY=your_resend_api_key
+```
+
+```bash
+# 4. Run database migrations (via Supabase CLI or dashboard SQL editor)
+supabase db push
+
+# 5. Start the dev server
+npm run dev
+```
+
+App runs at `http://localhost:3000`.
+
+## 📌 Status
+
+Built and iterated as a real product — submitted to the **ABB Innovation** incubation program. Actively maintained.
+
+## 📄 License
+
+MIT
