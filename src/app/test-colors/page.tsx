@@ -11,10 +11,10 @@ import { Separator } from '@/components/ui/separator';
 import { ScheduleItem } from '@/lib/schedule-data';
 
 const SAMPLE: ScheduleItem[] = [
-  { subject: 'Əməliyyat sistemləri', teacher: 'Məmmədov Ə.', room: '204', time: '09:00-10:30', day: 'Bazar ertəsi', type: 'müh', week: 'ust', subgroup: 'hamisi' },
-  { subject: 'Kompüter Şəbəkələri', teacher: 'Hüseynov R.', room: '301', time: '10:45-12:15', day: 'Bazar ertəsi', type: 'lab', week: 'ust', subgroup: 'ust' },
-  { subject: 'Verilənlər bazası', teacher: 'Əliyeva S.', room: '105', time: '13:00-14:30', day: 'Çərşənbə axşamı', type: 'müh', week: 'alt', subgroup: 'hamisi' },
-  { subject: 'Diskret riyaziyyat', teacher: 'Qasımov T.', room: '202', time: '09:00-10:30', day: 'Çərşənbə', type: 'məş', week: 'hamisi', subgroup: 'alt' },
+  { subject: 'Əməliyyat sistemləri', teacher: 'Məmmədov Ə.', room: '204', time: '09:00-10:30', day: 'Bazar ertəsi', type: 'müh', week: 'ust', subgroup: 'hamisi', group: 'hamisi' },
+  { subject: 'Kompüter Şəbəkələri', teacher: 'Hüseynov R.', room: '301', time: '10:45-12:15', day: 'Bazar ertəsi', type: 'lab', week: 'ust', subgroup: 'ust', group: 'hamisi' },
+  { subject: 'Verilənlər bazası', teacher: 'Əliyeva S.', room: '105', time: '13:00-14:30', day: 'Çərşənbə axşamı', type: 'müh', week: 'alt', subgroup: 'hamisi', group: 'hamisi' },
+  { subject: 'Diskret riyaziyyat', teacher: 'Qasımov T.', room: '202', time: '09:00-10:30', day: 'Çərşənbə', type: 'məş', week: 'hamisi', subgroup: 'alt', group: 'hamisi' },
 ];
 
 export default function TestColorsPage() {
