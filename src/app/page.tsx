@@ -381,19 +381,19 @@ export default function LandingPage() {
                       <input name="universitet" type="text" className="inp" placeholder="Mingəçevir Dövlət Universiteti" value={form.universitet} onChange={hc} />
                     </div>
                     <div className="contact-form-row">
-                      {[['qisa_ad','Qısa Ad','MDU'],['seher','Şəhər','Mingəçevir']].map(([n,l,p]) => (
+                      {([['qisa_ad','Qısa Ad','MDU'],['seher','Şəhər','Mingəçevir']] as const).map(([n,l,p]) => (
                         <div key={n}>
                           <label style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 500, color: '#938977', marginBottom: 8, letterSpacing: '0.5px' }}>{l}</label>
-                          <input name={n} type="text" className="inp" placeholder={p} value={(form as any)[n]} onChange={hc} />
+                          <input name={n} type="text" className="inp" placeholder={p} value={form[n]} onChange={hc} />
                         </div>
                       ))}
                     </div>
                     <div style={{ borderTop: '1px solid rgba(24,12,4,0.08)', marginBottom: 20 }} />
                     <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 600, color: '#938977', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 20 }}>Əlaqə Məlumatları</p>
-                    {[['ad_soyad','text','Ad Soyad *','Əli Həsənov'],['email','email','Email *','info@university.edu.az'],['telefon','tel','Telefon','+994 XX XXX XX XX']].map(([n,t,l,p]) => (
+                    {([['ad_soyad','text','Ad Soyad *','Əli Həsənov'],['email','email','Email *','info@university.edu.az'],['telefon','tel','Telefon','+994 XX XXX XX XX']] as const).map(([n,t,l,p]) => (
                       <div key={n} style={{ marginBottom: 14 }}>
                         <label style={{ display: 'block', fontFamily: 'Inter,sans-serif', fontSize: 11, fontWeight: 500, color: '#938977', marginBottom: 8, letterSpacing: '0.5px' }}>{l}</label>
-                        <input name={n} type={t} className="inp" placeholder={p} value={(form as any)[n]} onChange={hc} />
+                        <input name={n} type={t} className="inp" placeholder={p} value={form[n]} onChange={hc} />
                       </div>
                     ))}
                     {error && <p style={{ fontFamily: 'Inter,sans-serif', fontSize: 12, color: '#c0392b', margin: '12px 0' }}>{error}</p>}

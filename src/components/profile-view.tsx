@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Camera, FileText, BookOpen, Pencil, ChevronDown, ChevronUp, Upload, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -50,12 +50,12 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
 
   // Qayib saylari - profile-dan oxu
   const getAbsences = (subject: string): number => {
-    return (profile as any).absences?.[subject] || 0;
+    return profile.absences?.[subject] ?? 0;
   };
 
   const setAbsences = (subject: string, count: number) => {
-    const absences = { ...((profile as any).absences || {}), [subject]: Math.max(0, count) };
-    onUpdate({ ...profile, absences } as any);
+    const absences = { ...(profile.absences ?? {}), [subject]: Math.max(0, count) };
+    onUpdate({ ...profile, absences });
   };
 
   const getAbsenceStatus = (subject: string) => {
@@ -74,11 +74,11 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     if (saved) setNotes(saved);
   }, []);
 
-  useEffect(() => {
-    if (activePanel === 'materials') loadMaterials();
-  }, [activePanel]);
+  function encodeSubject(subject: string) {
+    return encodeURIComponent(subject).replace(/%/g, '');
+  }
 
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
   setLoadingMaterials(true);
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -116,9 +116,15 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
 });
 
     setMaterialsBySubject(grouped);
-  } catch (e) { setMaterials([]); }
+  } catch {
+    setMaterials([]);
+  }
   setLoadingMaterials(false);
-};
+}, []);
+
+  useEffect(() => {
+    if (activePanel === 'materials') void loadMaterials();
+  }, [activePanel, loadMaterials]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -129,10 +135,10 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     if (!session) return;
     const userId = session.user.id;
     const subjectPrefix = encodeSubject(selectedSubject);
-    const fileName = `${subjectPrefix}_${Date.now()}_${file.name}`;
+    const fileName = `${subjectPrefix}_${file.lastModified}_${file.name}`;
     const { error } = await supabase.storage.from('materials').upload(`${userId}/${fileName}`, file);
     if (!error) await loadMaterials();
-  } catch (e) {}
+  } catch {}
   setUploading(false);
   e.target.value = '';
 };
@@ -168,7 +174,7 @@ const { data } = supabase.storage
 
 // Cache-i keç üçün timestamp əlavə et
 const photoUrl = `${data.publicUrl}?t=${Date.now()}`;
-onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
+onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
   };
 
   const getGrade = (subject: string) => profile.savedGrades?.[subject];
@@ -187,9 +193,6 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
     if (type.includes('sheet') || type.includes('excel')) return '📊';
     return '📎';
   };
-  const encodeSubject = (subject: string) => {
-  return encodeURIComponent(subject).replace(/%/g, '');
-  };
   const togglePanel = (panel: ActivePanel) => setActivePanel(prev => prev === panel ? 'none' : panel);
 
   return (
@@ -200,7 +203,7 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl } as any);
         <div className="px-6 pb-6">
           <div className="relative -mt-12 mb-4 w-fit">
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-              <AvatarImage src={(profile as any).photo_url || profile.photo} />
+              <AvatarImage src={profile.photo_url || profile.photo} />
               <AvatarFallback className="bg-primary/10 text-primary text-2xl">
                 <User className="h-10 w-10" />
               </AvatarFallback>

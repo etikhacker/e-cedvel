@@ -6,7 +6,7 @@ import { LayoutGrid, Bell, Calculator, User, Info, Smartphone, CheckCircle2, Moo
 import { UserProfile, WeekType, NotificationSettings } from '@/lib/types';
 import { DailyView, WeeklyView } from '@/components/schedule-views';
 import { Onboarding } from '@/components/onboarding';
-import { getSchedule } from '@/lib/schedule-data';
+import { getSchedule, type ScheduleItem } from '@/lib/schedule-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -35,16 +35,12 @@ export default function Home() {
   const [notifPermission, setNotifPermission] = useState<string>('unknown');
   const [activeTab, setActiveTab] = useState('daily');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [dbSchedule, setDbSchedule] = useState<any[]>([]);
+  const [dbSchedule, setDbSchedule] = useState<ScheduleItem[]>([]);
 
   useEffect(() => {
     // ---- .then() XARICINDƏ olan hər şey ----
-
-    // Tema
-    const isDark = document.documentElement.classList.contains('dark');
-    setIsDarkMode(isDark);
 
     // Bildiriş icazəsi
     if ('Notification' in window) {
@@ -130,9 +126,11 @@ export default function Home() {
 
   // localStorage-dən çək
   const savedProfile = localStorage.getItem('it24_profile');
-  let parsed: any = {};
+  let parsed: UserProfile = { name: '', subgroup: 'hamisi', notificationSettings: DEFAULT_NOTIF_SETTINGS };
   if (savedProfile) {
-    try { parsed = JSON.parse(savedProfile); } catch (e) {}
+    try {
+      parsed = { ...parsed, ...(JSON.parse(savedProfile) as Partial<UserProfile>) };
+    } catch {}
   }
 
   // DB data varsa üstünlük ver
@@ -183,7 +181,7 @@ export default function Home() {
   if (!isReady) return <div className="min-h-screen bg-background" />;
 
   if (!profile) {
-    return <Onboarding onComplete={async (p: any) => {
+    return <Onboarding onComplete={async (p) => {
       const newProfile: UserProfile = {
         ...p,
         savedGrades: {},
@@ -205,7 +203,7 @@ export default function Home() {
     }} />
   }
 
-  const schedule = (profile as any).group_id && dbSchedule.length > 0
+  const schedule = profile.group_id && dbSchedule.length > 0
   ? dbSchedule
   : getSchedule(profile.group || 'IT24.1');
 
@@ -228,13 +226,13 @@ export default function Home() {
   await supabase.from('profiles').upsert({
   id: session.user.id,
   name: updatedProfile.name,
-  photo_url: (updatedProfile as any).photo_url || null,
-  absences: (updatedProfile as any).absences || {},
+  photo_url: updatedProfile.photo_url || null,
+  absences: updatedProfile.absences || {},
   saved_grades: updatedProfile.savedGrades || {},
   saved_details: updatedProfile.savedDetails || {},
-  group_id: (updatedProfile as any).group_id || null,
-  university_id: (updatedProfile as any).university_id || null,
-  subgroup: (updatedProfile as any).subgroup || null,
+  group_id: updatedProfile.group_id || null,
+  university_id: updatedProfile.university_id || null,
+  subgroup: updatedProfile.subgroup || null,
   updated_at: new Date().toISOString(),
 });
 };
@@ -260,6 +258,7 @@ export default function Home() {
   };
 
   const handleEditGrade = (subject: string) => {
+    void subject;
     setIsProfileOpen(false);
     setActiveTab('calculator');
   };
@@ -274,7 +273,7 @@ export default function Home() {
       const p = JSON.parse(savedProfile);
       savedGrades = p.savedGrades || {};
       savedDetails = p.savedDetails || {};
-    } catch (e) {}
+    } catch {}
   }
   localStorage.removeItem('it24_profile');
   // Ballari geri yaz
@@ -313,7 +312,7 @@ export default function Home() {
         });
         toast({ title: "Test Göndərildi", description: "Bildiriş panelini yoxlayın!" });
       }
-    } catch (err) {
+    } catch {
       toast({ variant: "destructive", title: "Xəta", description: "Bildiriş göndərilə bilmədi." });
     }
   };
@@ -480,7 +479,7 @@ export default function Home() {
             <button aria-label="profil" onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="relative group transition-transform active:scale-95 ml-1">
               <Avatar className={`h-11 w-11 border-2 transition-all ${isProfileOpen ? 'border-primary ring-2 ring-primary/20' : 'border-background shadow-sm'}`}>
-                <AvatarImage src={(profile as any).photo_url || profile.photo} />
+                <AvatarImage src={profile.photo_url || profile.photo} />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   <User className="h-6 w-6 shrink-0" />
                 </AvatarFallback>

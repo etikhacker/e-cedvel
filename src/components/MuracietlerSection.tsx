@@ -20,11 +20,7 @@ export function MuracietlerSection() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(true);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  async function fetchData() {
     setLoading(true);
     const { data } = await supabase
       .from("muracietler")
@@ -32,7 +28,11 @@ export function MuracietlerSection() {
       .order("created_at", { ascending: false });
     setList((data as Muraciet[]) || []);
     setLoading(false);
-  };
+  }
+
+  useEffect(() => {
+    void fetchData();
+  }, []);
 
   const updateStatus = async (id: string, status: "qebul" | "red") => {
     await supabase.from("muracietler").update({ status }).eq("id", id);

@@ -29,8 +29,12 @@ export interface GradeDetails {
 export interface UserProfile {
   name: string;
   group?: string;
+  faculty?: string;
   subgroup: string;
   photo?: string;
+  photo_url?: string;
+  group_id?: string;
+  university_id?: string;
   savedGrades?: Record<string, number>;
   savedDetails?: Record<string, GradeDetails>;
   notificationSettings?: NotificationSettings;

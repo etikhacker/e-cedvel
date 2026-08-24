@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,25 +8,23 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, CheckCircle } from 'lucide-react';
 
+type Invite = {
+  email: string;
+  university_id: string;
+  universities: { name: string } | null;
+};
+
 export default function AdminSetupPage() {
   const { toast } = useToast();
-  const [token, setToken] = useState('');
-  const [invite, setInvite] = useState<any>(null);
+  const tokenRef = useRef('');
+  const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const t = params.get('token');
-    if (!t) { window.location.replace('/'); return; }
-    setToken(t);
-    loadInvite(t);
-  }, []);
-
-  const loadInvite = async (t: string) => {
+  const loadInvite = useCallback(async (t: string) => {
     const { data, error } = await supabase
       .from('university_invites')
       .select('*, universities(name)')
@@ -43,7 +41,18 @@ export default function AdminSetupPage() {
     setInvite(data);
     setForm(prev => ({ ...prev, email: data.email }));
     setLoading(false);
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get('token');
+    if (!inviteToken) {
+      window.location.replace('/');
+      return;
+    }
+    tokenRef.current = inviteToken;
+    void loadInvite(inviteToken);
+  }, [loadInvite]);
 
   const handleSetup = async () => {
     if (form.password !== form.confirm) {
@@ -52,6 +61,11 @@ export default function AdminSetupPage() {
     }
     if (form.password.length < 6) {
       toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə ən az 6 simvol olmalıdır.' });
+      return;
+    }
+
+    if (!invite) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət məlumatı tapılmadı.' });
       return;
     }
 
@@ -77,7 +91,7 @@ export default function AdminSetupPage() {
     });
 
     // 3. Dəvəti istifadə edilmiş işarələ
-    await supabase.from('university_invites').update({ used: true }).eq('token', token);
+    await supabase.from('university_invites').update({ used: true }).eq('token', tokenRef.current);
 
     setSaving(false);
     setDone(true);

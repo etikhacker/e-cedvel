@@ -5,16 +5,6 @@ import { ScheduleItem } from '@/lib/schedule-data';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, User } from 'lucide-react';
 
-const DAYS_OF_WEEK = [
-  'Bazar ertəsi',
-  'Çərşənbə axşamı',
-  'Çərşənbə',
-  'Cümə axşamı',
-  'Cümə',
-  'Şənbə',
-  'Bazar',
-];
-
 const TYPE_COLORS: Record<string, string> = {
   // Brand palitrası ilə uyğun — isti tonlar, heç bir standart mavi/yaşıl yoxdur
   'müh': 'bg-primary/10 text-primary border border-primary/20',

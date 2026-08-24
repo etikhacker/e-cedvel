@@ -2,37 +2,53 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import type { UserProfile } from '@/lib/types';
 
 type University = { id: string; name: string; short_name: string };
 type Faculty = { id: string; name: string };
 type Group = { id: string; name: string };
+type OnboardingProfile = UserProfile & {
+  university_name?: string;
+  faculty_id?: string;
+  faculty_name?: string;
+};
 
-export function Onboarding({ onComplete }: { onComplete: (p: any) => void }) {
+function CardButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className="w-full p-4 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left font-medium">
+      {children}
+    </button>
+  );
+}
+
+export function Onboarding({ onComplete }: { onComplete: (p: OnboardingProfile) => void }) {
   const [step, setStep] = useState<'university' | 'faculty' | 'group' | 'subgroup' | 'done'>('university');
   const [universities, setUniversities] = useState<University[]>([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [hasSubgroups, setHasSubgroups] = useState(false);
-
   const [selectedUni, setSelectedUni] = useState<University | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [selectedSubgroup, setSelectedSubgroup] = useState<'ust' | 'alt'>('ust');
   const [userName, setUserName] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) return;
-      const meta = session.user.user_metadata;
-      setUserName(meta.full_name || session.user.email || 'İstifadəçi');
-    });
-    loadUniversities();
-  }, []);
-
-  const loadUniversities = async () => {
+  async function loadUniversities() {
     const { data } = await supabase.from('universities').select('id, name, short_name').eq('is_active', true);
     setUniversities(data || []);
-  };
+  }
+
+  useEffect(() => {
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const meta = session.user.user_metadata;
+        setUserName(meta.full_name || session.user.email || 'İstifadəçi');
+      }
+      await loadUniversities();
+    };
+
+    void initialize();
+  }, []);
 
   const selectUniversity = async (uni: University) => {
     setSelectedUni(uni);
@@ -59,10 +75,8 @@ export function Onboarding({ onComplete }: { onComplete: (p: any) => void }) {
       .limit(1);
 
     if (data && data.length > 0) {
-      setHasSubgroups(true);
       setStep('subgroup');
     } else {
-      setHasSubgroups(false);
       completeOnboarding(group, 'hamisi');
     }
   };
@@ -81,13 +95,6 @@ export function Onboarding({ onComplete }: { onComplete: (p: any) => void }) {
       savedDetails: {},
     });
   };
-
-  const CardButton = ({ onClick, children }: { onClick: () => void; children: React.ReactNode }) => (
-    <button onClick={onClick}
-      className="w-full p-4 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left font-medium">
-      {children}
-    </button>
-  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

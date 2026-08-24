@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { InviteSection } from '@/components/InviteSection'
-import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut, Mail } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, University, Users, BookOpen, LogOut, Mail, type LucideIcon } from 'lucide-react';
 type University = { id: string; name: string; short_name: string; city: string };
 type Faculty = { id: string; name: string; university_id: string };
 type Group = { id: string; name: string; faculty_id: string; university_id: string };
 type Lesson = { id: string; subject: string; teacher: string; room: string; day: string; time: string; week: string; subgroup: string; type: string; group_id: string };
+type UniversityRequest = { id: string; name: string; short_name: string; city: string; contact_name: string; contact_email: string };
 
 const DAYS = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
 const TIMES = ['08:00-09:20', '09:30-10:50', '11:00-12:20', '12:30-13:50', '14:00-15:20', '15:30-16:50', '17:00-18:20'];
@@ -18,10 +19,10 @@ const SEL = "p-2.5 rounded-xl border bg-background text-foreground text-sm";
 const EMPTY_LESSON = { subject: '', teacher: '', room: '', day: DAYS[0], time: TIMES[0], week: 'hamisi', subgroup: 'hamisi', type: 'mesqele' };
 
 function Section({ id, title, icon: Icon, expanded, onToggle, children }: {
-  id: string; title: string; icon: any; expanded: boolean; onToggle: () => void; children: React.ReactNode;
+  id: string; title: string; icon: LucideIcon; expanded: boolean; onToggle: () => void; children: React.ReactNode;
 }) {
   return (
-    <div className="border rounded-xl overflow-hidden">
+    <div data-section={id} className="border rounded-xl overflow-hidden">
       <button onClick={onToggle} className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/40 transition-colors">
         <div className="flex items-center gap-2 font-bold"><Icon className="h-5 w-5 text-primary" /> {title}</div>
         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -48,7 +49,7 @@ export default function AdminPage() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<UniversityRequest[]>([]);
   const [selectedUni, setSelectedUni] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
@@ -58,9 +59,16 @@ export default function AdminPage() {
   const [newGroup, setNewGroup] = useState('');
   const [newLesson, setNewLesson] = useState(EMPTY_LESSON);
 
-  useEffect(() => { checkAdmin(); }, []);
+  const loadData = useCallback(async (uniId: string | null) => {
+    const { data: unis } = uniId ? await supabase.from('universities').select('*').eq('id', uniId) : await supabase.from('universities').select('*');
+    setUniversities(unis || []);
+    const { data: facs } = await supabase.from('faculties').select('*');
+    setFaculties(facs || []);
+    const { data: grps } = await supabase.from('groups').select('*');
+    setGroups(grps || []);
+  }, []);
 
-  const checkAdmin = async () => {
+  const checkAdmin = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.replace('/login'); return; }
     const { data } = await supabase.from('university_admins').select('role, university_id').eq('id', session.user.id).single();
@@ -73,21 +81,14 @@ export default function AdminPage() {
       setRequests(reqs || []);
     }
     setLoading(false);
-  };
+  }, [loadData]);
 
-  const loadData = async (uniId: string | null) => {
-    const { data: unis } = uniId ? await supabase.from('universities').select('*').eq('id', uniId) : await supabase.from('universities').select('*');
-    setUniversities(unis || []);
-    const { data: facs } = await supabase.from('faculties').select('*');
-    setFaculties(facs || []);
-    const { data: grps } = await supabase.from('groups').select('*');
-    setGroups(grps || []);
-  };
-
-  const loadLessons = async (groupId: string) => {
+  async function loadLessons(groupId: string) {
     const { data } = await supabase.from('schedule_lessons').select('*').eq('group_id', groupId);
     setLessons(data || []);
-  };
+  }
+
+  useEffect(() => { void checkAdmin(); }, [checkAdmin]);
 
   const addUniversity = async () => {
     if (!newUni.name) return;
@@ -148,7 +149,7 @@ export default function AdminPage() {
     setLessons(prev => prev.filter(l => l.id !== id));
   };
 
-  const approveRequest = async (r: any) => {
+  const approveRequest = async (r: UniversityRequest) => {
     const { data: uni, error: uniError } = await supabase.from('universities').insert({ name: r.name, short_name: r.short_name, city: r.city }).select().single();
     if (uniError || !uni) { toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet əlavə edilmədi' }); return; }
     const { data: invite, error: inviteError } = await supabase.from('university_invites').insert({ email: r.contact_email, university_id: uni.id }).select().single();

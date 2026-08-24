@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
         }
       });
     }
-  }, []);
+  }, [toast]);
 
   const handleReset = async () => {
     if (password !== confirm) {

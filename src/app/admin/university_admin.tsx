@@ -13,6 +13,10 @@ type Lesson  = {
   subject: string; teacher: string; room: string;
   week: string; subgroup: string;
 };
+type UniversityAdminRecord = {
+  university_id: string;
+  universities: { name: string } | null;
+};
 
 const DAYS = ['Bazar ertəsi','Çərşənbə axşamı','Çərşənbə','Cümə axşamı','Cümə','Şənbə'];
 const TABS = ['Cədvəl','Fakültələr','Qruplar','Fənlər','Dərslər'] as const;
@@ -53,23 +57,7 @@ export default function UniversityAdminPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [lessons,  setLessons]  = useState<Lesson[]>([]);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { router.replace('/login'); return; }
-      setEmail(session.user.email ?? '');
-      const { data } = await supabase
-        .from('university_admins')
-        .select('university_id, universities(name)')
-        .eq('id', session.user.id).single();
-      if (!data) { router.replace('/'); return; }
-      const id = data.university_id;
-      const nm = (data as any).universities?.name ?? '';
-      setUniId(id); setUniName(nm);
-      await loadAll(id);
-    });
-  }, []);
-
-  const loadAll = async (id: string) => {
+  async function loadAll(id: string) {
     setLoading(true);
     const [f,g,s,l] = await Promise.all([
       supabase.from('faculties').select('*').eq('university_id',id),
@@ -80,9 +68,29 @@ export default function UniversityAdminPage() {
     setFaculties(f.data??[]); setGroups(g.data??[]);
     setSubjects(s.data??[]); setLessons(l.data??[]);
     setLoading(false);
-  };
+  }
 
-  const reload = () => { if (uniId) loadAll(uniId); };
+  useEffect(() => {
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace('/login'); return; }
+      setEmail(session.user.email ?? '');
+      const { data } = await supabase
+        .from('university_admins')
+        .select('university_id, universities(name)')
+        .eq('id', session.user.id)
+        .single();
+      const admin = data as UniversityAdminRecord | null;
+      if (!admin) { router.replace('/'); return; }
+      setUniId(admin.university_id);
+      setUniName(admin.universities?.name ?? '');
+      await loadAll(admin.university_id);
+    };
+
+    void initialize();
+  }, [router]);
+
+  const reload = () => { if (uniId) void loadAll(uniId); };
 
   if (loading) return (
     <div style={{minHeight:'100vh',background:'#0d1117',display:'flex',

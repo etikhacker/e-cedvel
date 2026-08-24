@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -16,29 +16,38 @@ type Muraciet = {
   created_at: string;
 };
 
+type Filter = "hamisi" | Muraciet["status"];
+
 export default function MuracietlerPage() {
   const router = useRouter();
-  const [list, setList]       = useState<Muraciet[]>([]);
+  const [list, setList] = useState<Muraciet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter]   = useState<"hamisi" | "gozlemede" | "qebul" | "red">("hamisi");
+  const [filter, setFilter] = useState<Filter>("hamisi");
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace("/login"); return; }
-      fetchData();
-    });
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("muracietler")
       .select("*")
       .order("created_at", { ascending: false });
+
     if (error) console.error(error);
-    setList((data as Muraciet[]) || []);
+    setList((data as Muraciet[] | null) ?? []);
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    const initialize = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+      await fetchData();
+    };
+
+    void initialize();
+  }, [fetchData, router]);
 
   const updateStatus = async (id: string, status: "qebul" | "red") => {
     await supabase.from("muracietler").update({ status }).eq("id", id);
@@ -79,13 +88,13 @@ export default function MuracietlerPage() {
 
         {/* Summary cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 24 }}>
-          {[
+          {([
             { label: "Gözləmədə", key: "gozlemede", color: "#f59e0b", count: counts.gozlemede },
-            { label: "Qəbul",     key: "qebul",     color: "#22c55e", count: counts.qebul },
-            { label: "Rədd",      key: "red",        color: "#ef4444", count: counts.red },
-          ].map(s => (
+            { label: "Qəbul", key: "qebul", color: "#22c55e", count: counts.qebul },
+            { label: "Rədd", key: "red", color: "#ef4444", count: counts.red },
+          ] as const).map(s => (
             <button key={s.key}
-              onClick={() => setFilter(filter === s.key as any ? "hamisi" : s.key as any)}
+              onClick={() => setFilter(filter === s.key ? "hamisi" : s.key)}
               style={{ padding: "16px", background: filter === s.key ? `${s.color}18` : "rgba(255,255,255,0.03)",
                 border: `1px solid ${filter === s.key ? s.color + "44" : "rgba(255,255,255,0.08)"}`,
                 borderRadius: 12, cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>

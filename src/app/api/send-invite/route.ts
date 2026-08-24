@@ -56,9 +56,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, invite_link: inviteLink });
-  } catch (err: any) {
-    console.error('Server error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Server error:', error);
+    const message = error instanceof Error ? error.message : 'Gözlənilməz server xətası.';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
