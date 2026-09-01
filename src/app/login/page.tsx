@@ -5,11 +5,16 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import {
+  fetchUniversities,
+  fetchFaculties,
+  fetchGroups,
+  type University,
+  type Faculty,
+  type Group,
+} from '@/lib/catalog';
 
 type Mode = 'login' | 'register' | 'forgot';
-type University = { id: string; name: string; short_name: string };
-type Faculty = { id: string; name: string };
-type Group = { id: string; name: string };
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -31,10 +36,18 @@ export default function LoginPage() {
   const [subgroup, setSubgroup] = useState<'ust' | 'alt' | ''>('');
 
   useEffect(() => {
-    supabase.from('universities').select('id, name, short_name').eq('is_active', true).then(({ data }) => {
-      setUniversities(data || []);
-    });
-  }, []);
+    fetchUniversities()
+      .then(setUniversities)
+      .catch(err => {
+        console.error('Universitetlər yüklənmədi:', err);
+        setUniversities([]);
+        toast({
+          variant: 'destructive',
+          title: 'Xəta',
+          description: 'Universitetlər yüklənmədi. Səhifəni yeniləyin.',
+        });
+      });
+  }, [toast]);
 
   const handleUniChange = async (uniId: string) => {
     const uni = universities.find(u => u.id === uniId) || null;
@@ -43,9 +56,19 @@ export default function LoginPage() {
     setSelectedGroup(null);
     setSubgroup('');
     setHasSubgroups(false);
+    setFaculties([]);
     if (!uniId) return;
-    const { data } = await supabase.from('faculties').select('id, name').eq('university_id', uniId);
-    setFaculties(data || []);
+    try {
+      const list = await fetchFaculties(uniId);
+      setFaculties(list);
+    } catch (err) {
+      console.error('Fakültələr yüklənmədi:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Xəta',
+        description: 'Fakültələr yüklənmədi. Yenidən cəhd edin.',
+      });
+    }
   };
 
   const handleFacultyChange = async (facId: string) => {
@@ -54,9 +77,19 @@ export default function LoginPage() {
     setSelectedGroup(null);
     setSubgroup('');
     setHasSubgroups(false);
+    setGroups([]);
     if (!facId) return;
-    const { data } = await supabase.from('groups').select('id, name').eq('faculty_id', facId);
-    setGroups(data || []);
+    try {
+      const list = await fetchGroups(facId);
+      setGroups(list);
+    } catch (err) {
+      console.error('Qruplar yüklənmədi:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Xəta',
+        description: 'Qruplar yüklənmədi. Yenidən cəhd edin.',
+      });
+    }
   };
 
   const handleGroupChange = async (grpId: string) => {
