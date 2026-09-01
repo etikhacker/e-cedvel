@@ -35,7 +35,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="E-Cədvəl" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
-        <link rel="icon" type="image/svg+xml" href="/ec-icon.svg" />
+        <link rel="icon" href="/icons/e-cedvel-favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/e-cedvel-icon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/e-cedvel-icon-16.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
