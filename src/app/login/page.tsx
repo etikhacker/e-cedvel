@@ -5,16 +5,11 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import {
-  fetchUniversities,
-  fetchFaculties,
-  fetchGroups,
-  type University,
-  type Faculty,
-  type Group,
-} from '@/lib/catalog';
 
 type Mode = 'login' | 'register' | 'forgot';
+type University = { id: string; name: string; short_name: string | null };
+type Faculty = { id: string; name: string; university_id: string };
+type Group = { id: string; name: string; faculty_id: string; university_id: string };
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -36,16 +31,23 @@ export default function LoginPage() {
   const [subgroup, setSubgroup] = useState<'ust' | 'alt' | ''>('');
 
   useEffect(() => {
-    fetchUniversities()
-      .then(setUniversities)
-      .catch(err => {
-        console.error('Universitetlər yüklənmədi:', err);
-        setUniversities([]);
-        toast({
-          variant: 'destructive',
-          title: 'Xəta',
-          description: 'Universitetlər yüklənmədi. Səhifəni yeniləyin.',
-        });
+    supabase
+      .from('universities')
+      .select('id, name, short_name')
+      .eq('is_active', true)
+      .order('name', { ascending: true })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Universitetlər yüklənmədi:', error.message);
+          setUniversities([]);
+          toast({
+            variant: 'destructive',
+            title: 'Xəta',
+            description: 'Universitetlər yüklənmədi. Səhifəni yeniləyin.',
+          });
+        } else {
+          setUniversities(data || []);
+        }
       });
   }, [toast]);
 
@@ -57,18 +59,23 @@ export default function LoginPage() {
     setSubgroup('');
     setHasSubgroups(false);
     setFaculties([]);
+    setGroups([]);
     if (!uniId) return;
-    try {
-      const list = await fetchFaculties(uniId);
-      setFaculties(list);
-    } catch (err) {
-      console.error('Fakültələr yüklənmədi:', err);
+    const { data, error } = await supabase
+      .from('faculties')
+      .select('id, name, university_id')
+      .eq('university_id', uniId)
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('Fakültələr yüklənmədi:', error.message);
       toast({
         variant: 'destructive',
         title: 'Xəta',
-        description: 'Fakültələr yüklənmədi. Yenidən cəhd edin.',
+        description: 'Fakültələr yüklənmədi. RLS policy-ni yoxlayın.',
       });
+      return;
     }
+    setFaculties(data || []);
   };
 
   const handleFacultyChange = async (facId: string) => {
@@ -79,17 +86,21 @@ export default function LoginPage() {
     setHasSubgroups(false);
     setGroups([]);
     if (!facId) return;
-    try {
-      const list = await fetchGroups(facId);
-      setGroups(list);
-    } catch (err) {
-      console.error('Qruplar yüklənmədi:', err);
+    const { data, error } = await supabase
+      .from('groups')
+      .select('id, name, faculty_id, university_id')
+      .eq('faculty_id', facId)
+      .order('name', { ascending: true });
+    if (error) {
+      console.error('Qruplar yüklənmədi:', error.message);
       toast({
         variant: 'destructive',
         title: 'Xəta',
-        description: 'Qruplar yüklənmədi. Yenidən cəhd edin.',
+        description: 'Qruplar yüklənmədi. RLS policy-ni yoxlayın.',
       });
+      return;
     }
+    setGroups(data || []);
   };
 
   const handleGroupChange = async (grpId: string) => {
