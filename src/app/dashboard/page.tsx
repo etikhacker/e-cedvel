@@ -360,7 +360,7 @@ export default function Home() {
         <header className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="bg-primary p-2 rounded-lg text-white font-bold text-lg shadow-sm shrink-0">{logoText}</div>
+              <div className="bg-primary text-primary-foreground p-2 rounded-lg font-bold text-lg shadow-sm shrink-0">{logoText}</div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Dərs Cədvəli</h1>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm">

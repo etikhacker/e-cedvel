@@ -41,3 +41,32 @@ CREATE POLICY "Public read schedule_lessons subgroup"
   ON schedule_lessons
   FOR SELECT
   USING (true);
+
+-- 5) muracietler (landing page form submissions) — anon yaza bilsin,
+--    admin/logged-in user ise oxuya, statusu deyise ve sile bilsin.
+ALTER TABLE muracietler ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anon insert muracietler" ON muracietler;
+CREATE POLICY "Anon insert muracietler"
+  ON muracietler
+  FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated read muracietler" ON muracietler;
+CREATE POLICY "Authenticated read muracietler"
+  ON muracietler
+  FOR SELECT
+  USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated update muracietler" ON muracietler;
+CREATE POLICY "Authenticated update muracietler"
+  ON muracietler
+  FOR UPDATE
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Authenticated delete muracietler" ON muracietler;
+CREATE POLICY "Authenticated delete muracietler"
+  ON muracietler
+  FOR DELETE
+  USING (auth.role() = 'authenticated');
