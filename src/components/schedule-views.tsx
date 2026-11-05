@@ -4,6 +4,7 @@ import React from 'react';
 import { ScheduleItem } from '@/lib/schedule-data';
 import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, User } from 'lucide-react';
+import { bakuDate } from '@/lib/scheduling';
 
 const TYPE_COLORS: Record<string, string> = {
   // Brand palitrası ilə uyğun — isti tonlar, heç bir standart mavi/yaşıl yoxdur
@@ -44,7 +45,7 @@ function ClassCard({ c }: { c: ScheduleItem }) {
 
 export const DailyView = ({ classes }: { classes: ScheduleItem[] }) => {
   const today = new Date();
-  const dayIndex = today.getDay(); // 0=Bazar, 1=Bazar ertəsi...
+  const dayIndex = new Date(bakuDate(today)+'T00:00:00Z').getUTCDay();
   // JS-də 0=Bazar, 1=Bazar ertəsi, 2=Çərşənbə axşamı, 3=Çərşənbə, 4=Cümə axşamı, 5=Cümə, 6=Şənbə
   const dayMap: Record<number, string> = {
     1: 'Bazar ertəsi',
@@ -63,7 +64,7 @@ export const DailyView = ({ classes }: { classes: ScheduleItem[] }) => {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <h2 className="font-bold text-base sm:text-lg text-foreground">{todayName}</h2>
-        <Badge variant="outline" className="text-xs">{today.toLocaleDateString('az-AZ')}</Badge>
+        <Badge variant="outline" className="text-xs">{today.toLocaleDateString('az-AZ',{timeZone:'Asia/Baku'})}</Badge>
       </div>
       {sorted.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -78,8 +79,9 @@ export const DailyView = ({ classes }: { classes: ScheduleItem[] }) => {
 };
 
 export const WeeklyView = ({ classes }: { classes: ScheduleItem[] }) => {
-  const days = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə'];
+  const days = ['Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
 
+  if (!classes.length) return <p className="text-center py-12 text-muted-foreground">Bu qrup üçün cədvəl yoxdur.</p>;
   return (
     <div className="space-y-6">
       {days.map(day => {

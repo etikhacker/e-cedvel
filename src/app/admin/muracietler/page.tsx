@@ -55,7 +55,7 @@ export default function MuracietlerPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) console.error(error);
+    if(error){setLoading(false);alert('Müraciətlər yüklənmədi.');return;}
     setList((data as Muraciet[] | null) ?? []);
     setLoading(false);
   }, []);
@@ -73,9 +73,9 @@ export default function MuracietlerPage() {
   }, [fetchData, router]);
 
   const updateStatus = async (id: string, status: "qebul" | "red") => {
-    const { error } = await supabase.from("muracietler").update({ status }).eq("id", id);
-    if (error) {
-      console.error(error);
+    const {data,error}=await supabase.from("muracietler").update({status}).eq("id",id).select("id");
+    if(error||!data?.length) {
+      alert("Müraciət yenilənmədi.");
       return;
     }
     setList(prev => prev.map(m => m.id === id ? { ...m, status } : m));
@@ -85,37 +85,9 @@ export default function MuracietlerPage() {
     if (!pendingDelete) return;
     setDeleting(true);
 
-    // 1) Sil
-    const { error } = await supabase
-      .from("muracietler")
-      .delete()
-      .eq("id", pendingDelete.id);
-
-    if (error) {
-      setDeleting(false);
-      console.error("Silmə xətası:", error);
-      alert("Silmək mümkün olmadı: " + error.message);
-      return;
-    }
-
-    // 2) Yoxla — həqiqətən silinib? (RLS səssizcə bloklaya bilər,
-    //    ona görə select ilə təsdiqləyirik)
-    const { data: stillThere } = await supabase
-      .from("muracietler")
-      .select("id")
-      .eq("id", pendingDelete.id)
-      .maybeSingle();
-
+    const {data,error}=await supabase.from('muracietler').delete().eq('id',pendingDelete.id).select('id');
     setDeleting(false);
-
-    if (stillThere) {
-      alert(
-        "Silmə əməliyyatı yerinə yetirilmədi.\n\n" +
-        "Səbəb: Supabase RLS policy `DELETE` icazəsi vermir.\n\n" +
-        "Həll: Supabase Dashboard → SQL Editor-də `supabase/public_catalog_policies.sql` faylını Run edin."
-      );
-      return;
-    }
+    if(error||!data?.length){alert('Müraciət silinmədi. İcazələri yoxlayın.');return;}
 
     setList(prev => prev.filter(m => m.id !== pendingDelete.id));
     setPendingDelete(null);

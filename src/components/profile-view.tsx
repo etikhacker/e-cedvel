@@ -5,15 +5,10 @@ import { User, Camera, FileText, BookOpen, Pencil, ChevronDown, ChevronUp, Uploa
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserProfile } from '@/lib/types';
+import { MATERIAL_BUCKET, materialSubjectPrefix, materialDisplayName } from '@/lib/uploads';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
-const SUBJECTS = [
-  'Əməliyyat sistemləri',
-  'Kompüter Şəbəkələri',
-  'Verilənlər bazası sistemləri',
-  'Obyektyönlü proqramlaşdırma',
-  'Diskret riyaziyyat',
-];
 
 // Qayib limitlari: [1bal_cixilir, 2bal_cixilir, kesir]
 const ABSENCE_LIMITS: Record<string, [number, number, number]> = {
@@ -34,15 +29,18 @@ type Material = {
 
 type ActivePanel = 'none' | 'notes' | 'materials';
 
-export function ProfileView({ profile, onUpdate, onEditGrade }: {
+export function ProfileView({ profile, onUpdate, onEditGrade, subjects }: {
   profile: UserProfile;
-  onUpdate: (p: UserProfile) => void;
+  subjects: string[];
+  onUpdate: (p: UserProfile) => Promise<boolean>;
   onEditGrade: (s: string) => void;
 }) {
+  const {toast}=useToast();
+  const SUBJECTS=Array.from(new Set([...subjects,...Object.keys(profile.savedGrades??{}),...Object.keys(profile.absences??{})]));
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [notes, setNotes] = useState<string>('');
+  const [notes, setNotes] = useState<string>(profile.notes??'');
   const [uploading, setUploading] = useState(false);
   const [loadingMaterials, setLoadingMaterials] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string>('');
@@ -69,13 +67,9 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     return { label: 'Normal', color: 'text-green-500', bg: 'bg-green-500/10', penalty: 0 };
   };
 
-  useEffect(() => {
-    const saved = localStorage.getItem('it24_notes');
-    if (saved) setNotes(saved);
-  }, []);
 
   function encodeSubject(subject: string) {
-    return encodeURIComponent(subject).replace(/%/g, '');
+    return materialSubjectPrefix(subject);
   }
 
   const loadMaterials = useCallback(async () => {
@@ -85,96 +79,82 @@ export function ProfileView({ profile, onUpdate, onEditGrade }: {
     if (!session) return;
     const userId = session.user.id;
     const { data, error } = await supabase.storage
-      .from('materials')
+      .from(MATERIAL_BUCKET)
       .list(`${userId}/`, { sortBy: { column: 'created_at', order: 'desc' } });
-    if (error || !data) { setMaterials([]); setMaterialsBySubject({}); return; }
+    if (error || !data) throw new Error('Materiallar yüklənmədi.');
 
-    const allMats: Material[] = data
-      .filter(f => f.name !== '.emptyFolderPlaceholder')
-      .map(f => ({
-        name: f.name,
-        url: supabase.storage.from('materials').getPublicUrl(`${userId}/${f.name}`).data.publicUrl,
-        path: `${userId}/${f.name}`,
-        type: f.metadata?.mimetype || 'file',
-        uploadedAt: f.created_at || '',
-      }));
+    const allMats:Material[]=await Promise.all(data.filter(f=>f.id && f.name!=='.emptyFolderPlaceholder').map(async f=>{
+      const path=userId+'/'+f.name;
+      const {data:signed,error:signError}=await supabase.storage.from(MATERIAL_BUCKET).createSignedUrl(path,300,{download:true});
+      if(signError) throw signError;
+      return {name:f.name,url:signed.signedUrl,path,type:f.metadata?.mimetype||'file',uploadedAt:f.created_at||''};
+    }));
 
     setMaterials(allMats);
 
     // Fənnə görə qruplaşdır
     const grouped: Record<string, Material[]> = {};
-    SUBJECTS.forEach(s => { grouped[s] = []; });
+    const catalogue=Array.from(new Set([...subjects,...Object.keys(profile.savedGrades??{}),...Object.keys(profile.absences??{})]));
+    catalogue.forEach(s => { grouped[s] = []; });
     grouped['Digər'] = [];
 
     allMats.forEach(m => {
-  const subject = SUBJECTS.find(s => m.name.startsWith(encodeSubject(s) + '_'));
+  const subject = catalogue.find(s => m.name.startsWith(encodeSubject(s) + '_'));
   if (subject) {
-    grouped[subject].push({ ...m, name: m.name.replace(/^\d+_/, '').replace(encodeSubject(subject) + '_', '') });
+    grouped[subject].push({ ...m, name: materialDisplayName(m.name,encodeSubject(subject)) });
   } else {
-    grouped['Digər'].push({ ...m, name: m.name.replace(/^\d+_/, '') });
+    grouped['Digər'].push({ ...m, name: materialDisplayName(m.name) });
   }
 });
 
     setMaterialsBySubject(grouped);
   } catch {
-    setMaterials([]);
-  }
-  setLoadingMaterials(false);
-}, []);
+    toast({variant:'destructive',title:'Xəta',description:'Materiallar yüklənmədi.'});
+  } finally { setLoadingMaterials(false); }
+}, [subjects, profile.savedGrades, profile.absences, toast]);
 
   useEffect(() => {
     if (activePanel === 'materials') void loadMaterials();
   }, [activePanel, loadMaterials]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file || !selectedSubject) return;
-  setUploading(true);
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const userId = session.user.id;
-    const subjectPrefix = encodeSubject(selectedSubject);
-    const fileName = `${subjectPrefix}_${file.lastModified}_${file.name}`;
-    const { error } = await supabase.storage.from('materials').upload(`${userId}/${fileName}`, file);
-    if (!error) await loadMaterials();
-  } catch {}
-  setUploading(false);
-  e.target.value = '';
-};
-
-  const handleDelete = async (path: string) => {
-    const { error } = await supabase.storage.from('materials').remove([path]);
-    if (!error) setMaterials(prev => prev.filter(m => m.path !== path));
+  const handleUpload = async (e:React.ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0];if(!file||!selectedSubject||uploading)return;
+    setUploading(true);
+    try {
+      const body=new FormData();body.set('file',file);body.set('kind','material');body.set('subject',selectedSubject);
+      const response=await fetch('/api/uploads',{method:'POST',body});
+      if(!response.ok) throw new Error('upload');
+      await loadMaterials();
+    } catch {toast({variant:'destructive',title:'Xəta',description:'Fayl yüklənmədi. İcazəli format və maksimum 4 MB ölçü seçin.'});}
+    finally {setUploading(false);e.target.value='';}
   };
-
-  const saveNotes = (val: string) => {
-    setNotes(val);
-    localStorage.setItem('it24_notes', val);
+  const handleDelete=async(path:string)=>{
+    const {data:{user}}=await supabase.auth.getUser();
+    if(!user||!path.startsWith(user.id+'/')||path.includes('..'))return;
+    const {error}=await supabase.storage.from(MATERIAL_BUCKET).remove([path]);
+    if(error){toast({variant:'destructive',title:'Xəta',description:'Fayl silinmədi.'});return;}
+    await loadMaterials();
   };
-
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log('Session:', session?.user?.id);
-  if (!session) return;
-
-  const filePath = `avatars/${session.user.id}`;
-const { error } = await supabase.storage
-  .from('avatars')
-  .upload(filePath, file, { upsert: true });
-
-if (error) return;
-
-const { data } = supabase.storage
-  .from('avatars')
-  .getPublicUrl(filePath);
-
-// Cache-i keç üçün timestamp əlavə et
-const photoUrl = `${data.publicUrl}?t=${Date.now()}`;
-onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
+  const handleDownload=async(material:Material)=>{
+    const {data,error}=await supabase.storage.from(MATERIAL_BUCKET).createSignedUrl(material.path,300,{download:material.name});
+    if(error||!data){toast({variant:'destructive',title:'Xəta',description:'Fayl endirilə bilmədi.'});return;}
+    const link=document.createElement('a');link.href=data.signedUrl;link.rel='noopener noreferrer';link.click();
+  };
+  const saveNotes=(val:string)=>setNotes(val);
+  const handlePhotoChange=async(e:React.ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0];if(!file||uploading)return;
+    setUploading(true);
+    try {
+      const body=new FormData();body.set('file',file);body.set('kind','avatar');
+      const response=await fetch('/api/uploads',{method:'POST',body});
+      if(!response.ok)throw new Error('upload');
+      const result=await response.json();
+      if(!await onUpdate({...profile,photo:result.url,photo_url:result.url})) {
+        const {error}=await supabase.storage.from('avatars').remove([result.path]);
+        if(error)toast({variant:'destructive',title:'Xəta',description:'İstifadə olunmayan şəkil silinmədi.'});
+      }
+    } catch {toast({variant:'destructive',title:'Xəta',description:'Şəkil yüklənmədi. PNG, JPEG və ya WebP, maksimum 2 MB seçin.'});}
+    finally {setUploading(false);e.target.value='';}
   };
 
   const getGrade = (subject: string) => profile.savedGrades?.[subject];
@@ -217,7 +197,7 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
           <div className="text-center space-y-1">
             <h2 className="text-2xl font-bold text-foreground">{profile.name}</h2>
             <p className="text-xs font-bold text-primary uppercase tracking-widest">
-              {profile.subgroup === 'ust' ? 'Yuxari' : 'Asagi'} Altqrup
+              {profile.subgroup==='hamisi'?'Bütün qrup':profile.subgroup==='ust'?'Üst altqrup':'Alt altqrup'}
             </p>
           </div>
 
@@ -234,10 +214,10 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
 
           {activePanel === 'notes' && (
             <div className="mt-4 space-y-2 animate-in slide-in-from-top-2">
-              <textarea value={notes} onChange={e => saveNotes(e.target.value)}
+              <textarea value={notes} onChange={e => saveNotes(e.target.value)} onBlur={()=>void onUpdate({...profile,notes})}
                 placeholder="Qeydlerinizi buraya yazin..."
                 className="w-full h-40 p-3 rounded-xl border bg-muted/30 text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary" />
-              <p className="text-xs text-muted-foreground text-right">Avtomatik yadda saxlanilir</p>
+              <p className="text-xs text-muted-foreground text-right">Mətn sahəsindən çıxdıqda saxlanılır</p>
             </div>
           )}
 
@@ -275,7 +255,7 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
       <p className="text-center text-sm text-muted-foreground py-4">Yüklənilir...</p>
     ) : (
       <div className="space-y-3 max-h-64 overflow-y-auto">
-        {SUBJECTS.map(subject => {
+        {Array.from(new Set([...SUBJECTS,'Digər'])).map(subject => {
           const subMats = materialsBySubject[subject] || [];
           if (subMats.length === 0) return null;
           return (
@@ -284,10 +264,10 @@ onUpdate({ ...profile, photo: photoUrl, photo_url: photoUrl });
               {subMats.map(m => (
                 <div key={m.path} className="flex items-center gap-3 p-3 rounded-xl border bg-muted/20 hover:bg-muted/40 transition-colors">
                   <span className="text-xl shrink-0">{getFileIcon(m.type)}</span>
-                  <a href={m.url} target="_blank" rel="noopener noreferrer"
-                    className="flex-1 text-sm font-medium text-foreground hover:text-primary truncate">
+                  <button type="button" onClick={()=>void handleDownload(m)}
+                    className="flex-1 text-left text-sm font-medium text-foreground hover:text-primary truncate">
                     {m.name}
-                  </a>
+                  </button>
                   <button onClick={() => handleDelete(m.path)}
                     className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
                     <Trash2 className="h-4 w-4" />

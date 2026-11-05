@@ -7,13 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
-const SUBJECTS = [
-  'Əməliyyat sistemləri',
-  'Kompüter Şəbəkələri',
-  'Verilənlər bazası sistemləri',
-  'Obyektyönlü proqramlaşdırma',
-  'Diskret riyaziyyat',
-];
+
 
 type Components = {
   hasKollokvium: boolean;
@@ -49,16 +43,19 @@ type SaveData = {
 };
 
 interface GradeCalculatorProps {
-  onSave?: (data: SaveData) => void;
+  subjects: string[];
+  initialSubject?: string;
+  onSave?: (data: SaveData) => Promise<boolean>;
 }
 
-export function GradeCalculator({ onSave }: GradeCalculatorProps) {
-  const [subject, setSubject] = useState('');
+export function GradeCalculator({ onSave,subjects:SUBJECTS,initialSubject }: GradeCalculatorProps) {
+  const [subject, setSubject] = useState(initialSubject??'');
   const [components, setComponents] = useState<Components | null>(null);
   const [grades, setGrades] = useState<GradeState>(defaultGrades());
   const [result, setResult] = useState<number | null>(null);
   const [lastCalc, setLastCalc] = useState<Omit<SaveData, 'subject'> | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleSubjectChange = (s: string) => {
     setSubject(s);
@@ -96,14 +93,15 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
 
   const calculate = () => {
   if (!components) return;
-  const davamiyyat = Math.min(10, parseFloat(grades.davamiyyat) || 0);
-  const serbest = Math.min(10, parseFloat(grades.serbest) || 0);
+  const clampGrade = (value:string) => Math.max(0,Math.min(10,parseFloat(value)||0));
+  const davamiyyat = clampGrade(grades.davamiyyat);
+  const serbest = clampGrade(grades.serbest);
 
   const kollokviumVals = components.hasKollokvium
-    ? grades.kollokvium.map(k => Math.min(10, parseFloat(k) || 0))
+    ? grades.kollokvium.map(clampGrade)
     : [];
   const seminarVals = components.hasSeminar
-    ? grades.seminar.map(s => Math.min(10, parseFloat(s) || 0))
+    ? grades.seminar.map(clampGrade)
     : [];
 
   let kombinOrta = 0;
@@ -135,10 +133,11 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   setLastCalc({ total, davamiyyat, serbest, kollokviumOrta: kombinOrta, seminarOrta: kombinOrta, labBal });
 };
 
-  const handleSave = () => {
-    if (!onSave || !lastCalc || !subject) return;
-    onSave({ subject, ...lastCalc });
-    setSaved(true);
+  const handleSave = async () => {
+    if (!onSave || !lastCalc || !subject || saving) return;
+    setSaving(true);
+    try { setSaved(await onSave({ subject, ...lastCalc })); }
+    finally { setSaving(false); }
   };
 
   if (!subject) {
@@ -168,7 +167,7 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   }
 
   if (!components) {
-    return <ComponentSelector subject={subject} onSubjectChange={handleSubjectChange} onConfirm={handleComponentsConfirm} />;
+    return <ComponentSelector subjects={SUBJECTS} subject={subject} onSubjectChange={handleSubjectChange} onConfirm={handleComponentsConfirm} />;
   }
 
   return (
@@ -294,9 +293,9 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
             <Button variant="outline"
               className={cn("w-full h-12 gap-2 font-bold border-2 transition-all",
                 saved ? "border-green-500/40 text-green-500 bg-green-500/10" : "border-primary/30 text-primary hover:bg-primary/5")}
-              onClick={handleSave} disabled={saved}>
+              onClick={handleSave} disabled={saved||saving}>
               <Save className="h-5 w-5 shrink-0" />
-              {saved ? 'Yadda Saxlanildi' : 'Kabinetde Yadda Saxla'}
+              {saving ? 'Saxlanılır...' : saved ? 'Yadda Saxlanildi' : 'Kabinetde Yadda Saxla'}
             </Button>
           )}
         </div>
@@ -305,7 +304,8 @@ export function GradeCalculator({ onSave }: GradeCalculatorProps) {
   );
 }
 
-function ComponentSelector({ subject, onSubjectChange, onConfirm }: {
+function ComponentSelector({ subject, onSubjectChange, onConfirm, subjects:SUBJECTS }: {
+  subjects: string[];
   subject: string;
   onSubjectChange: (s: string) => void;
   onConfirm: (c: Components) => void;

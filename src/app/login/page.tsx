@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type Mode = 'login' | 'register' | 'forgot';
 type University = { id: string; name: string; short_name: string | null };
@@ -13,6 +14,7 @@ type Group = { id: string; name: string; faculty_id: string; university_id: stri
 
 export default function LoginPage() {
   const { toast } = useToast();
+  const router=useRouter();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,9 +30,11 @@ export default function LoginPage() {
   const [selectedUni, setSelectedUni] = useState<University | null>(null);
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [subgroup, setSubgroup] = useState<'ust' | 'alt' | ''>('');
+  const [subgroup, setSubgroup] = useState<'ust' | 'alt' | 'hamisi' | ''>('');
 
   useEffect(() => {
+    if(new URLSearchParams(window.location.search).get('error')==='invalid-link')
+      toast({variant:'destructive',title:'Link etibarsızdır',description:'Təsdiq və ya bərpa linkinin vaxtı bitmiş ola bilər. Yeni link istəyin.'});
     supabase
       .from('universities')
       .select('id, name, short_name')
@@ -71,7 +75,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Xəta',
-        description: 'Fakültələr yüklənmədi. RLS policy-ni yoxlayın.',
+        description: 'Fakültələr yüklənmədi. Yenidən cəhd edin.',
       });
       return;
     }
@@ -96,7 +100,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Xəta',
-        description: 'Qruplar yüklənmədi. RLS policy-ni yoxlayın.',
+        description: 'Qruplar yüklənmədi. Yenidən cəhd edin.',
       });
       return;
     }
@@ -108,33 +112,31 @@ export default function LoginPage() {
     setSelectedGroup(grp);
     setSubgroup('');
     if (!grpId) return;
-    const { data } = await supabase
-      .from('schedule_lessons')
-      .select('subgroup')
-      .eq('group_id', grpId)
-      .neq('subgroup', 'hamisi')
-      .limit(1);
-    setHasSubgroups(!!(data && data.length > 0));
+    setHasSubgroups(true);
+
   };
 
   const handleLogin = async () => {
+    if (loading) return;
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
       toast({ variant: 'destructive', title: 'Xəta', description: 'Email və ya şifrə yanlışdır.' });
     } else {
-      window.location.href = '/';
+      router.replace('/dashboard');router.refresh();
     }
   };
 
   const handleRegister = async () => {
+    if (password.length < 12) { toast({variant:'destructive',title:'Xəta',description:'Şifrə ən az 12 simvol olmalıdır.'}); return; }
     if (!fullName.trim()) { toast({ variant: 'destructive', title: 'Xəta', description: 'Ad Soyad daxil edin.' }); return; }
     if (!selectedUni) { toast({ variant: 'destructive', title: 'Xəta', description: 'Universitet seçin.' }); return; }
     if (!selectedFaculty) { toast({ variant: 'destructive', title: 'Xəta', description: 'Fakültə seçin.' }); return; }
     if (!selectedGroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Qrup seçin.' }); return; }
     if (hasSubgroups && !subgroup) { toast({ variant: 'destructive', title: 'Xəta', description: 'Alt/Üst qrup seçin.' }); return; }
 
+    if (loading) return;
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email, password,
@@ -154,21 +156,22 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (error) {
-      toast({ variant: 'destructive', title: 'Xəta', description: error.message });
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Əməliyyat alınmadı. Məlumatları yoxlayıb yenidən cəhd edin.' });
     } else {
-      toast({ title: 'Uğurlu!', description: 'Hesabınız yaradıldı!' });
+      toast({ title: 'Uğurlu!', description: 'Qeydiyyatı tamamlamaq üçün emailinizdəki təsdiq linkini açın.' });
       setMode('login');
     }
   };
 
   const handleForgot = async () => {
+    if (loading) return;
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
     });
     setLoading(false);
     if (error) {
-      toast({ variant: 'destructive', title: 'Xəta', description: error.message });
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Əməliyyat alınmadı. Məlumatları yoxlayıb yenidən cəhd edin.' });
     } else {
       toast({ title: 'Göndərildi!', description: 'Şifrə bərpası emaili göndərildi.' });
       setMode('login');
@@ -367,14 +370,14 @@ export default function LoginPage() {
                       Alt/Üst Qrup
                     </label>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      {(['ust', 'alt'] as const).map(s => (
+                      {(['ust', 'alt', 'hamisi'] as const).map(s => (
                         <button
                           key={s}
                           type="button"
                           onClick={() => setSubgroup(s)}
                           className={`subgroup-btn ${subgroup === s ? 'active' : ''}`}
                         >
-                          {s === 'ust' ? 'ÜST QRUP' : 'ALT QRUP'}
+                          {s === 'hamisi' ? 'BÜTÜN QRUP' : s === 'ust' ? 'ÜST QRUP' : 'ALT QRUP'}
                         </button>
                       ))}
                     </div>

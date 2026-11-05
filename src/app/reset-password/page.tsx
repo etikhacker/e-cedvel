@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPasswordPage() {
   const { toast } = useToast();
+  const router=useRouter();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,33 +21,10 @@ export default function ResetPasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    // URL hash-dən token-i oxu və sessiya yarat
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const refreshToken = hashParams.get('refresh_token');
-    const type = hashParams.get('type');
-
-    if (accessToken && type === 'recovery') {
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken || '',
-      }).then(({ error }) => {
-        if (error) {
-          toast({ variant: 'destructive', title: 'Xəta', description: 'Link etibarsızdır və ya müddəti bitib.' });
-        } else {
-          setReady(true);
-        }
-      });
-    } else {
-      // Token yoxdursa — mövcud sessiyaya bax
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setReady(true);
-        } else {
-          toast({ variant: 'destructive', title: 'Xəta', description: 'Etibarsız link. Yenidən şifrə bərpası göndərin.' });
-        }
-      });
-    }
+    supabase.auth.getUser().then(({data:{user},error})=>{
+      if (error || !user) { window.location.replace('/login?error=invalid-link'); return; }
+      setReady(true);
+    });
   }, [toast]);
 
   const handleReset = async () => {
@@ -53,19 +32,22 @@ export default function ResetPasswordPage() {
       toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrələr uyğun gəlmir.' });
       return;
     }
-    if (password.length < 6) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə ən az 6 simvol olmalıdır.' });
+    if (password.length < 12) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə ən az 12 simvol olmalıdır.' });
       return;
     }
+    if (loading || !ready) return;
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      toast({ variant: 'destructive', title: 'Xəta', description: error.message });
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə yenilənmədi. Yenidən cəhd edin.' });
     } else {
+      const {error:logoutError}=await supabase.auth.signOut();
+      if (logoutError) { toast({variant:'destructive',title:'Xəta',description:'Şifrə dəyişdi, lakin çıxış alınmadı.'}); return; }
       setDone(true);
       toast({ title: 'Uğurlu!', description: 'Şifrəniz yeniləndi.' });
-      setTimeout(() => { window.location.href = '/login'; }, 2000);
+      router.replace('/login');router.refresh();
     }
   };
 

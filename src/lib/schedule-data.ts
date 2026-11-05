@@ -7,7 +7,9 @@ export type ScheduleItem = {
   type: string;
   subgroup: 'ust' | 'alt' | 'hamisi';
   week: 'ust' | 'alt' | 'hamisi';
-  group: 'IT24.1' | 'IT24.2' | 'hamisi';
+  id?: string;
+  group_id?: string;
+  group?: string;
 };
 
 export const SCHEDULE_IT24_1: ScheduleItem[] = [

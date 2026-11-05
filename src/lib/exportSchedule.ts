@@ -1,3 +1,5 @@
+import { escapeHtml, csvCell, safeFilename } from './security';
+import { timeRange } from './scheduling';
 // src/lib/exportSchedule.ts
 // Xarici paket tələb etmir — xlsx əvəzinə CSV, PDF üçün browser print
 
@@ -33,7 +35,7 @@ export function exportToExcel(data: ScheduleRow[], title = 'Cədvəl') {
 
   const rows: string[][] = [];
   DAYS.forEach(day => {
-    data.filter(d => d.day === day).forEach(r => {
+    data.filter(d => d.day === day).sort((a,b)=>timeRange(a.time)[0]-timeRange(b.time)[0]).forEach(r => {
       rows.push([
         day, r.time, r.subject, r.teacher, r.room,
         r.group ?? '', wk(r.week), sg(r.subgroup),
@@ -43,16 +45,16 @@ export function exportToExcel(data: ScheduleRow[], title = 'Cədvəl') {
 
   // BOM + CSV (Excel UTF-8 üçün BOM lazımdır)
   const csv = '\uFEFF' + [headers, ...rows]
-    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .map(row => row.map(csvCell).join(','))
     .join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `${title}.csv`;
+  a.download = `${safeFilename(title)}.csv`;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 
   // Promise wrapper (ExportButtons async onClick ilə uyğun)
   return Promise.resolve();
@@ -66,7 +68,7 @@ export function exportToPDF(data: ScheduleRow[], title = 'Cədvəl') {
 
   const grouped: Record<string, ScheduleRow[]> = {};
   DAYS.forEach(d => {
-    const items = data.filter(r => r.day === d);
+    const items = data.filter(r => r.day === d).sort((a,b)=>timeRange(a.time)[0]-timeRange(b.time)[0]);
     if (items.length) grouped[d] = items;
   });
 
@@ -74,15 +76,15 @@ export function exportToPDF(data: ScheduleRow[], title = 'Cədvəl') {
     items.map((r, i) => `
       <tr>
         ${i === 0
-          ? `<td rowspan="${items.length}" class="day">${day}</td>`
+          ? `<td rowspan="${items.length}" class="day">${escapeHtml(day)}</td>`
           : ''}
-        <td>${r.time}</td>
-        <td>${r.subject}</td>
-        <td>${r.teacher}</td>
-        <td>${r.room}</td>
-        <td>${r.group ?? ''}</td>
-        <td>${wk(r.week)}</td>
-        <td>${sg(r.subgroup)}</td>
+        <td>${escapeHtml(r.time)}</td>
+        <td>${escapeHtml(r.subject)}</td>
+        <td>${escapeHtml(r.teacher)}</td>
+        <td>${escapeHtml(r.room)}</td>
+        <td>${escapeHtml(r.group ?? '')}</td>
+        <td>${escapeHtml(wk(r.week))}</td>
+        <td>${escapeHtml(sg(r.subgroup))}</td>
       </tr>`
     ).join('')
   ).join('');
@@ -90,7 +92,7 @@ export function exportToPDF(data: ScheduleRow[], title = 'Cədvəl') {
   const html = `<!DOCTYPE html>
 <html lang="az"><head>
 <meta charset="UTF-8">
-<title>${title}</title>
+<title>${escapeHtml(title)}</title>
 <style>
   @page { size: A4 landscape; margin: 14mm 12mm; }
   body  { font-family: Arial, sans-serif; font-size: 10pt; color: #111; }
@@ -105,8 +107,8 @@ export function exportToPDF(data: ScheduleRow[], title = 'Cədvəl') {
           text-align: center; vertical-align: middle; }
 </style>
 </head><body>
-<h1>${title}</h1>
-<p>Çap tarixi: ${date}</p>
+<h1>${escapeHtml(title)}</h1>
+<p>Çap tarixi: ${escapeHtml(date)}</p>
 <table>
   <thead><tr>
     <th style="width:14%">Gün</th><th style="width:11%">Vaxt</th>
@@ -119,8 +121,9 @@ export function exportToPDF(data: ScheduleRow[], title = 'Cədvəl') {
 </body></html>`;
 
   const w = window.open('', '_blank');
-  if (!w) return;
+  if (!w) throw new Error('Çap pəncərəsi bloklandı. Brauzerdə pop-up icazəsini aktiv edin.');
+  w.opener=null;
+  w.onload = () => { w.focus(); w.print(); };
   w.document.write(html);
   w.document.close();
-  w.onload = () => { w.focus(); w.print(); };
 }

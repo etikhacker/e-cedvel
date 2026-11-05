@@ -20,17 +20,15 @@ export default function AdminSetupPage() {
   const [invite, setInvite] = useState<Invite | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [signedIn,setSignedIn]=useState(false);
   const [done, setDone] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
 
   const loadInvite = useCallback(async (t: string) => {
-    const { data, error } = await supabase
-      .from('university_invites')
-      .select('*, universities(name)')
-      .eq('token', t)
-      .eq('used', false)
-      .single();
+    const response = await fetch('/api/invitations', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'inspect',token:t})});
+    const data = await response.json();
+    const error = !response.ok;
 
     if (error || !data) {
       toast({ variant: 'destructive', title: 'Xəta', description: 'Link etibarsızdır və ya artıq istifadə edilib.' });
@@ -51,16 +49,17 @@ export default function AdminSetupPage() {
       return;
     }
     tokenRef.current = inviteToken;
-    void loadInvite(inviteToken);
-  }, [loadInvite]);
+    void supabase.auth.getUser().then(({data:{user}})=>setSignedIn(!!user));
+    void loadInvite(inviteToken).catch(() => { setLoading(false); toast({variant:'destructive',title:'Xəta',description:'Dəvət yüklənmədi. Səhifəni yeniləyin.'}); });
+  }, [loadInvite, toast]);
 
   const handleSetup = async () => {
-    if (form.password !== form.confirm) {
+    if (!signedIn && form.password !== form.confirm) {
       toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrələr uyğun gəlmir.' });
       return;
     }
-    if (form.password.length < 6) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə ən az 6 simvol olmalıdır.' });
+    if (!signedIn && form.password.length < 12) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Şifrə ən az 12 simvol olmalıdır.' });
       return;
     }
 
@@ -69,32 +68,29 @@ export default function AdminSetupPage() {
       return;
     }
 
+    if (saving) return;
     setSaving(true);
 
-    // 1. Qeydiyyat
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-    });
+    try {
+      const {data:{user}}=await supabase.auth.getUser();
+      if (!user) {
+        const {data,error}=await supabase.auth.signUp({email:invite.email,password:form.password,options:{
+          emailRedirectTo:window.location.origin+'/auth/callback?next='+encodeURIComponent('/admin/setup?token='+tokenRef.current),
+        }});
+        if (error) throw new Error('Qeydiyyat alınmadı. Mövcud hesabınız varsa daxil olun.');
+        if (!data.session) {
+          toast({title:'Emaili təsdiqləyin',description:'Emaildəki linki açın. Mövcud hesabınız varsa daxil olub bu dəvət linkinə qayıdın.'});
+          return;
+        }
+      }
+      const response=await fetch('/api/invitations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'consume',token:tokenRef.current})});
+      const result=await response.json();
+      if (!response.ok) throw new Error(result.error);
+      setDone(true);
+    } catch(error) {
+      toast({variant:'destructive',title:'Xəta',description:error instanceof Error?error.message:'Əməliyyat tamamlanmadı.'});
+    } finally { setSaving(false); }
 
-    if (signUpError || !authData.user) {
-      toast({ variant: 'destructive', title: 'Xəta', description: signUpError?.message || 'Qeydiyyat alınmadı.' });
-      setSaving(false);
-      return;
-    }
-
-    // 2. university_admins-ə əlavə et
-    await supabase.from('university_admins').insert({
-      id: authData.user.id,
-      university_id: invite.university_id,
-      role: 'admin',
-    });
-
-    // 3. Dəvəti istifadə edilmiş işarələ
-    await supabase.from('university_invites').update({ used: true }).eq('token', tokenRef.current);
-
-    setSaving(false);
-    setDone(true);
   };
 
   if (loading) return (
@@ -157,8 +153,9 @@ export default function AdminSetupPage() {
               onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))}
             />
           </div>
+          <a href="/login" className="block text-sm text-primary">Mövcud hesabla daxil olun, sonra bu dəvət linkinə qayıdın.</a>
           <Button className="w-full h-12 font-bold" onClick={handleSetup} disabled={saving}>
-            {saving ? 'Yaradılır...' : 'Hesabı Yarat'}
+            {saving ? 'Yaradılır...' : signedIn ? 'Dəvəti qəbul et' : 'Hesabı Yarat'}
           </Button>
         </div>
       </div>
