@@ -2,6 +2,8 @@
 
 **Mövcud layihə üzrə aktual plan:** istifadəçi ayrıca staging əvəzinə `samcakpeuxwegyzrlrwp` layihəsini seçib. [LIVE-ROLLOUT.md](LIVE-ROLLOUT.md) canlı audit nəticələrini, bərpa sınağını və koordinasiyalı keçid şərtlərini saxlayır. Aşağıdakı ayrıca staging təlimatı alternativdir.
 
+**Son release gate:** [RELEASE-READINESS.md](RELEASE-READINESS.md). Mövcud layihədə Gmail SMTP seçilib; aşağıdakı Resend domen hazırlığı yalnız Resend provider-i seçildikdə tələb olunur.
+
 **Hazırkı status:** kod və SQL yerli hazırlanıb. Supabase miqrasiyaları, Edge Function yeniləməsi, GitHub push və Vercel production deploy icra edilməyib. Canlı köhnə icazələr hələ dəyişməyib.
 
 **Staging hazırlığı:** ayrıca E-Cədvəl staging layihəsi və ya development DB branch-i görünən hesabda tapılmadı. Production-un `main` DB branch-i staging deyil. [STAGING.md](STAGING.md) yaradılacaq boş layihə üçün dəqiq env, Dashboard, migration preflight və real inteqrasiya siyahısıdır. `.env.local` təhlükəsiz, boş açarlı vəziyyətdə hazırlanıb; bu mərhələdə SQL və deploy əmrlərini işlətməyin.

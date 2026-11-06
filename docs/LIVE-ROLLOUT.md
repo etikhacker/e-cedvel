@@ -2,6 +2,8 @@
 
 Yoxlama tarixi 6 noyabr 2026. Layihə `samcakpeuxwegyzrlrwp`, iş qovluğu `D:\e-cedvel\audit-work`, branch `fix/production-hardening`.
 
+**Son release yoxlaması:** [RELEASE-READINESS.md](RELEASE-READINESS.md). Aşağıdakı əvvəlki qeydlərin SMTP autentifikasiyası ilə bağlı məhdudiyyətləri qalır; təzə backup üzərində üç miqrasiyanın təkrarı və Dashboard email şablonlarının oxunması artıq tamamlanıb.
+
 ## Cari vəziyyət
 
 Üç miqrasiya canlı bazaya hələ tətbiq edilməyib. Bu iş çərçivəsində canlı Auth/Storage ayarları və biznes məlumatları dəyişdirilməyib. Bu yoxlamada agent GitHub push və deployment etməyib. Son oxunan production deployment `dpl_F9F61m7XpHBBvLPDqgy5ry1T8VEM`, READY və auditdən əvvəlki `49160fc` commitidir. Yeni UI dəyişikliyi yoxdur. İstifadəçinin son göstərişi deploy etməməkdir.
@@ -14,7 +16,7 @@ Yoxlama tarixi 6 noyabr 2026. Layihə `samcakpeuxwegyzrlrwp`, iş qovluğu `D:\e
 - Next.js admin dəvətlərini öz SMTP dəyişənləri ilə göndərir. Qeydiyyat təsdiqi və recovery email-ləri Supabase-in ayrıca SMTP ayarlarından istifadə edir. Bu iki xidmətin App Password-u eyni olmaq məcburiyyətində deyil. Vercel-dəki yeni parol Supabase ayarını avtomatik dəyişmir.
 - Auth email təsdiqi hələ söndürülüb, minimum parol 6-dır. Site URL artıq `https://e-cedvel-etikhackers-projects.vercel.app/`-dır. Redirect siyahısı əvvəlki iki ünvandan genişlənib və wildcard alias ünvanları ehtiva edir. Bunlar bu yoxlama zamanı dəyişdirilməyib.
 - `NEXT_PUBLIC_APP_URL` Vercel-də Sensitive kimi saxlanıb, dəyəri oxuna bilməyib. Onun Auth Site URL ilə uyğunluğu hələ təsdiqlənməlidir. Köhnə lokal Auth planından redirect siyahısını əvəz edən hissə çıxarılıb ki, yeni canlı ayarlar təsadüfən silinməsin. Canlıya heç bir config push edilməyib.
-- Email şablonlarının faktiki məzmunu CLI diff-də qaytarılmayıb. Callback-də PKCE və token-hash dəstəyi kodda var, lakin Dashboard şablonları və real təsdiq/recovery davamı ayrıca yoxlanmalıdır.
+- Signup, recovery və Auth invitation şablonları Dashboard-da oxunub: üçü də `{{ .ConfirmationURL }}` istifadə edir. Kodda PKCE code exchange və token-hash dəstəyi var. Eyni browser/origin və query parametrlərinin saxlanması şərtilə uyğunluq mövcuddur; real emaildən davam etmə ayrıca yoxlanmalıdır.
 
 Auth və tətbiqin email yolları üçün istinadlar [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [email təsdiqi](https://supabase.com/docs/guides/auth/general-configuration), [redirect uyğunluğu](https://supabase.com/docs/guides/auth/redirect-urls).
 
@@ -36,7 +38,7 @@ Bu sübutlar real email çatdırılmasını və real brauzer hesabları ilə bü
 
 ## Backup və bərpa planı
 
-Yeni baza arxivi `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106` qovluğundadır. `backup-manifest.json` archive/encryption/restore yoxlamalarını, `restore-comparison.json` 14 cədvəlin müqayisəsini saxlayır. Yeni izolə edilmiş `ec-recovery-20261106` konteynerinə public/Auth/Storage sxemləri bərpa edilib və yoxlamadan sonra konteyner dayandırılıb. Hazırlanmış üç miqrasiya bu yeni nüsxədə yenidən işlədilməyib.
+Yeni baza arxivi `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106` qovluğundadır. `backup-manifest.json` archive/encryption/restore yoxlamalarını, `restore-comparison.json` 14 cədvəlin müqayisəsini saxlayır. Yeni izolə edilmiş `ec-recovery-20261106` konteynerində üç miqrasiya yenidən ardıcıllıqla tətbiq edilib; `local-recovery-verification.sql` və `verify.sql` keçib. `readiness-preservation.json` 14 cədvəlin sətir sayının, bucket konfiqurasiyası xaricində 13 cədvəlin məzmun izinin dəyişmədiyini təsdiqləyir. Şifrəli ilkin dump dəyişdirilməyib.
 
 Əvvəlki parolsuz rol nüsxəsi, Storage faylları və ilk migration sınağının sübutları `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261105` qovluğundadır. Bərpada həmin rol nüsxəsindən istifadə olunub. Üç Storage arxivinin DPAPI açma və SHA-256 yoxlaması yenidən keçib. Storage faylları bu mərhələdə yenidən endirilməyib. Hər iki qovluq repodan kənardadır.
 
@@ -77,7 +79,7 @@ Keçiddən əvvəl təzə dump çıxarın, şifrələyin, SHA-256 yoxlayın və 
 
 ## Manual tamamlanacaq məsələlər
 
-- `NEXT_PUBLIC_APP_URL` ilə Auth Site URL uyğunluğunun təsdiqi, Dashboard email şablonlarının yoxlanması və real email testinin ünvanı. SMTP parolu artıq əlavə edilib.
+- `NEXT_PUBLIC_APP_URL` ilə Auth Site URL uyğunluğunun təsdiqi və real email testləri. Şablonlar oxunub; test alıcısı `e.cedvel.qruptap@gmail.com` üçün açıq icazə alınıb. SMTP parolu Vercel-də əlavə edilib, amma autentifikasiya hələ sınanmayıb.
 - Supabase leaked-password protection plan dəstəyi və aktivləşdirilməsi.
 - Dörd mövcud tələbə profilində qrup seçimi yoxdur. İstifadəçilər onboarding vasitəsilə düzgün qrupu seçməlidir. Qrup uydurulmur.
 - Canlı bazada dərs sayı sıfırdır. Yeni tətbiq boş real cədvəl göstərəcək. Universitetin real cədvəli, semester_start və first_week tədris məsulunun təsdiqi ilə daxil edilməlidir.
