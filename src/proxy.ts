@@ -1,6 +1,15 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
+import { canonicalPageRedirect } from '@/lib/canonical-url';
 export async function proxy(request: NextRequest) {
+  const canonical = canonicalPageRedirect(request.url,request.method,process.env.VERCEL_ENV,process.env.NEXT_PUBLIC_APP_URL);
+  if (canonical) {
+    const redirect = NextResponse.redirect(canonical,307);
+    redirect.headers.set('Cache-Control','private, no-store');
+    redirect.headers.set('Referrer-Policy','no-referrer');
+    return redirect;
+  }
+  if (request.nextUrl.pathname === '/') return NextResponse.next();
   let response=NextResponse.next({request});
   const db=createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{
     cookies:{getAll:()=>request.cookies.getAll(),setAll:values=>{
@@ -29,4 +38,4 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Referrer-Policy',path==='/admin/setup'?'no-referrer':'same-origin');
   return response;
 }
-export const config={matcher:['/dashboard/:path*','/admin/:path*','/auth/:path*','/reset-password','/login','/api/:path*']};
+export const config={matcher:['/','/dashboard/:path*','/admin/:path*','/auth/:path*','/reset-password','/login','/api/:path*']};

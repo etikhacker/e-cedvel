@@ -4,7 +4,7 @@ Universitetlər üçün Next.js 16, React 19 və Supabase əsaslı cədvəl tət
 
 **6 noyabr 2026 qərarı:** mövcud Supabase layihəsi saxlanılır, ayrıca staging layihəsi yaradılmır. Canlı keçidin yoxlanmış nəticələri, backup və açıq məsələlər [LIVE-ROLLOUT.md](docs/LIVE-ROLLOUT.md) sənədindədir. Aşağıdakı staging əmrləri əvvəlki alternativ hazırlıq üçündür, production keçidi üçün istifadə edilməməlidir.
 
-Son buraxılış yoxlaması və koordinasiyalı icra/bərpa ardıcıllığı: [RELEASE-READINESS.md](docs/RELEASE-READINESS.md). Hazırda URL, real SMTP və maintenance şərtləri açıq olduğundan release bloklanıb.
+Son buraxılış yoxlaması: [RELEASE-READINESS.md](docs/RELEASE-READINESS.md). Canonical URL düzəlişi, təhlükəsiz SMTP sınağı və yeni maintenance planı: [RELEASE-PREREQUISITES.md](docs/RELEASE-PREREQUISITES.md). Real email sınaqları və canlı keçid checkpoint-ləri tamamlanmadığından release bloklanıb.
 
 ## Quraşdırma
 

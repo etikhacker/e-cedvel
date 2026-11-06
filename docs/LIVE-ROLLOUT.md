@@ -2,6 +2,8 @@
 
 Yoxlama tarixi 6 noyabr 2026. Layihə `samcakpeuxwegyzrlrwp`, iş qovluğu `D:\e-cedvel\audit-work`, branch `fix/production-hardening`.
 
+**Aktual davam:** [RELEASE-PREREQUISITES.md](RELEASE-PREREQUISITES.md). Vercel canonical URL yeniləndi; SMTP üçün faylsız gizli input vasitəsi və lokal sınanmış maintenance əməliyyatları hazırlandı. Aşağıdakı əvvəlki mərhələ qeydləri tarixçə kimi saxlanır. Auth recovery sınağı istifadəçinin qərarı ilə sonraya saxlanıb.
+
 **Son release yoxlaması:** [RELEASE-READINESS.md](RELEASE-READINESS.md). Aşağıdakı əvvəlki qeydlərin SMTP autentifikasiyası ilə bağlı məhdudiyyətləri qalır; təzə backup üzərində üç miqrasiyanın təkrarı və Dashboard email şablonlarının oxunması artıq tamamlanıb.
 
 ## Cari vəziyyət

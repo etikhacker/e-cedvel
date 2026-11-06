@@ -2,14 +2,16 @@
 
 **Nəticə: BLOCKED.** Bu sənəd icra icazəsi deyil. Production miqrasiyası, Auth/RLS/Storage dəyişikliyi, Edge Function/Vercel deploymenti və GitHub push edilməyib. UI dəyişməyib.
 
+**Son yeniləmə:** [RELEASE-PREREQUISITES.md](RELEASE-PREREQUISITES.md). Canonical Vercel env dəyəri artıq düzəldilib, yeni lokal maintenance qoruması sınanıb. Aşağıdakı audit nəticələri saxlanılır; ilkin dörd maneənin son vəziyyəti həmin yeni sənəddədir. SMTP parolunu repo daxilindəki env faylına yazmaq barədə əvvəlki alternativ əvəzinə maskalanmış terminal sorğusu istifadə olunur.
+
 Layihə: `samcakpeuxwegyzrlrwp`. Repo: `D:\e-cedvel\audit-work`, branch `fix/production-hardening`. Tətbiq bazası `8b5db9d`, əvvəlki sənəd commit-i `ae2a3f5`. Son testlər bu kod üzərindədir; bu dəyişiklik yalnız sənədləri, CI test siyahısını və generated-artifact qaydasını yeniləyir.
 
 ## Dəqiq açıq məsələlər
 
-1. Vercel-də `NEXT_PUBLIC_APP_URL` Sensitive olduğu üçün dəyəri oxunmur. İstifadəçi yalnız bu public URL-i bildirməlidir. Auth Site URL canonical domenlə eyni deyil. Keçiddə hər ikisi və redirect-lər eyni origin-ə uyğunlaşdırılmalıdır.
-2. Vercel SMTP parolu mövcuddur, amma Gmail AUTH və email göndərişi hələ sınaqdan keçməyib. İstifadəçi eyni parolu Git tərəfindən ignore edilən `.env.smtp-test.local` faylına özü daxil edə bilər. Parolu çata yazmaq olmaz. Lokal test uğuru Vercel runtime şəbəkəsini ayrıca təsdiqləmir; sonuncu yalnız təsdiqlənmiş release mərhələsində sınana bilər.
-3. Supabase Auth SMTP ayrıca saxlanır. Dashboard-da test email düyməsi yoxdur. Bir recovery emaili Auth-da token/göndərilmə vaxtını yeniləyə bildiyinə görə həmin məhdud əməl üçün ayrıca cavab gözlənilir. Parol dəyişməyəcək və link istifadə edilməyəcək. Alıcıya email icazəsi alınıb; faktiki SMTP AUTH və inbox çatdırılması hələ təsdiqlənməyib.
-4. Köhnə klientlər birbaşa Supabase-ə qoşulur. Təkcə Vercel maintenance səhifəsi həmin sorğuları dayandırmır. Keçid üçün həm Vercel trafikini, həm köhnə Data API/Storage/Edge yazma yollarını dayandıran, operatora məhdud yoxlama imkanı saxlayan mexanizm seçilib sınaqdan keçirilməlidir. Hazırda bu mexanizmin işlədiyinə sübut yoxdur. Bunu həll etmədən miqrasiyaya başlamaq olmaz.
+1. Vercel `NEXT_PUBLIC_APP_URL` istifadəçinin seçdiyi canonical URL-ə yeniləndi. Auth Site URL/redirect dəyişməsi deployment ilə birlikdə tətbiq olunacaq; hələ dəyişdirilməyib.
+2. Gmail AUTH və çatdırılma sınağı üçün `scripts/verify-gmail-smtp.ps1` hazırdır; parolu yalnız gizli terminal sorğusu ilə daxil edin. Lokal test Vercel runtime şəbəkəsini təsdiqləmir.
+3. İcazəli Gmail alıcısı Auth istifadəçisi deyil. İstifadəçi recovery sınağını sonraya saxladı; email göndərilməyib və heç bir əməliyyat növbədə yoxdur.
+4. Lokal DB yazma qorumasının install/test/remove sınağı keçdi. Vercel trafik qaydasının faktiki aktivləşdirilməsi, operator IP-si və hosted Storage/REST sınağı release icazəsi mərhələsində qalır.
 
 ## URL və email uyğunluğu
 
@@ -18,7 +20,7 @@ Vercel production-domain API-də `e-cedvel.vercel.app` təsdiqlənib, redirect y
 | Mənbə | Faktiki vəziyyət |
 |---|---|
 | Vercel production deployment | `dpl_F9F61m7XpHBBvLPDqgy5ry1T8VEM`, READY, köhnə `49160fc` |
-| NEXT_PUBLIC_APP_URL | Production/Preview-da var; Sensitive, dəyər naməlum |
+| NEXT_PUBLIC_APP_URL | Production/Preview üçün canonical URL yazılıb; Vercel Sensitive tipini dəyişməyə icazə vermir, read-back gizlidir |
 | Auth Site URL | `https://e-cedvel-etikhackers-projects.vercel.app/` |
 | Auth redirects | canonical `/auth/callback`, `/reset-password`; team alias root və `/**`; `e-*-cedvel-...` wildcard-ları |
 | Next invitation SMTP | Gmail, 587, STARTTLS, TLS sertifikat yoxlaması, `MAIL_PROVIDER=smtp` |
