@@ -1,6 +1,8 @@
 # Qalan release şərtləri — 6 noyabr 2026
 
-**BLOCKED.** Əvvəlki security audit, backup restore və üç migration sınağı təkrarlanmayıb. Burada yalnız yeni URL dəyişiklikləri, SMTP yoxlama vasitəsi və maintenance qoruması hazırlanıb. Canlı SQL/Auth/Storage/Edge dəyişməsi, deployment, promote, push və real email göndərişi edilməyib.
+**Son SMTP yeniləməsi:** icazəli bir real Gmail test məktubu SMTP `250 2.0.0`, exit 0 ilə qəbul edilib və istifadəçi Inbox çatdırılmasını təsdiqləyib. [Göndəriş sübutu](SMTP-DELIVERY-TEST.md). Aşağıdakı ilkin hazırlıq qeydlərinin lokal SMTP maneəsi bağlanıb; Supabase Auth testi təxirə salınıb, Vercel runtime və canlı release checkpoint-ləri açıq qalır.
+
+**BLOCKED — Auth SMTP və koordinasiyalı keçidin canlı checkpoint-ləri açıqdır.** Əvvəlki audit, backup restore və üç migration sınağı təkrarlanmayıb. Bir icazəli lokal SMTP məktubu artıq çatdırılıb. Bu son hazırlıq mərhələsində canlı SQL/Auth/Storage/Edge dəyişməsi, deployment, promote, push və əlavə email göndərişi edilməyib.
 
 Yeni dəyişikliklərin yoxlaması: hədəfli lint və TypeScript, 4 canonical URL testi, lokal test-env build, PowerShell parser və boş SMTP input-un şəbəkədən əvvəl rəddi keçdi. Yeni DB fence install/test/remove sınağı ayrıca lokal nüsxədə keçdi. Bunlar real Gmail və hosted Auth/Storage nəticəsi kimi təqdim edilmir.
 
@@ -16,7 +18,7 @@ Canlı Auth read-only diff: Site URL hələ team alias-dır, email confirmation 
 
 Əvvəl Dashboard-da oxunan signup/recovery/invite-user şablonları `{{ .ConfirmationURL }}` istifadə edir. Onlar dəyişdirilməyib. Signup → `/auth/callback` → dashboard; recovery → `/auth/callback?type=recovery` → reset-password; admin signup → kodlanmış `next=/admin/setup?token=...` davamı. Kod/query uyğunluğu yoxlanıb, real emaildən callback və cookie davamı hələ E2E sübut deyil.
 
-## 2. Gmail SMTP: konfiqurasiya tam, real sınaq gözlənilir
+## 2. Gmail SMTP: autentifikasiya və Inbox çatdırılması tamamlandı
 
 Vercel Production metadata və qeyri-məxfi dəyərlər yenidən yoxlanıb:
 
@@ -38,15 +40,21 @@ Maskalanmış `Read-Host -AsSecureString` sorğusunda Vercel-də saxlanılan **e
 
 Bu əmr **yalnız autentifikasiyadır**; `-SendTest` və Node delivery rejimi çıxarılıb. `SMTP_AUTHENTICATED` (0), `SMTP_AUTH_FAILED` (2), `SMTP_CONNECTION_FAILED` (3), `SMTP_TLS_FAILED` (4), yaxud yerli proses/input/protokol xətası üçün `SMTP_CHECK_FAILED` (5) göstərir. Nəticədən dərhal sonra `$LASTEXITCODE` oxuna bilər. Boş çıxış və child exit 0 artıq uğur sayılmır.
 
-Bu test lokal kompüterdən olur. Vercel runtime göndərişi, SMTP message acceptance və faktiki Inbox çatdırılması bu əmrlə yoxlanmır. İstifadəçinin əvvəlki real cəhdi çıxış göstərmədiyi üçün Gmail nəticəsi naməlumdur. Düzəldilmiş axın yalnız mock məlumatlarla sınanıb; real Gmail uğuru iddia edilmir. Əvvəlki `.env.smtp-test.local` yanaşması istifadə edilmir. Ayrı email delivery testi gələcək ayrıca işdir.
+Bu əmr lokal kompüterdə yalnız autentifikasiyanı yoxlayır. İstifadəçi düzəldilmiş skriptdə `SMTP_AUTHENTICATED`, exit 0 aldı. Ayrıca bir icazəli göndəriş `250 2.0.0` ilə qəbul olundu və `omrbabayev455@gmail.com` Inbox çatdırılması istifadəçi tərəfindən təsdiqləndi. Bu yoxlamaları təkrarlamayın. Vercel runtime və Supabase Auth-un ayrıca SMTP credential-i bu nəticə ilə təsdiqlənmir. Əvvəlki `.env.smtp-test.local` yanaşması istifadə edilmir.
 
-## 3. Supabase Auth SMTP: istifadəçi sonraya saxladı
+## 3. Supabase Auth SMTP: ayrıca əməliyyat icazəsi gözlənilir
 
 Next.js dəvət SMTP-si və Supabase Auth SMTP-si iki ayrı credential/config dəstidir. Vercel App Password-u Auth-a kopyalanmayıb. Auth-da eyni Gmail host/port/göndərən konfiqurasiyası aktivdir; saxlanmış parol gizlidir.
 
-İcazəli Gmail ünvanı üçün canlı read-only sorğu **0 Auth hesabı** göstərdi. Heç bir recovery əməliyyatı agent tərəfindən göndərilməyib, növbədə avtomatik göndəriş yoxdur. Qeydiyyatsız email üçün recovery API-nin ümumi uğur cavabı çatdırılma sübutu sayılmır. İstifadəçi açıq şəkildə **“sonraya saxla”** dedi; test dayandırılıb.
+Son read-only sorğuda yeni icazəli alıcı `omrbabayev455@gmail.com` üçün **0 Auth hesabı** var. Əvvəlki recovery sınağı təxirə salınıb; agent tərəfindən göndəriş və avtomatik retry planlaşdırılmayıb. Qeydiyyatsız email üçün recovery API-nin ümumi uğur cavabı çatdırılma sübutu sayılmır. Alıcıya icazə hesab yaratmağa və ya Auth emaili göndərməyə icazə deyil.
 
-Gələcək test: istifadəçi artıq mövcud olan öz hesabının ünvanını və **bir recovery məktubu** üçün icazəni verir; əvvəl email sətirinin mövcudluğu yoxlanır. Recovery token/göndərilmə vaxtı yenilənə bilər, şifrə dəyişdirilmir. Inbox təsdiqindən sonra yeni tətbiq hazır olduqda eyni browser-də recovery linki → canonical callback → reset-password səhifəsi yoxlanır; parol dəyişmə submit-i ayrıca istifadəçi tərəfindən edilir. Signup confirmation və admin invitation E2E üçün ayrıca icazəli test hesabı/dəvəti lazımdır; mövcud adminləri dəyişmək və ya gizli test user yaratmaq olmaz.
+Konkret ilkin sınaq təklifi: ayrıca icazədən sonra həmin ünvana bir adi, admin/tenant səlahiyyəti olmayan Auth test hesabı yaradılır və **bir recovery məktubu** istənilir. Hesab yaratma email göndərməyən server-side `admin.createUser` əməliyyatı ilə, təsdiqi saxtalaşdırmadan hazırlanır; lazım olan təsadüfi parol yalnız proses yaddaşında saxlanır. `auth.users` üçün hazırkı canlı qeyri-sistem trigger siyahısı boşdur; əməliyyat öncəsi yenidən hesab mövcudluğu yoxlanır. Artıq hesab varsa avtomatik dəyişdirməyin. Universitet dəvəti/public profil/admin sətri yaradılmır, mövcud hesabların şifrəsi dəyişdirilmir. Recovery tokeni və vaxtı yaranacaq; retry və test hesabının avtomatik silinməsi yoxdur. [Supabase createUser](https://supabase.com/docs/reference/javascript/auth-admin-createuser), [recovery davranışı](https://supabase.com/docs/guides/auth/passwords).
+
+Bu ilkin sınaq yalnız Auth provider qəbulunu və istifadəçinin Inbox təsdiqini yoxlayır. Hazırda köhnə tətbiq aktiv olduğundan məktub linkini açıb tokeni istifadə etməyin. Yeni callback-in tam E2E sınağı deployment sonrası ayrıca icazəli, eyni browser-də başladılmış yeni recovery axını ilə aparılacaq; köhnə/vaxtı keçmiş məktub istifadə olunmur. Şifrə dəyişmə submit-i ayrıca istifadəçi icazəsi tələb edir. Signup confirmation və universitet admin dəvəti üçün ayrıca test hesabı/dəvəti icazəsi lazımdır.
+
+Canlı signup, recovery və invite-user şablonlarının hamısı `{{ .ConfirmationURL }}` istifadə edir. Signup/recovery ilə tətbiqin PKCE callback-i statik baxışda uyğundur; actual query allow-list uyğunluğu, token exchange və cookie davamı hələ real E2E deyil. Dashboard-un **Invite user** əməliyyatı universitet admin dəvəti ilə eyni axın deyil; onu tətbiqin invitation testinin əvəzi kimi işlətməyin. Tətbiqin dəvəti Next.js emaili → admin setup → signup confirmation → server-side dəvət istehlakı ardıcıllığıdır.
+
+Auth SMTP aktivdir: Gmail 587, eyni göndərən; parol gizlidir və oxunmayıb. Next.js SMTP testinin keçməsi bu ayrı saxlanmış parolun işlədiyini sübut etmir. Yeni credential istənilmir; yalnız real Auth testi bu fərqi bağlayacaq.
 
 ## 4. Maintenance: iki qatlı plan və lokal sübut
 
@@ -69,14 +77,15 @@ Bu qoruma **biznes və Storage metadata yazma dayanmasıdır**, bütün Supabase
 ### Koordinasiyalı icra sırası — indi icra edilmir
 
 1. SMTP və Auth testlərindəki açıq işləri bağlayın; release commit/SQL hash-ləri və operator IP-ni təsdiqləyin. Mövcud yoxlanmış backup-ı əsassız təkrar yaratmayın; yalnız yeni DB/Auth/Storage dəyişiklikləri onu köhnəldibsə yeniləyin.
-2. Explicit deployment icazəsindən sonra yeni production build-i domenə promote etmədən hazırlayın. Yeni env və canonical redirect kodu bu build-də birlikdə olmalıdır; köhnə mock `.next` istifadə olunmur.
+2. Explicit deployment icazəsindən sonra workspace-i məhz mövcud `e-cedvel` layihəsinə bağlayın: project `prj_6Z8mY8gUMiosSJsZNR4ndixkNn00`, team `team_4EkrgFVSXtz0IJcH6RJOhgd7`. Hazırda lokal `.vercel/project.json` yoxdur; CLI-nin yeni layihə yaratmasına yol verməyin. Vercel hazırda Node 24.x, yoxlanmış lokal/CI mühiti Node 22-dir: build-dən əvvəl Vercel runtime-ı 22.x-ə uyğunlaşdırın və API-dən oxuyub təsdiqləyin. Sonra yeni production build-i domenə promote etmədən, operatorla məhdud girişlə hazırlayın. Aliassız production build də deployment-dir və indi qadağandır. Yeni env və canonical redirect kodu birlikdə olmalıdır; köhnə mock `.next` istifadə olunmur. Build uğuru və birbaşa URL-in ictimai əlçatan olmaması checkpoint-dir.
 3. Vercel WAF gate-i aktivləşdirib iki şəbəkədən yoxlayın. Köhnə legacy `send-invite` Edge relay-i repo 410 replacement-i ilə bağlayın; artıq gedən çağırışların bitməsini gözləyin. Bu ayrıca təsdiqlənmiş release əməlidir, indi deploy edilmir.
 4. `install-release-write-fence.sql`-i birbaşa postgres operator sessiyasında tətbiq edin. Trigger sayını və enable vəziyyətini yoxlayın. Köhnə JWT ilə read-only/no-op REST yazma cəhdi və icazəli təzə Storage test yolu rədd olunmalıdır. Yan keçmə varsa miqrasiyaya başlamayın. Auth signup-ı bu maintenance müddətində müvəqqəti bağlamağı əvvəlcədən planlaşdırın; mövcud session/tokenləri silməyin.
-5. Son backup/baseline checkpoint-i tamamlayın. Üç migration history ilə əvvəlki təsdiqlənmiş ardıcıllıqda tətbiq olunur. Operator backfill-lərinə fence mane olmur. Xəta çıxsa fence/WAF saxlanır; sonrakı migration və promote dayanır.
+5. Son backup/baseline checkpoint-i tamamlayın. Üç migration history ilə bu ardıcıllıqda tətbiq olunur: `20261105151505_authorization_and_invites.sql` → `20261105151513_scheduling_integrity.sql` → `20261105151520_storage_isolation.sql`. Canlı migration history hazırda boşdur; SQL fayllarının hash-ləri yoxlanmış lokal nüsxə ilə eynidir. Hər migration ayrı transaction-dır, üçü birlikdə atomik deyil. Operator backfill-lərinə fence mane olmur. Xəta çıxsa fence/WAF saxlanır; sonrakı migration və promote dayanır. Live `supabase/tests/local-recovery-verification.sql` və `bootstrap.sql` işlədilmir.
 6. Yeni Auth Site URL/redirect/confirmation/minimum-password planını tətbiq edin; SMTP/MFA-ya toxunmayın. `verify.sql`, say/məzmun müqayisəsi və policy checkpoint-lərini tamamlayın. Recovery zamanı gözlənilən Auth timestamp dəyişikliklərini məlumat itkisi ilə qarışdırmayın.
 7. Yeni tətbiqi canonical domain-ə promote edin, WAF və DB fence hələ qalsın. Operator yeni versiyanın READY/commit/alias/read-only səhifələrini yoxlasın. Yeni kodda səhv varsa fence qalır, fix-forward edilir.
 8. Bütün komponentlər uyğun olduqda DB fence-i götürün; WAF altında operator icazəli real sınaqları tamamlasın. Bu andan birbaşa Supabase klientləri yenidən yaza bilər, ancaq artıq yeni RLS/constraint-lər qüvvədədir. Köhnə invitation/upload axınları fail-closed qalır; istifadəçilər canonical səhifəni yeniləməlidir. “Bütün dünya hələ bağlıdır” fərziyyəsi ilə test aparmayın.
-9. Qəbul yoxlamaları keçdikdə WAF müvəqqəti qaydasını götürün və planlaşdırılmış signup vəziyyətini bərpa edin. Email confirmation aktiv qalır. GitHub push/merge ayrıca icazə ilədir.
+9. Qəbul yoxlamaları keçdikdə WAF müvəqqəti qaydasını götürün və planlaşdırılmış signup vəziyyətini bərpa edin. Signup testinə maintenance daxilində ehtiyac varsa yalnız test üçün ayrıca razılaşdırılmış qısa pəncərədə açın; WAF birbaşa Auth API-ni qorumur. Email confirmation aktiv qalır.
+10. Ayrı GitHub icazəsindən sonra yalnız təsdiqlənmiş feature branch push edilir, `main` üçün PR açılır, CI/review tamamlanır, sonra ayrıca merge icazəsi alınır. Push/merge-dən əvvəl Vercel Git production branch və avtomatik deployment davranışını faktiki yoxlayın; təsadüfi ikinci deployment-ə yol verməyin. GitHub CI hələ uzaqda işləməyib; lokal test nəticəsini uzaq CI kimi təqdim etməyin.
 
 ### Dayanma / bərpa
 
@@ -84,4 +93,12 @@ Bu qoruma **biznes və Storage metadata yazma dayanmasıdır**, bütün Supabase
 
 ## İndi tələb olunan konkret addım
 
-İstifadəçi maskalanmış SMTP authentication skriptini öz terminalında işlədir və yalnız nəticəni bildirir. Sonra ayrıca bir test emailinin SMTP acceptance və Inbox təsdiqi qeydə alınır. Auth testi istifadəçinin qərarı ilə təxirə salınıb. Operator IP/WAF canlı təsdiqi və hosted Storage checkpoint-i release pəncərəsində ayrıca tamamlanmalıdır. Bu işlər bitmədən READY deyil.
+`omrbabayev455@gmail.com` üçün **bir adi Auth test hesabının yaradılması və bir recovery emailinin göndərilməsi** üçün ayrıca icazə alınmalıdır. Bu, hazırda heç nə yaratmır/göndərmir; ilk sınaqda link açılmır və parol sıfırlanmır. Alternativ: istifadəçi özünə məxsus artıq qeydiyyatlı hesab seçir və yalnız bir recovery məktubuna icazə verir. Operator IP/WAF və hosted Storage checkpoint-ləri release pəncərəsində tamamlanır. Bu şərtlər bağlanmadan READY deyil.
+
+## Yerli release paketinin tamlığı
+
+`fix/production-hardening` branch-i, üç migration, tətbiq düzəlişləri, testlər, CI və konfiqurasiya nümunələri mövcuddur. SMTP receipt, `.env.local`, backup arxivləri, `.vercel` və yaradılmış test materialları commit-ə daxil edilmir. SMTP göndərişinin məxfi olmayan nəticəsi və bir dəfə göndərmə vasitəsi ayrıca yerli commit-ə daxil edilir.
+
+`src/app/auth/calback/route.ts` yazılış səhvinə baxmayaraq köhnə URL-lər üçün qəsdən saxlanmış callback re-export-udur. İki Supabase client modulu browser/server sərhədləri üçündür, artıq dublikat deyil. Köhnə `muracietler_delete_policy.sql` və `public_catalog_policies.sql` istifadəyə cəhd ediləndə dayanan arxiv stublarıdır; yalnız üç versioned migration icra olunur. `functions/send-invite` 410 replacement-i hələ lazımdır. İşlək kod silinməyib və UI dəyişməyib.
+
+Yoxlanmış backup: `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106`, 6 noyabr 16:26 UTC; manifestdə encryption/archive/restore verification true və 14 cədvəl var. Lokal rehearsal-da cədvəl sayları qorunub; bucket konfiqurasiyası gözlənilən dəyişiklikdir. DPAPI backup eyni Windows hesabı/maşınına bağlıdır; tam hosted restore və ayrıca portable/offsite bərpa sübutu deyil. Son Auth testi və ya canlı istifadə yeni məlumat yaradarsa cutover backup/baseline yenilənməlidir. İndiki read-only hazırlıq mövcud istifadəçi və universitet məlumatlarını dəyişməyib.
