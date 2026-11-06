@@ -2,7 +2,7 @@
 
 **Mövcud layihə üzrə aktual plan:** istifadəçi ayrıca staging əvəzinə `samcakpeuxwegyzrlrwp` layihəsini seçib. [LIVE-ROLLOUT.md](LIVE-ROLLOUT.md) canlı audit nəticələrini, bərpa sınağını və koordinasiyalı keçid şərtlərini saxlayır. Aşağıdakı ayrıca staging təlimatı alternativdir.
 
-**Son release gate:** [RELEASE-READINESS.md](RELEASE-READINESS.md). Mövcud layihədə Gmail SMTP seçilib; aşağıdakı Resend domen hazırlığı yalnız Resend provider-i seçildikdə tələb olunur.
+**Aktual icra sırası və approval gate:** [RELEASE-PREREQUISITES.md](RELEASE-PREREQUISITES.md). Vercel Authentication All Deployments, ayrıca DB write fence və Node 22 istifadə edilir; statik IP lazım deyil. Əvvəlki yoxlama sübutları: [RELEASE-READINESS.md](RELEASE-READINESS.md). Gmail və Supabase Auth delivery keçib; aşağıdakı Resend domen hazırlığı yalnız Resend provider-i seçildikdə tələb olunur.
 
 **Hazırkı status:** kod və SQL yerli hazırlanıb. Supabase miqrasiyaları, Edge Function yeniləməsi, GitHub push və Vercel production deploy icra edilməyib. Canlı köhnə icazələr hələ dəyişməyib.
 

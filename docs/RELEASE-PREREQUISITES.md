@@ -1,106 +1,90 @@
-# Qalan release şərtləri — 6 noyabr 2026
+# Koordinasiyalı production keçidi — 6 noyabr 2026
 
-**SMTP nəticələri — PASSED:** lokal Gmail SMTP autentifikasiyası və bir test məktubunun Inbox çatdırılması tamamlanıb. Supabase Auth-un ayrıca recovery məktubu da Inbox-a çatıb və istifadəçi təsdiqləyib. [Gmail sübutu](SMTP-DELIVERY-TEST.md), [Auth sübutu](AUTH-DELIVERY-TEST.md). Heç bir email testi təkrarlanmamalıdır. Recovery linki açılmayıb, parol sıfırlanmayıb. Callback E2E, Vercel runtime və maintenance checkpoint-ləri açıqdır.
+**Hazırlıq tamamlanıb; canlı icra üçün açıq icazə gözlənilir.** Statik IP maneəsi bağlanıb. Aşağıdakı yoxlama nöqtələri icazəli keçid daxilində məcburidir; onlardan biri keçməsə migration/promote/ictimai açılış dayanır. Canlı uğur və tam Auth E2E hələ iddia edilmir.
 
-**BLOCKED — maintenance hazırlığı və koordinasiyalı keçid icazəsi gözlənilir.** Əvvəlki audit, backup restore və üç migration sınağı təkrarlanmayıb. Ayrıca açıq icazə ilə bir adi Auth test hesabı yaradılıb və bir recovery məktubu göndərilib. Production miqrasiyaları, Auth konfiqurasiya dəyişməsi, Edge/Vercel deployment, promote və push edilməyib. Hazırkı sənəd yenilənməsi əlavə canlı yazma/email əməliyyatı etmir.
+Gmail SMTP və ayrıca Supabase Auth recovery Inbox çatdırılması **PASSED**. [Gmail sübutu](SMTP-DELIVERY-TEST.md), [Auth sübutu](AUTH-DELIVERY-TEST.md). Testləri təkrarlamayın. Recovery linki açılmayıb, parol sıfırlanmayıb; adi Auth test hesabı saxlanılır. UI dəyişməyib.
 
-Yeni dəyişikliklərin yoxlaması: hədəfli lint və TypeScript, 4 canonical URL testi, lokal test-env build, PowerShell parser və boş SMTP input-un şəbəkədən əvvəl rəddi keçdi. Yeni DB fence install/test/remove sınağı ayrıca lokal nüsxədə keçdi. Bunlar real Gmail və hosted Auth/Storage nəticəsi kimi təqdim edilmir.
+## 1. Statik IP əvəzinə Vercel Authentication
 
-## 1. Canonical URL: Vercel hissəsi həll olundu
+Dashboard-da oxunaraq təsdiqlənib: etikhacker's projects **Hobby**, etikhacker **Owner**, e-cedvel → Deployment Protection → Require Log In aktiv, seçim **Standard Protection**. Menyuda **All Deployments — Protect all domains** mövcuddur, upgrade tələb etmir. Seçim dəyişdirilməyib, Save basılmayıb.
 
-Canonical URL `https://e-cedvel.vercel.app`-dır. Vercel production-domain konfiqurasiyası yenidən oxundu: domen verified, redirect yoxdur; `it24-app.vercel.app` canonical domenə 307 ilə yönləndirilir.
+[Vercel-in 9 sentyabr 2026 yeniləməsi](https://vercel.com/changelog/protect-production-deployments-for-free-on-every-plan) bütün planlarda production daxil All Deployments qorumasını pulsuz edir. Köhnə sənədlərdəki Pro/add-on məhdudiyyəti bu qərara tətbiq olunmur. [Vercel Authentication](https://vercel.com/docs/deployment-protection/methods-to-protect-deployments/vercel-authentication).
 
-`NEXT_PUBLIC_APP_URL` mövcud env qeydi API ilə bu URL-ə yeniləndi, API uğurlu cavab və yeni updatedAt qaytardı. Mövcud qeyd Production və Preview üçün ortaq idi; hər iki scope saxlanıldı. Vercel Sensitive tipindən plain tipinə yerində çevirməyə 400 qaytardı. Sonrakı value-only update keçdi; heç bir env qeydi silinmədi. Dəyər public URL olsa da API read-back-i gizlədir. Aktiv deployment dəyişmədi; yeni build bu dəyəri alacaq. Preview ayrıca staging hesab edilmir və production-dakı biznes məlumatı ilə sərbəst test edilməməlidir.
+Hazırkı Dashboard inventarı: aktiv shareable link yoxdur; automation bypass secret yoxdur; exception domeni siyahılanmır; OPTIONS bypass söndürülüb. Trusted Sources yalnız bu layihənin uyğun environment tokenlərini və development → preview keçidini göstərir. Production-a yeni bypass və ya istifadəçi girişi verilmir.
 
-Yeni `canonicalPageRedirect` production browser səhifələrini Auth cookie-si yaradılmamışdan əvvəl canonical origin-ə yönləndirir. Recovery və dəvət query-ləri saxlanır; API/mutation, preview və local sorğular dəyişmir. UI eynidir. Köhnə alias-da başlamış PKCE axını yeni origin-də verifier cookie tapa bilməyə bilər: belə axını canonical login səhifəsindən yenidən başlatmaq lazımdır. Köhnə cookie-ləri başqa domenə köçürmürük.
+Əhatə: canonical e-cedvel.vercel.app, it24-app.vercel.app, e-cedvel-etikhackers-projects.vercel.app, e-cedvel-git-main-etikhackers-projects.vercel.app, cari e-cedvel-a41f5p6zr-etikhackers-projects.vercel.app və yeni deployment URL-ləri. All Deployments məhsul səviyyəsində bütün project domenlərini qoruyur; faktiki hər URL aktivləşdirmədən sonra yoxlanmalıdır. Canonical redirect-dən əvvəl Vercel gate işləməlidir.
 
-Canlı Auth read-only diff: Site URL hələ team alias-dır, email confirmation false, minimum parol 6; Gmail custom SMTP aktivdir. [Auth dəyişiklik planı](../supabase/operations/auth-cutover-plan.json) yalnız review üçündür, avtomatik config faylı deyil. Release zamanı canonical Site URL, dar callback query pattern-ləri, confirmation=true və minimum 12 birlikdə tətbiq olunacaq. Mövcud SMTP/MFA və başqa provider ayarları qorunacaq. Query-dəki literal `?` glob escape tələb edir; Dashboard-da JSON escape yox, tək `\?` yazılır. [Supabase redirect sintaksisi](https://supabase.com/docs/guides/auth/redirect-urls).
+### Aktivləşdirmə — yalnız release icazəsindən sonra
 
-Əvvəl Dashboard-da oxunan signup/recovery/invite-user şablonları `{{ .ConfirmationURL }}` istifadə edir. Onlar dəyişdirilməyib. Signup → `/auth/callback` → dashboard; recovery → `/auth/callback?type=recovery` → reset-password; admin signup → kodlanmış `next=/admin/setup?token=...` davamı. Kod/query uyğunluğu yoxlanıb, real emaildən callback və cookie davamı hələ E2E sübut deyil.
+1. Owner-in işlək Vercel Dashboard sessiyası və production URL-i açacağı browser hazır olsun. Role/membership dəyişdirilmir. Owner sessiyasını bağlamayın; Dashboard tətbiqdən müstəqil idarəetmə yoludur.
+2. Cari Standard Protection, alias siyahısı, exceptions/bypass/trusted-source inventarını saxlayın. Yeni bypass yaranıbsa avtomatik silməyin: onu ayrıca qiymətləndirin və maintenance sübutu tamamlanana qədər dayanıb bildirin.
+3. Eyni layihədə Require Log In açıq qalmaqla All Deployments seçin və Save edin. API ekvivalenti project update body: {"ssoProtection":{"deploymentType":"all"}}. Team/project ID-ləri aşağıdadır; başqa project yaratmayın.
+4. Owner browser canonical və birbaşa deployment URL-də daxil ola bilməlidir. Ayrı, Vercel cookie-si/bypass header-i olmayan sessiya hər alias-da Vercel login/protection görməlidir; tətbiq HTML/API-si ictimai açılmamalıdır. IP dəyişməsi tələb olunmur. Owner daxil ola bilmirsə DB-yə toxunmadan Standard Protection-a qaytarın.
+5. Aktivləşdirmədən əvvəl başlayan server/Edge çağırışları və upload-ların bitməsini gözləyin. Gate köhnə açıq browser-in Supabase sorğularını dayandırmır: aşağıdakı DB qoruması ayrıca məcburidir.
 
-## 2. Gmail SMTP: autentifikasiya və Inbox çatdırılması tamamlandı
+### Deaktivləşdirmə / geri qaytarma
 
-Vercel Production metadata və qeyri-məxfi dəyərlər yenidən yoxlanıb:
+Qəbul sınaqları keçəndən sonra **Standard Protection** seçin və Save edin; Require Log In-i tam söndürməyin. Canonical production domeni cookie-siz açılmalı, preview/birbaşa deployment-lərin əvvəlki qoruması qalmalıdır. Owner girişi yenidən yoxlanır. API-nin əvvəlki normallaşdırılmış dəyəri all_except_custom_domains idi; onu yeni API enum-u kimi təxmin edib göndərməyin, Dashboard-dakı əvvəlki Standard Protection seçimini bərpa edin.
 
-| Dəyişən | Yoxlama |
-|---|---|
-| MAIL_PROVIDER | smtp |
-| SMTP_HOST / SMTP_PORT | smtp.gmail.com / 587 |
-| SMTP_USER | e.cedvel.qruptap@gmail.com |
-| SMTP_FROM_EMAIL | E-Cedvel <e.cedvel.qruptap@gmail.com> |
-| SMTP_PASSWORD | Production, Sensitive, mövcuddur; oxunmayıb |
+Əvvəlki firewall GET 404 Config not found aktiv WAF konfiqurasiyasının alınmadığını göstərirdi; konkret səbəb sübut olunmayıb. Project oxunur və Owner Dashboard-a daxil olur, buna görə bunu ümumi layihə giriş qadağası hesab etmirik. Eyni uğursuz sorğu bu mərhələdə təkrarlanmadı. Vercel Authentication ayrıca project qorumasıdır və WAF config-dən asılı deyil; firewall/IP allowlist artıq release şərti deyil.
 
-Parolu **çata, env faylına, repoya, command argument-ə və shell history-yə yazmayın**. Öz PowerShell pəncərənizdə:
+## 2. Birbaşa Supabase yazmalarının qorunması
 
-```powershell
-& 'D:\e-cedvel\audit-work\scripts\verify-gmail-smtp.ps1'
-```
+supabase/operations/install-release-write-fence.sql bütün public cədvəllərdə və storage.objects-da BEFORE STATEMENT INSERT/UPDATE/DELETE/TRUNCATE trigger-i qurur. API anon/authenticated/service_role, Storage sessiyası və SECURITY DEFINER daxilindən gələn yazmalar PT503 ilə dayanır. Mövcud JWT/session bunu keçmir; RLS söndürülmür. Yalnız birbaşa postgres operator sessiyası backfill/migration üçün yaza bilir. Privileged operator bağlantısı app/Edge-ə verilmir.
 
-Maskalanmış `Read-Host -AsSecureString` sorğusunda Vercel-də saxlanılan **eyni** App Password-u daxil edin. Skript parolu yalnız child-process stdin-ə ötürür; diskə və env-ə yazmır, SMTP debug-u söndürür. BSTR buffer-i finally-də sıfırlanır, proses bitir; JS/.NET idarə olunan yaddaşın dərhal fiziki silinməsinə zəmanət verilmir. Terminalda transkripsiya/screenshot aparmayın. Vercel Sensitive parolunu geri oxuya bilmədiyimiz üçün eyni parol olduğunu operator təsdiqləyir. Çıxış və exit-code xətasının düzəlişi: [SMTP-VERIFICATION.md](SMTP-VERIFICATION.md).
+Service-role JWT ilə çalışan Next.js/Edge əməliyyatları da DB-də bloklanır. Lakin trigger xarici email/HTTP side-effect-i dayandıra bilməz: köhnə send-invite Edge relay əvvəl repo 410 replacement-i ilə bağlanmalıdır; JWT yoxlaması aktiv saxlanılır. Davam edən çağırışlar tamamlanmadan baseline götürülmür.
 
-Bu əmr **yalnız autentifikasiyadır**; `-SendTest` və Node delivery rejimi çıxarılıb. `SMTP_AUTHENTICATED` (0), `SMTP_AUTH_FAILED` (2), `SMTP_CONNECTION_FAILED` (3), `SMTP_TLS_FAILED` (4), yaxud yerli proses/input/protokol xətası üçün `SMTP_CHECK_FAILED` (5) göstərir. Nəticədən dərhal sonra `$LASTEXITCODE` oxuna bilər. Boş çıxış və child exit 0 artıq uğur sayılmır.
+Bu, bütün Supabase-in offline rejimi deyil. Auth session/recovery fəaliyyəti, public reads, CDN və bəzi service daxili əməliyyatları davam edə bilər. Signup maintenance zamanı müvəqqəti bağlanır; digər Auth əməliyyatları avtomatik dəyişdirilmir. Mövcud istifadəçi/session/tokenlər silinmir. Yekun backup və müqayisədə legitim Auth timestamp dəyişiklikləri nəzərə alınır.
 
-Bu əmr lokal kompüterdə yalnız autentifikasiyanı yoxlayır. İstifadəçi düzəldilmiş skriptdə `SMTP_AUTHENTICATED`, exit 0 aldı. Ayrıca bir icazəli göndəriş `250 2.0.0` ilə qəbul olundu və `omrbabayev455@gmail.com` Inbox çatdırılması istifadəçi tərəfindən təsdiqləndi. Bu yoxlamaları təkrarlamayın. Vercel runtime və Supabase Auth-un ayrıca SMTP credential-i bu nəticə ilə təsdiqlənmir. Əvvəlki `.env.smtp-test.local` yanaşması istifadə edilmir.
+remove-release-write-fence.sql yalnız öz trigger/function/schema-sını CASCADE olmadan götürür. RLS, məlumat və başqa obyektlər dəyişdirilmir. Qoruma götürülən kimi köhnə birbaşa klientlər yenidən yeni RLS/constraint-lər çərçivəsində yaza bilər; Vercel gate-in onları hələ saxladığını fərz etməyin.
 
-## 3. Supabase Auth SMTP recovery çatdırılması: PASSED
+### Lokal enable/disable nəticəsi
 
-Next.js dəvət SMTP-si və Supabase Auth SMTP-si iki ayrı credential/config dəstidir. Vercel App Password-u Auth-a kopyalanmayıb. Auth-da eyni Gmail host/port/göndərən konfiqurasiyası aktivdir; saxlanmış parol gizlidir.
+scripts/test-maintenance-local.ps1 yalnız ec-recovery-20261106 konteynerini/ec_restore DB-ni qəbul edir; network=none və exposed port yoxdur. 11 trigger quruldu; anon/authenticated birbaşa və definer, service_role birbaşa və definer, Storage sessiyası rədd edildi; operator yolu açıq qaldı. Test grant/function-ları transaction rollback ilə silindi. Remove sonrası trigger/schema qalmadı, service_role və Storage zero-row yazmaları yenidən keçdi. **47 public/Auth/Storage cədvəlinin say və məzmun fingerprint-ləri eyni qaldı.** Konteyner dayandırıldı. Production guard aktiv deyil.
 
-İstifadəçi hesab yaratmağa və bir recovery məktubuna ayrıca açıq icazə verdi. Başlanğıc yoxlamasında `omrbabayev455@gmail.com` üçün 0 hesab və `auth.users` üçün 0 qeyri-sistem trigger vardı. Bir adi, emaili hələ təsdiqlənməmiş hesab yaradıldı; son yoxlamada 1 hesab, 0 universitet admin sətri, 0 public profil sətri təsdiqləndi.
+Hosted REST/Storage davranışı release zamanı ayrıca yoxlanır: mövcud obyektə overwrite/delete yoxdur; yalnız əvvəlcədən təsdiqlənmiş yeni test yolu istifadə oluna bilər. Qoruma bypass edilirsə migration başlamır.
 
-Hesab server-side Auth API ilə təsadüfi, yalnız yaddaşda saxlanmış müvəqqəti parolla yaradıldı. Recovery API-yə yalnız bir POST göndərildi: HTTP 200, cavab `{}`. DB-də `recovery_sent_at=2026-11-06 18:30:19.863243+00` qeydə alındı. İstifadəçi məktubun Inbox-a çatdığını təsdiqlədi. Birbaşa Gmail SMTP cavabı Auth API-də göstərilmir; API nəticəsi və faktiki Inbox təsdiqi ayrı sübutlardır. Retry yoxdur; hesab ayrıca icazə olmadan silinməyəcək.
+## 3. Node.js, Auth və backup hazırlığı
 
-Bu sınaq Auth email çatdırılmasını yoxladı, callback/session/parol dəyişmə axınını yoxlamadı. Link açılmayıb; bu məktubu gələcək callback E2E üçün istifadə etməyin: PKCE browser axınından başlanmayıb və recovery yönləndirməsi yalnız email çatdırılma sınağı üçün idi. Tam callback E2E yeni tətbiq aktivləşəndə, ayrıca icazə ilə canonical login-dən eyni browser-də başladılmalıdır. Yeni email, signup hesabı, universitet admin dəvəti və parol dəyişmə submit-i ayrıca icazə tələb edir. Hazırda bunların heç biri icra olunmur.
+package.json və package-lock.json kök engines.node artıq **22.x**-dir. Lokal Node v22.23.4 ilə metadata uyğunluğu keçdi; əvvəlki build/test həmin major-da uğurlu idi. CI artıq Node 22 seçir. Dependency versiyaları və UI dəyişməyib; bütün audit təkrarlanmadı. [Vercel engines override davranışı](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions).
 
-Canlı signup, recovery və invite-user şablonlarının hamısı `{{ .ConfirmationURL }}` istifadə edir. Signup/recovery ilə tətbiqin PKCE callback-i statik baxışda uyğundur; actual query allow-list uyğunluğu, token exchange və cookie davamı hələ real E2E deyil. Dashboard-un **Invite user** əməliyyatı universitet admin dəvəti ilə eyni axın deyil; onu tətbiqin invitation testinin əvəzi kimi işlətməyin. Tətbiqin dəvəti Next.js emaili → admin setup → signup confirmation → server-side dəvət istehlakı ardıcıllığıdır.
+Canlı project setting hələ 24.x-dir, dəyişdirilməyib. Release icazəsindən sonra Build and Deployment → Node.js 22.x, framework Next.js, root audit repo kökü, Install npm ci, Build npm run build. Yeni build logunda/runtime metadata-da 22.x təsdiqlənməlidir; package engines də bunu məcbur edir. Köhnə .next istifadə edilmir.
 
-Auth SMTP aktivdir: Gmail 587, eyni göndərən; ayrıca saxlanmış parol oxunmadan real Auth delivery ilə yoxlandı. Credential və email çatdırılma blocker-i bağlanıb. Vercel runtime-dan tətbiqin dəvət göndərişi hələ ayrıca release qəbul checkpoint-idir.
+Canonical URL və NEXT_PUBLIC_APP_URL: https://e-cedvel.vercel.app. Mövcud env qeydi bu dəyərlə yenilənib; hazırkı köhnə deployment rebuild edilməyib. Auth Site URL son oxunuşda köhnə team alias, confirmation=false, minimum parol=6 idi. [auth-cutover-plan.json](../supabase/operations/auth-cutover-plan.json) yalnız review planıdır:
+- Site URL canonical;
+- signup /auth/callback;
+- recovery /auth/callback?type=recovery;
+- invitation signup /auth/callback?next=%2Fadmin%2Fsetup%3Ftoken%3D...;
+- /reset-password; keçid müddətində köhnə alias allow-list saxlanılır;
+- confirmation=true, minimum password=12; SMTP/MFA/providers/rate limits və ConfirmationURL şablonları saxlanılır.
 
-## 4. Maintenance: iki qatlı plan və lokal sübut
+Dashboard query glob-larında literal sual işarəsi tək backslash ilə escape edilir; JSON faylı bunu iki backslash ilə kodlayır. Real query matching, PKCE verifier/cookie və son səhifə E2E-si icazəli yeni tətbiqdə yoxlanmalıdır. Mail çatdırılma sınağındakı açılmamış link bu testin əvəzi deyil. Dashboard Invite user universitet admin dəvəti axını deyil.
 
-### Vercel trafik qatı
+Backup: D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106, 16:26 UTC; encryption/archive/restore verified, 14 biznes/Auth/Storage cədvəli üzrə əvvəlki preservation sübutu var. Üç migration hash-i əvvəlki uğurlu rehearsal ilə eynidir. 18:29 UTC Auth test hesabı bu arxivdən sonradır: son cutover backup/baseline yeni hesabı da əhatə etməli, yeni arxiv ayrıca restore yoxlamasından keçməlidir. Köhnə yoxlanmış backup üzərinə yazılmır; tarix+saatlı yeni qovluq istifadə edilir. DPAPI yalnız eyni Windows hesabı/maşını ilə açılır; hosted tam restore sübutu kimi təqdim edilmir. Storage binary obyektləri əvvəlki snapshot-dan dəyişibsə yeni/dəyişmiş obyektlərin ayrıca şifrəli nüsxəsi də götürülür.
 
-Deploy-dan asılı olmayan Dashboard WAF custom rule hazırlanmalıdır: bütün project host/path-lərində operatorun təsdiqlənmiş egress IP/CIDR-i xaricində sorğuları deny etsin. Qaydaları bütöv overwrite etməyin; ayrıca müvəqqəti rule əlavə edin, onun ID-sini saxlayın. Plan dəstəyi, faktiki operator IPv4/IPv6 ünvanı və ikinci şəbəkədən deny/operatordan allow yoxlaması canlı keçid checkpoint-idir. IP-ni təxmin etməyin. Mövcud firewall config sorğusu `404 Config not found` qaytardı; bu, WAF maintenance-in artıq işlədiyini və ya planın onu dəstəklədiyini sübut etmir. İndi heç bir qayda aktivləşdirilməyib. [Vercel custom rules](https://vercel.com/docs/vercel-firewall/vercel-waf/custom-rules).
+## 4. Dəqiq icra ardıcıllığı — hələ icra edilmir
 
-### Birbaşa Supabase yazmaları
+1. İstifadəçi aşağıdakı release əməliyyatlarına və maintenance vaxtına açıq icazə verir. Commit/hash, plan və owner sessiyası təsdiqlənir; başqa deploy/push prosesi başlamamalıdır.
+2. Mövcud Vercel project-ə local link hazırla: project prj_6Z8mY8gUMiosSJsZNR4ndixkNn00, team team_4EkrgFVSXtz0IJcH6RJOhgd7. Yeni project yaratma. Node 22/build/env ayarlarını yoxla; canlı setting dəyişməsi yalnız verilmiş icazə ilə.
+3. Vercel Authentication All Deployments-i aktivləşdir; owner allow + cookiesiz bütün production alias/deployment URL-lərində deny yoxlaması keçsin. Sonra yeni production build-i --skip-domain ilə hazırla. Bu da deployment-dir, indi qadağandır. Build uğursuzdursa DB migration yoxdur; Standard Protection-a geri qayıtmaq olar.
+4. Köhnə send-invite Edge Function-u repo 410 replacement ilə bağla, JWT yoxlamasını saxla. Çağırış/upload-lar bitsin. Auth signup-ı müvəqqəti bağla; əvvəlki ayarı qeyd et. Digər istifadəçi credential-lərinə toxunma.
+5. DB write fence-i birbaşa postgres operator sessiyasında qur. Canlı trigger sayı/enable vəziyyətini və birbaşa API/Storage bloklamasını təsdiqlə. Xəta varsa dayan.
+6. Yeni saatlı backup/baseline götür, şifrələmə+archive+izolyasiya olunmuş restore yoxlamasını tamamla; mövcud test hesabı daxil bütün məlumat qorunsun. Köhnə backup saxlanılsın. DB migration hələ başlamayıb.
+7. Migration history-ni yenidən oxu, eyni SQL hash-lərini təsdiqlə. Bu üç faylı ardıcıl tətbiq et: 20261105151505_authorization_and_invites.sql → 20261105151513_scheduling_integrity.sql → 20261105151520_storage_isolation.sql. Hər biri ayrıca transaction-dır; birinci xəta zamanı dayan. bootstrap.sql və local-recovery-verification.sql production-da işlədilmir.
+8. Auth cutover planını tətbiq et. supabase/verify.sql, tenant/RLS/grant/constraint/Storage və count/content müqayisələrini tamamla. Bucket siyasəti və nəzərdə tutulan backfill dəyişikliklərini əvvəlki rehearsal nəticəsinə görə ayırd et. SQL yoxlamaları yaşıl olmadan promote etmə.
+9. Hazır production build-i canonical domenə promote et; Vercel gate və DB fence qalsın. Commit/READY/Node22/alias/read-only səhifələri owner ilə yoxla. App DB-yə uyğundursa DB fence-i götür; bu andan birbaşa Supabase yazmaları yeni qaydalarla açıla bilər.
+10. Ayrıca icazəli real qəbul sınaqlarını owner browser-də et: signup confirmation, recovery callback/reset səhifəsi, superadmin/university admin/student isolation, tətbiq dəvəti, upload/signed download. Yeni email/dəvət/parol dəyişikliyi/test yazması ayrıca scope tələb edir; mövcud delivery testləri təkrarlanmır. Signup testi lazım olduqda razılaşdırılmış qısa pəncərədə signup açılır; Vercel gate birbaşa Auth endpoint-i qorumur.
+11. Qəbul meyarları keçdikdə signup-ın planlaşdırılmış açıq vəziyyətini bərpa et, confirmation aktiv qalsın. Vercel Authentication-ı Standard Protection-a qaytar. Canonical açılış və preview qorumasını təsdiqlə; müşahidə et.
+12. GitHub push/PR/merge ayrıca icazə ilədir. Əvvəl Vercel Git production branch/auto-deploy davranışı oxunur ki, ikinci planlaşdırılmamış deployment yaranmasın. Sonra feature push → main üçün PR → CI/review → ayrıca merge icazəsi.
 
-Təkcə WAF, CORS, logout və ya `pgrst.db_pre_request` Storage/bütün köhnə klientləri dayandırmır. [Supabase pre-request məhdudiyyəti](https://supabase.com/docs/guides/api/securing-your-api).
+## 5. Dayanma və bərpa
 
-`supabase/operations/install-release-write-fence.sql` ayrıca, **release icazəsi tələb edən əməliyyat**dır; üç audit migration-ına əlavə edilməyib. O, 10 public cədvəl və `storage.objects` üçün BEFORE STATEMENT trigger qurur. INSERT/UPDATE/DELETE/TRUNCATE yalnız birbaşa `postgres` operator sessiyası üçün mümkündür; API rolları, storage sessiyası və SECURITY DEFINER daxilindən gələn yazmalar PT503 ilə dayanır. RLS söndürülmür və köhnə policy-lər dəyişdirilmir. `session_user` yoxlaması definer funksiyasının postgres-ə çevrilərək qorumanı keçməsini dayandırır. [PostgreSQL session identity](https://www.postgresql.org/docs/17/functions-info.html).
+Migration-dan əvvəl abort: local build/maintenance problemi düzələnədək SQL-ə başlama; DB fence qurulubsa onu çıxarma və əvvəlki signup/Standard Protection bərpası uyğun abort planı ilə mümkündür. Edge relay 410-a çevrilibsə təhlükəli köhnə relay avtomatik geri açılmır; köhnə dəvət axını bağlı qala bilər.
 
-Install tək transaction-dır, lock timeout 5 saniyədir; davam edən DB yazmalarını gözləyir, vaxt bitərsə bütöv rollback olur. Mövcud schema/trigger adı ilə toqquşma varsa əvəz etmir, dayanır. `remove-release-write-fence.sql` yalnız bu əməliyyatın öz trigger/function/schema-sını CASCADE olmadan götürür. Biznes sətirləri silinmir. Operator DB açarı browser/runtime-a verilmir.
+İlk migration-dan sonra tək köhnə Vercel deployment-ə rollback uyğun deyil. Vercel Authentication və DB fence saxlanır; uyğun kod/SQL fix-forward lokal yoxlanıb ayrıca tətbiq olunur. Yeni yazmalar başlamışsa nasaz vəziyyətin ayrıca backup-ı və reconcile planı hazırlanır. Destruktiv restore/reset, pg_restore --clean, bootstrap və RLS söndürülməsi avtomatik icra edilmir. Məlumat itkisi/destruktiv dəyişiklik tələb edən nəticədə dayanıb istifadəçiyə bildir.
 
-Yeni lokal test şəbəkəsiz `ec_restore` nüsxəsində keçdi: 11 trigger; operator backfill yolu; anon/authenticated definer cəhdi; service-role birbaşa və definer cəhdi; Storage session yazması; rollback və remove-dan sonra 0 trigger. Əvvəlki migration/RLS auditi təkrarlanmadı. Test konteyneri yenidən dayandırılıb.
+## İcazə sərhədi
 
-Bu qoruma **biznes və Storage metadata yazma dayanmasıdır**, bütün Supabase xidmətlərinin offline rejimi deyil. Public read/CDN downloads və bəzi Auth session fəaliyyəti davam edə bilər. Realtime/Vault/Storage service-in bütün daxili işlərinə zəmanət verilmir. İstifadəçinin artıq göndərdiyi upload-lar bitənədək gözləyin. Storage-nin rəsmi mənbəyində normal upload permission probe-u binary yazmadan əvvəl işləyir; hosted layihənin həmin davranışı ayrıca canlı checkpoint-də təsdiqlənməlidir. [Storage uploader mənbəyi](https://github.com/supabase/storage/blob/master/src/storage/uploader.ts). Qoruma altında mövcud faylı overwrite/delete edərək test etməyin; yalnız ayrıca təsdiqli yeni test yolu istifadə oluna bilər.
+Hazırda yalnız lokal engines/test/sənəd dəyişiklikləri və read-only Dashboard yoxlaması edilib. İcazə gözləyən paket: Vercel Node22 + All Deployments aktivləşməsi/bərpası + qorunan production build/promote; Edge 410 replacement; müvəqqəti signup və DB write fence; yeni backup/restore checkpoint; üç production migration; Auth cutover. Real istifadəçi axını üçün email/test-data/parol əməliyyatlarının konkret scope-u ayrıca təsdiqlənir. GitHub push/merge və test hesabının silinməsi bu paketə daxil deyil.
 
-### Koordinasiyalı icra sırası — indi icra edilmir
-
-1. SMTP delivery testlərini təkrarlamayın. Release commit/SQL hash-ləri, operator IP/CIDR, maintenance vaxtı və keçid üçün açıq icazə təsdiqlənməlidir. Yeni Auth test hesabı və recovery timestamp-i əvvəlki backup-da yoxdur: cutover-da son backup/baseline mütləq yenilənsin və yeni arxivin bərpa oluna bildiyi təsdiqlənsin; köhnə backup saxlanılsın. Tam security auditini təkrar aparmaq lazım deyil.
-2. Explicit deployment icazəsindən sonra workspace-i məhz mövcud `e-cedvel` layihəsinə bağlayın: project `prj_6Z8mY8gUMiosSJsZNR4ndixkNn00`, team `team_4EkrgFVSXtz0IJcH6RJOhgd7`. Hazırda lokal `.vercel/project.json` yoxdur; CLI-nin yeni layihə yaratmasına yol verməyin. Vercel hazırda Node 24.x, yoxlanmış lokal/CI mühiti Node 22-dir: build-dən əvvəl Vercel runtime-ı 22.x-ə uyğunlaşdırın və API-dən oxuyub təsdiqləyin. Sonra yeni production build-i domenə promote etmədən, operatorla məhdud girişlə hazırlayın. Aliassız production build də deployment-dir və indi qadağandır. Yeni env və canonical redirect kodu birlikdə olmalıdır; köhnə mock `.next` istifadə olunmur. Build uğuru və birbaşa URL-in ictimai əlçatan olmaması checkpoint-dir.
-3. Vercel WAF gate-i aktivləşdirib iki şəbəkədən yoxlayın. Köhnə legacy `send-invite` Edge relay-i repo 410 replacement-i ilə bağlayın; artıq gedən çağırışların bitməsini gözləyin. Bu ayrıca təsdiqlənmiş release əməlidir, indi deploy edilmir.
-4. `install-release-write-fence.sql`-i birbaşa postgres operator sessiyasında tətbiq edin. Trigger sayını və enable vəziyyətini yoxlayın. Köhnə JWT ilə read-only/no-op REST yazma cəhdi və icazəli təzə Storage test yolu rədd olunmalıdır. Yan keçmə varsa miqrasiyaya başlamayın. Auth signup-ı bu maintenance müddətində müvəqqəti bağlamağı əvvəlcədən planlaşdırın; mövcud session/tokenləri silməyin.
-5. Son backup/baseline checkpoint-i tamamlayın. Üç migration history ilə bu ardıcıllıqda tətbiq olunur: `20261105151505_authorization_and_invites.sql` → `20261105151513_scheduling_integrity.sql` → `20261105151520_storage_isolation.sql`. Canlı migration history hazırda boşdur; SQL fayllarının hash-ləri yoxlanmış lokal nüsxə ilə eynidir. Hər migration ayrı transaction-dır, üçü birlikdə atomik deyil. Operator backfill-lərinə fence mane olmur. Xəta çıxsa fence/WAF saxlanır; sonrakı migration və promote dayanır. Live `supabase/tests/local-recovery-verification.sql` və `bootstrap.sql` işlədilmir.
-6. Yeni Auth Site URL/redirect/confirmation/minimum-password planını tətbiq edin; SMTP/MFA-ya toxunmayın. `verify.sql`, say/məzmun müqayisəsi və policy checkpoint-lərini tamamlayın. Recovery zamanı gözlənilən Auth timestamp dəyişikliklərini məlumat itkisi ilə qarışdırmayın.
-7. Yeni tətbiqi canonical domain-ə promote edin, WAF və DB fence hələ qalsın. Operator yeni versiyanın READY/commit/alias/read-only səhifələrini yoxlasın. Yeni kodda səhv varsa fence qalır, fix-forward edilir.
-8. Bütün komponentlər uyğun olduqda DB fence-i götürün; WAF altında operator icazəli real sınaqları tamamlasın. Bu andan birbaşa Supabase klientləri yenidən yaza bilər, ancaq artıq yeni RLS/constraint-lər qüvvədədir. Köhnə invitation/upload axınları fail-closed qalır; istifadəçilər canonical səhifəni yeniləməlidir. “Bütün dünya hələ bağlıdır” fərziyyəsi ilə test aparmayın.
-9. Qəbul yoxlamaları keçdikdə WAF müvəqqəti qaydasını götürün və planlaşdırılmış signup vəziyyətini bərpa edin. Signup testinə maintenance daxilində ehtiyac varsa yalnız test üçün ayrıca razılaşdırılmış qısa pəncərədə açın; WAF birbaşa Auth API-ni qorumur. Email confirmation aktiv qalır.
-10. Ayrı GitHub icazəsindən sonra yalnız təsdiqlənmiş feature branch push edilir, `main` üçün PR açılır, CI/review tamamlanır, sonra ayrıca merge icazəsi alınır. Push/merge-dən əvvəl Vercel Git production branch və avtomatik deployment davranışını faktiki yoxlayın; təsadüfi ikinci deployment-ə yol verməyin. GitHub CI hələ uzaqda işləməyib; lokal test nəticəsini uzaq CI kimi təqdim etməyin.
-
-### Dayanma / bərpa
-
-İlk migration-dan əvvəl abort olarsa fence-i çıxarmaq və WAF-ı açmaq mümkündür; Edge relay-i 410-a çevirmişiksə köhnə mail axını müvəqqəti bağlı qalacaq, təhlükəli relay-i avtomatik geri qaytarmayın. İlk migration-dan sonra köhnə tətbiqə tək Vercel rollback olmaz. Fence/WAF saxlanır, lokal nüsxədə fix-forward hazırlanır. Məlumat itkisi şübhəsində ayrıca nasaz vəziyyət backup-ı və yeni yazıların reconcile planı hazırlanır. Avtomatik reset, `pg_restore --clean`, bootstrap və RLS-in söndürülməsi yoxdur.
-
-## İndi tələb olunan konkret addım
-
-İstifadəçi maintenance zamanı işlədəcəyi sabit public IPv4/IPv6 və ya CIDR-i, ikinci şəbəkədən yoxlama imkanını və uyğun keçid vaxtını müəyyən etməlidir. Bundan sonra bütün hostları əhatə edən müvəqqəti qayda konkret hazırlanır və ayrıca keçid icazəsi alınır. Son read-only Vercel yoxlaması Node 24.x və firewall `404 Config not found` göstərdi; SSO `all_except_custom_domains` aktivdir, password/trusted-IP protection aktiv deyil. Bu metadata maintenance-in faktiki işlədiyini sübut etmir. Plan dəstəyi və operator allow / başqa şəbəkə deny canlı yoxlanmadan DB migration başlamır. Node 22.x uyğunlaşdırılması və yeni build ayrıca deployment icazəsindən sonra edilir.
-
-Auth cutover-da Site URL canonical olmalıdır; signup `/auth/callback`, recovery `/auth/callback?type=recovery`, invitation signup kodlanmış `next=/admin/setup?token=...` allow-list-i hazır JSON plana əsasən əlavə edilir. Mövcud SMTP konfiqurasiyası dəyişdirilmir. Confirmation=true və minimum password=12 yeni tətbiqlə birlikdə aktivləşdirilir. Faktiki query matching, PKCE code exchange, cookie/session və son səhifə ayrıca real qəbul sınaqlarıdır. Statik uyğunluq və uğurlu Inbox bu sınaqları əvəz etmir.
-
-## Yerli release paketinin tamlığı
-
-`fix/production-hardening` branch-i, üç migration, tətbiq düzəlişləri, testlər, CI və konfiqurasiya nümunələri mövcuddur. SMTP receipt, `.env.local`, backup arxivləri, `.vercel` və yaradılmış test materialları commit-ə daxil edilmir. SMTP göndərişinin məxfi olmayan nəticəsi və bir dəfə göndərmə vasitəsi ayrıca yerli commit-ə daxil edilir.
-
-`src/app/auth/calback/route.ts` yazılış səhvinə baxmayaraq köhnə URL-lər üçün qəsdən saxlanmış callback re-export-udur. İki Supabase client modulu browser/server sərhədləri üçündür, artıq dublikat deyil. Köhnə `muracietler_delete_policy.sql` və `public_catalog_policies.sql` istifadəyə cəhd ediləndə dayanan arxiv stublarıdır; yalnız üç versioned migration icra olunur. `functions/send-invite` 410 replacement-i hələ lazımdır. İşlək kod silinməyib və UI dəyişməyib.
-
-Yoxlanmış backup: `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106`, 6 noyabr 16:26 UTC; manifestdə encryption/archive/restore verification true və 14 cədvəl var. Lokal rehearsal-da cədvəl sayları qorunub; bucket konfiqurasiyası gözlənilən dəyişiklikdir. DPAPI backup eyni Windows hesabı/maşınına bağlıdır; tam hosted restore və ayrıca portable/offsite bərpa sübutu deyil. 18:29 UTC-də yaradılmış Auth test hesabı bu backup-dan sonradır; yeni baseline onu və recovery timestamp-ini nəzərə almalıdır. İndiki sənəd/read-only hazırlıq mövcud istifadəçi və universitet məlumatlarını dəyişməyib.
+Köhnə callback calback re-export-u qəsdən compatibility üçündür. Köhnə SQL policy stubları və bootstrap release əmrləri deyil. Yalnız üç versioned migration istifadə edilir; UI/refactor dəyişikliyi yoxdur.

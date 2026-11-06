@@ -11,14 +11,21 @@ update public.universities set name=name where false;
 create function public.ec_release_probe() returns void language plpgsql security definer set search_path='' as $$
 begin update public.universities set name=name where false; end $$;
 grant execute on function public.ec_release_probe() to anon, authenticated, service_role;
+-- Grant only inside this rolled-back local fixture to prove the fence itself,
+-- independently of whichever RLS/table grants a restored snapshot contains.
+grant update on public.universities to anon, authenticated;
 set session authorization authenticator;
 set local role anon;
 do $$ begin
+  begin update public.universities set name=name where false; raise exception 'Anonymous direct bypass';
+  exception when sqlstate 'PT503' then null; end;
   begin perform public.ec_release_probe(); raise exception 'Anonymous definer bypass';
   exception when sqlstate 'PT503' then null; end;
 end $$;
 set local role authenticated;
 do $$ begin
+  begin update public.universities set name=name where false; raise exception 'Authenticated direct bypass';
+  exception when sqlstate 'PT503' then null; end;
   begin perform public.ec_release_probe(); raise exception 'Authenticated definer bypass';
   exception when sqlstate 'PT503' then null; end;
 end $$;

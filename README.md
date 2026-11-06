@@ -4,11 +4,11 @@ Universitetlər üçün Next.js 16, React 19 və Supabase əsaslı cədvəl tət
 
 **6 noyabr 2026 qərarı:** mövcud Supabase layihəsi saxlanılır, ayrıca staging layihəsi yaradılmır. Canlı keçidin yoxlanmış nəticələri, backup və açıq məsələlər [LIVE-ROLLOUT.md](docs/LIVE-ROLLOUT.md) sənədindədir. Aşağıdakı staging əmrləri əvvəlki alternativ hazırlıq üçündür, production keçidi üçün istifadə edilməməlidir.
 
-Son buraxılış yoxlaması: [RELEASE-READINESS.md](docs/RELEASE-READINESS.md). Canonical URL düzəlişi, təhlükəsiz SMTP sınağı və yeni maintenance planı: [RELEASE-PREREQUISITES.md](docs/RELEASE-PREREQUISITES.md). Real email sınaqları və canlı keçid checkpoint-ləri tamamlanmadığından release bloklanıb.
+Aktual production icra planı: [RELEASE-PREREQUISITES.md](docs/RELEASE-PREREQUISITES.md). Gmail və Supabase Auth Inbox sınaqları PASSED; statik IP əvəzinə Vercel Authentication All Deployments hazırlanıb. Canlı keçid açıq icazə və sənəddəki checkpoint-lərdən sonra mümkündür. Əvvəlki geniş yoxlamanın sübutları: [RELEASE-READINESS.md](docs/RELEASE-READINESS.md).
 
 ## Quraşdırma
 
-Node.js **22 LTS** tövsiyə edilir (paket 22–24 aralığını qəbul edir). Repo kökündə:
+Node.js **22 LTS** tələb olunur (engines: 22.x; CI də Node 22 istifadə edir). Repo kökündə:
 
 ```sh
 npm ci
