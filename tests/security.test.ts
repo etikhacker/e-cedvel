@@ -9,6 +9,8 @@ test('CSV formulas including whitespace/control prefixes are neutralized',()=>{
 });
 test('filenames cannot add paths',()=>assert.equal(safeFilename('../a/b:*'),'.._a_b__'));
 test('invite schema rejects role tricks and invalid identifiers',()=>{
+  for(const email of ['first,second@example.az','first;second@example.az','Name(address)@example.az'])
+    assert.equal(inviteInput({email,university_id:'10000000-0000-4000-8000-000000000001'}),null);
   assert.equal(inviteInput({email:'x\r\n@foo.az',university_id:'x'}),null);
   assert.equal(inviteInput({email:'x@example.az',university_id:'not-a-uuid',role:'superadmin'}),null);
   assert.deepEqual(inviteInput({email:' X@example.az ',university_id:'10000000-0000-4000-8000-000000000001',role:'superadmin'}),{email:'x@example.az',university_id:'10000000-0000-4000-8000-000000000001'});

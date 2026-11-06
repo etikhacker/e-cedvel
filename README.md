@@ -2,6 +2,8 @@
 
 Universitetlər üçün Next.js 16, React 19 və Supabase əsaslı cədvəl tətbiqi. Mövcud dizayn qorunub; autentifikasiya, tenant icazələri və cədvəl bütövlüyü server və PostgreSQL səviyyəsində yoxlanır.
 
+**6 noyabr 2026 qərarı:** mövcud Supabase layihəsi saxlanılır, ayrıca staging layihəsi yaradılmır. Canlı keçidin yoxlanmış nəticələri, backup və açıq məsələlər [LIVE-ROLLOUT.md](docs/LIVE-ROLLOUT.md) sənədindədir. Aşağıdakı staging əmrləri əvvəlki alternativ hazırlıq üçündür, production keçidi üçün istifadə edilməməlidir.
+
 ## Quraşdırma
 
 Node.js **22 LTS** tövsiyə edilir (paket 22–24 aralığını qəbul edir). Repo kökündə:
@@ -14,22 +16,33 @@ npm run dev
 
 Windows PowerShell-də ikinci əmr: `Copy-Item .env.example .env.local`. Dəyişənləri öz development Supabase layihənizlə doldurun. İstehsal bazasında test məlumatı yaratmayın.
 
+**Hazırlanmış audit workspace-də `.env.local` artıq mövcuddur; üzərinə kopyalamayın.** Staging layihəsi tapılmadığından açarlar boş, Supabase URL-i `.invalid` kimi saxlanılıb. Orijinal production açarları köçürülməyib. Fayl doldurulana qədər tətbiqin başlamaması gözləniləndir. Layihə yaratma, Dashboard ayarları, migration uyğunluğu və real test planı: [STAGING.md](docs/STAGING.md).
+
+Staging dəyərlərini lokal doldurduqdan sonra `npm run check:staging`, sonra `npm run dev:staging`. Yoxlama şəbəkəyə qoşulmur, açarları göstərmir və tanınan production ref-ini rədd edir. Opaque açarların hansı layihəyə aid olduğunu Dashboard-da yoxlamaq yenə tələb olunur. Normal `npm run dev` bu əlavə yoxlamanı avtomatik çağırmır.
+
 Mövcud baza üçün `supabase/migrations/` fayllarını ardıcıllıqla staging-də tətbiq edin. **Boş** Supabase layihəsində əvvəl `supabase/bootstrap.sql` tələb olunur; bu fayl mövcud bazada işlədilməməlidir. Tam addımlar: [yerləşdirmə təlimatı](docs/DEPLOYMENT.md).
 
 ## Mühit dəyişənləri
 
 | Dəyişən | Təyinat |
 |---|---|
+| STAGING_SUPABASE_PROJECT_REF | Yalnız lokal staging yoxlayıcısı; ayrıca staging layihəsinin ref-i |
 | NEXT_PUBLIC_SUPABASE_URL | Supabase layihəsinin API URL-i |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Brauzer üçün anon/publishable açar |
 | NEXT_PUBLIC_APP_URL | Dəqiq sayt origin-i; production-da HTTPS; dəvət URL-i və CSRF yoxlaması |
 | NEXT_PUBLIC_MATERIALS_BUCKET | Mövcud material bucket-inin böyük/kiçik hərfə həssas adı; standart Materials |
-| SUPABASE_SERVICE_ROLE_KEY | Yalnız server; token yoxlaması, email statusu və yoxlanmış upload |
+| SUPABASE_SERVICE_ROLE_KEY | Yalnız server; eyni staging layihəsinin secret key-si və ya legacy service_role; dəyişən adı uyğunluq üçün saxlanılıb |
 | RESEND_API_KEY | Yalnız server; email göndərmə |
 | RESEND_FROM_EMAIL | Resend-də təsdiqlənmiş domenə aid göndərən |
+| MAIL_PROVIDER | `resend` (standart) və ya `smtp`; domen yoxdursa mövcud Gmail SMTP istifadə edilə bilər |
+| SMTP_HOST / SMTP_PORT | SMTP host və TLS portu, Gmail üçün `smtp.gmail.com` və `587` |
+| SMTP_USER / SMTP_PASSWORD | Yalnız server; Gmail ünvanı və tətbiq parolu, adi hesab parolu deyil |
+| SMTP_FROM_EMAIL | SMTP hesabına aid göndərən ünvanı |
 | VERCEL_ENV / VERCEL_URL | Vercel özü təyin edir; preview origin yoxlaması |
 
 Service-role və Resend açarlarını heç vaxt `NEXT_PUBLIC_` adı ilə verməyin. Real sirlər repoda saxlanılmır.
+
+Tətbiq REST/Auth/Storage SDK-larını istifadə edir; `DATABASE_URL`, DB parolu və Supabase management access token-i runtime üçün tələb olunmur. Signup/recovery SMTP ayarları Supabase Dashboard-da ayrıca edilir. Next.js-dəki `RESEND_API_KEY` yalnız tətbiqin admin dəvət emailini göndərir.
 
 ## Yoxlamalar
 

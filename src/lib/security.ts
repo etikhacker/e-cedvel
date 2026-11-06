@@ -14,7 +14,7 @@ export function safeFilename(value: string): string {
 export function inviteInput(body: unknown): {email:string; university_id:string} | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
   const { email, university_id } = body as Record<string,unknown>;
-  if (typeof email !== 'string' || email.length>254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email.trim())
+  if (typeof email !== 'string' || email.length>254 || !/^[^\s@<>,;:"()\\]+@[^\s@<>,;:"()\\]+\.[^\s@<>,;:"()\\]+$/.test(email.trim())
     || typeof university_id !== 'string' || !UUID.test(university_id)) return null;
   return {email:email.trim().toLowerCase(),university_id};
 }

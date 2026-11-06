@@ -1,7 +1,8 @@
 import { sameOrigin } from '@/lib/request-origin';
 import { readLimitedBody, BodyTooLarge } from '@/lib/request-body';
 import { NextRequest, NextResponse } from 'next/server';
-import { Resend } from 'resend';
+import { mailConfig } from '@/lib/mail-config';
+import { sendInvitationMail } from '@/lib/invitation-mail';
 import { randomBytes, createHash } from 'node:crypto';
 import { serverSupabase, serviceSupabase } from '@/lib/supabase/server';
 import { escapeHtml, inviteInput } from '@/lib/security';
@@ -20,8 +21,8 @@ export async function POST(req: NextRequest) {
     try { parsed=JSON.parse(body); } catch { return NextResponse.json({error:'Yanlış JSON.'},{status:400}); }
     const input=inviteInput(parsed);
     if (!input) return NextResponse.json({error:'Düzgün email və universitet seçin.'},{status:400});
-    const sender=process.env.RESEND_FROM_EMAIL, base=process.env.NEXT_PUBLIC_APP_URL;
-    if (!sender || !base || !process.env.RESEND_API_KEY) throw new Error('configuration');
+    const mail=mailConfig(process.env), base=process.env.NEXT_PUBLIC_APP_URL;
+    if (!base) throw new Error('configuration');
     const appUrl=new URL(base);
     if (process.env.NODE_ENV==='production' && appUrl.protocol!=='https:') throw new Error('configuration');
     const {data:uni,error:uniError}=await db.from('universities').select('name').eq('id',input.university_id).eq('is_active',true).single();
@@ -38,11 +39,10 @@ export async function POST(req: NextRequest) {
     const inviteLink=new URL('/admin/setup',appUrl); inviteLink.searchParams.set('token',token);
     let sent=false;
     try {
-      const {error:mailError}=await new Resend(process.env.RESEND_API_KEY).emails.send({
-        from:sender,to:input.email,subject:uni.name+' — Admin Dəvəti',
+      sent=await sendInvitationMail(mail,{
+        to:input.email,subject:uni.name+' — Admin Dəvəti',invitationId:id,
         html:emailTemplate({email:input.email,university_name:uni.name,inviteLink:inviteLink.href,expires_at:new Date(Date.now()+7*86400000)}),
-      },{idempotencyKey:'invite/'+id});
-      sent=!mailError;
+      });
     } catch { sent=false; }
     const {error:deliveryError}=await service.from('university_invites')
       .update({delivery_status:sent?'sent':'failed',...(!sent?{expires_at:new Date().toISOString()}:{})}).eq('id',id);
