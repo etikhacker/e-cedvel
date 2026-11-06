@@ -34,21 +34,11 @@ Parolu **çata, env faylına, repoya, command argument-ə və shell history-yə 
 & 'D:\e-cedvel\audit-work\scripts\verify-gmail-smtp.ps1'
 ```
 
-Maskalanmış `Read-Host -AsSecureString` sorğusunda Vercel-də saxlanılan **eyni** App Password-u daxil edin. Skript parolu yalnız child-process stdin-ə ötürür; diskə və env-ə yazmır, SMTP debug-u söndürür. BSTR buffer-i finally-də sıfırlanır, proses bitir; JS/.NET idarə olunan yaddaşın dərhal fiziki silinməsinə zəmanət verilmir. Terminalda transkripsiya/screenshot aparmayın. Vercel Sensitive parolunu geri oxuya bilmədiyimiz üçün eyni parol olduğunu operator təsdiqləyir.
+Maskalanmış `Read-Host -AsSecureString` sorğusunda Vercel-də saxlanılan **eyni** App Password-u daxil edin. Skript parolu yalnız child-process stdin-ə ötürür; diskə və env-ə yazmır, SMTP debug-u söndürür. BSTR buffer-i finally-də sıfırlanır, proses bitir; JS/.NET idarə olunan yaddaşın dərhal fiziki silinməsinə zəmanət verilmir. Terminalda transkripsiya/screenshot aparmayın. Vercel Sensitive parolunu geri oxuya bilmədiyimiz üçün eyni parol olduğunu operator təsdiqləyir. Çıxış və exit-code xətasının düzəlişi: [SMTP-VERIFICATION.md](SMTP-VERIFICATION.md).
 
-Bu əmr **email göndərmir**. `SMTP_AUTHENTICATED` yalnız Gmail-in TLS bağlantısı və AUTH qəbulunu təsdiqləyir. Bir nəzarətli email üçün əvvəlcədən icazə verilmiş alıcı sərt şəkildə `e.cedvel.qruptap@gmail.com` təyin edilib:
+Bu əmr **yalnız autentifikasiyadır**; `-SendTest` və Node delivery rejimi çıxarılıb. `SMTP_AUTHENTICATED` (0), `SMTP_AUTH_FAILED` (2), `SMTP_CONNECTION_FAILED` (3), `SMTP_TLS_FAILED` (4), yaxud yerli proses/input/protokol xətası üçün `SMTP_CHECK_FAILED` (5) göstərir. Nəticədən dərhal sonra `$LASTEXITCODE` oxuna bilər. Boş çıxış və child exit 0 artıq uğur sayılmır.
 
-```powershell
-& 'D:\e-cedvel\audit-work\scripts\verify-gmail-smtp.ps1' -SendTest
-```
-
-Bu seçim Gmail AUTH-dan sonra tətbiqin eyni `sendInvitationMail` funksiyası ilə **bir** işarələnmiş məktub göndərir. Dəvət/token və DB qeydi yaratmır, avtomatik retry etmir. Nəticələr fərqlidir:
-
-- `SMTP_AUTHENTICATED`: Gmail giriş məlumatını qəbul etdi.
-- `SMTP_ACCEPTED test=<id>`: Gmail məktubu alıcı üçün qəbul etdi; inbox sübutu deyil.
-- Faktiki çatdırılma: alıcı Inbox və Spam-da eyni test ID-li məktubu tapdığını bildirməlidir.
-
-Bu test lokal kompüterdən olur. Vercel runtime göndərişi yalnız son təsdiqlənmiş release zamanı ayrıca yoxlanır. İndiyə qədər real autentifikasiya/göndəriş icra edilməyib; yalnız boş input-un təhlükəsiz rəddi sınanıb. Əvvəlki `.env.smtp-test.local` yanaşması artıq istifadə edilmir.
+Bu test lokal kompüterdən olur. Vercel runtime göndərişi, SMTP message acceptance və faktiki Inbox çatdırılması bu əmrlə yoxlanmır. İstifadəçinin əvvəlki real cəhdi çıxış göstərmədiyi üçün Gmail nəticəsi naməlumdur. Düzəldilmiş axın yalnız mock məlumatlarla sınanıb; real Gmail uğuru iddia edilmir. Əvvəlki `.env.smtp-test.local` yanaşması istifadə edilmir. Ayrı email delivery testi gələcək ayrıca işdir.
 
 ## 3. Supabase Auth SMTP: istifadəçi sonraya saxladı
 

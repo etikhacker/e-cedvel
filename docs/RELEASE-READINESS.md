@@ -9,7 +9,7 @@ Layihə: `samcakpeuxwegyzrlrwp`. Repo: `D:\e-cedvel\audit-work`, branch `fix/pro
 ## Dəqiq açıq məsələlər
 
 1. Vercel `NEXT_PUBLIC_APP_URL` istifadəçinin seçdiyi canonical URL-ə yeniləndi. Auth Site URL/redirect dəyişməsi deployment ilə birlikdə tətbiq olunacaq; hələ dəyişdirilməyib.
-2. Gmail AUTH və çatdırılma sınağı üçün `scripts/verify-gmail-smtp.ps1` hazırdır; parolu yalnız gizli terminal sorğusu ilə daxil edin. Lokal test Vercel runtime şəbəkəsini təsdiqləmir.
+2. Gmail AUTH sınağı üçün `scripts/verify-gmail-smtp.ps1` hazırdır; parolu yalnız gizli terminal sorğusu ilə daxil edin. Skript yalnız autentifikasiya edir, çatdırılma ayrıca gələcək testdir. Lokal test Vercel runtime şəbəkəsini təsdiqləmir. Çıxış/exit-code düzəlişi: [SMTP-VERIFICATION.md](SMTP-VERIFICATION.md).
 3. İcazəli Gmail alıcısı Auth istifadəçisi deyil. İstifadəçi recovery sınağını sonraya saxladı; email göndərilməyib və heç bir əməliyyat növbədə yoxdur.
 4. Lokal DB yazma qorumasının install/test/remove sınağı keçdi. Vercel trafik qaydasının faktiki aktivləşdirilməsi, operator IP-si və hosted Storage/REST sınağı release icazəsi mərhələsində qalır.
 
