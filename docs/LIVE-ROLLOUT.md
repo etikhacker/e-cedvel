@@ -4,7 +4,19 @@ Yoxlama tarixi 6 noyabr 2026. Layihə `samcakpeuxwegyzrlrwp`, iş qovluğu `D:\e
 
 ## Cari vəziyyət
 
-Üç miqrasiya canlı bazaya hələ tətbiq edilməyib. Auth və Storage ayarları dəyişdirilməyib. GitHub push edilməyib. Əsas Vercel tətbiqi hələ auditdən əvvəlki `49160fc` versiyasıdır. Yeni UI dəyişikliyi yoxdur.
+Üç miqrasiya canlı bazaya hələ tətbiq edilməyib. Bu iş çərçivəsində canlı Auth/Storage ayarları və biznes məlumatları dəyişdirilməyib. Bu yoxlamada agent GitHub push və deployment etməyib. Son oxunan production deployment `dpl_F9F61m7XpHBBvLPDqgy5ry1T8VEM`, READY və auditdən əvvəlki `49160fc` commitidir. Yeni UI dəyişikliyi yoxdur. İstifadəçinin son göstərişi deploy etməməkdir.
+
+### SMTP parolu əlavə edildikdən sonrakı yoxlama
+
+- Vercel production-da `MAIL_PROVIDER`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_FROM_EMAIL`, `SMTP_PASSWORD` hamısı mövcuddur. `SMTP_PASSWORD` Sensitive tipindədir və dəyəri istənilməyib/açılmayıb.
+- Provider `smtp`, host `smtp.gmail.com`, port `587` uyğundur. Göndərən ünvanı SMTP giriş hesabı ilə eynidir. Supabase Auth da eyni Gmail hesabı, göndərən və portdan istifadə edir. Public Supabase URL düzgün `samcakpeuxwegyzrlrwp` layihəsinə aiddir.
+- Lokal kompüterdən Gmail-ə sertifikat yoxlaması ilə STARTTLS bağlantısı keçib. AUTH göndərilməyib, parol istifadə edilməyib, email göndərilməyib. Bu, Vercel-dən SMTP girişinin və inbox-a çatdırılmanın sınağı deyil.
+- Next.js admin dəvətlərini öz SMTP dəyişənləri ilə göndərir. Qeydiyyat təsdiqi və recovery email-ləri Supabase-in ayrıca SMTP ayarlarından istifadə edir. Bu iki xidmətin App Password-u eyni olmaq məcburiyyətində deyil. Vercel-dəki yeni parol Supabase ayarını avtomatik dəyişmir.
+- Auth email təsdiqi hələ söndürülüb, minimum parol 6-dır. Site URL artıq `https://e-cedvel-etikhackers-projects.vercel.app/`-dır. Redirect siyahısı əvvəlki iki ünvandan genişlənib və wildcard alias ünvanları ehtiva edir. Bunlar bu yoxlama zamanı dəyişdirilməyib.
+- `NEXT_PUBLIC_APP_URL` Vercel-də Sensitive kimi saxlanıb, dəyəri oxuna bilməyib. Onun Auth Site URL ilə uyğunluğu hələ təsdiqlənməlidir. Köhnə lokal Auth planından redirect siyahısını əvəz edən hissə çıxarılıb ki, yeni canlı ayarlar təsadüfən silinməsin. Canlıya heç bir config push edilməyib.
+- Email şablonlarının faktiki məzmunu CLI diff-də qaytarılmayıb. Callback-də PKCE və token-hash dəstəyi kodda var, lakin Dashboard şablonları və real təsdiq/recovery davamı ayrıca yoxlanmalıdır.
+
+Auth və tətbiqin email yolları üçün istinadlar [Supabase SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [email təsdiqi](https://supabase.com/docs/guides/auth/general-configuration), [redirect uyğunluğu](https://supabase.com/docs/guides/auth/redirect-urls).
 
 İstifadəçinin son qərarı mövcud Supabase layihəsindən istifadə etməkdir. `STAGING.md` ayrıca boş layihə üçün əvvəlki alternativ təlimatdır. Bu keçid üçün ayrıca Supabase layihəsi yaradılmır. `bootstrap.sql` mövcud bazada işlədilməməlidir.
 
@@ -16,7 +28,7 @@ Yoxlama tarixi 6 noyabr 2026. Layihə `samcakpeuxwegyzrlrwp`, iş qovluğu `D:\e
 - `supabase/tests/local-recovery-verification.sql` superadmin, universitet admini, tələbə və anonim rolları, iki universitetin izolyasiyasını, dəvət replay/email yoxlamalarını, Storage icazələrini və dərs toqquşmalarını yoxlayıb. Sınaq məlumatları rollback edilib.
 - İki müstəqil lokal DB sessiyasından eyni vaxt aralığına yazıda biri keçib, digəri exclusion constraint ilə rədd edilib.
 - `supabase/verify.sql` həm canlı köhnə bazada, həm də lokal miqrasiya edilmiş nüsxədə işlədilib. Canlı nəticə hələ təhlükəsiz deyil. Anonim və tələbə hesabları köhnə dəvət qeydlərini oxuya bilir. Tələbə inzibati müraciət qeydinə çıxış əldə edir.
-- 6 noyabr təkrar yoxlamasında bütün 10 biznes cədvəli, Auth identities və Storage metadata əvvəlki backup-la eynidir. Auth users cədvəlinin məzmun izi dəyişib, istifadəçi sayı 10 olaraq qalır. Keçid üçün yeni backup tələb olunur.
+- 6 noyabr ilk təkrar yoxlamasında Auth users məzmun izi dəyişdiyindən backup yeniləndi. Yeni backup-ın lokal bərpasında 14 cədvəlin sətir sayı və məzmun izi canlı baza ilə tam uyğun gəldi. İstifadəçi sayı 10, universitet 1, fakültə 4, qrup 21, admin 1, profil 4, dəvət 8, Storage obyekt sayı 3-dür.
 - SMTP dəstəyindən sonra 34 tətbiq/SQL/SMTP testi, 5 staging-konfiqurasiya testi və 11 brauzer testi keçib. Lint, TypeScript və test env ilə production build keçib, dependency audit 0 boşluq göstərib. Lokal SMTP protokol sınağı STARTTLS yoxdursa AUTH/parol göndərilmədiyini faktiki socket bağlantısında yoxlayır. Brauzer testləri mock Supabase istifadə edir, canlı hesablara daxil olmur.
 - 6 noyabr canlı `verify.sql` yenidən tam işlədilib, yeddi sorğu icra olunub. Üç integrity sayğacı sıfırdır. Anonim və authenticated dəvət oxuma grant-ları hələ aktivdir. Hər iki Storage bucket hələ public-dir və ölçü/MIME məhdudiyyətləri yoxdur.
 
@@ -24,7 +36,9 @@ Bu sübutlar real email çatdırılmasını və real brauzer hesabları ilə bü
 
 ## Backup və bərpa planı
 
-Şəxsi arxiv qovluğu `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261105` repodan kənardadır.
+Yeni baza arxivi `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261106` qovluğundadır. `backup-manifest.json` archive/encryption/restore yoxlamalarını, `restore-comparison.json` 14 cədvəlin müqayisəsini saxlayır. Yeni izolə edilmiş `ec-recovery-20261106` konteynerinə public/Auth/Storage sxemləri bərpa edilib və yoxlamadan sonra konteyner dayandırılıb. Hazırlanmış üç miqrasiya bu yeni nüsxədə yenidən işlədilməyib.
+
+Əvvəlki parolsuz rol nüsxəsi, Storage faylları və ilk migration sınağının sübutları `D:\e-cedvel\private-recovery\samcakpeuxwegyzrlrwp-20261105` qovluğundadır. Bərpada həmin rol nüsxəsindən istifadə olunub. Üç Storage arxivinin DPAPI açma və SHA-256 yoxlaması yenidən keçib. Storage faylları bu mərhələdə yenidən endirilməyib. Hər iki qovluq repodan kənardadır.
 
 - `database.dump.dpapi` tam baza dump-ını saxlayır.
 - `roles.sql.dpapi` parolları olmayan rol siyahısıdır.
@@ -34,9 +48,9 @@ Bu sübutlar real email çatdırılmasını və real brauzer hesabları ilə bü
 
 DPAPI faylları həmin Windows istifadəçisi və kompüterin açarlarından asılıdır. Bu, ayrıca kompüterdə bərpa edilə bilən offsite backup deyil. Daşına bilən şifrəli nüsxə və açarların ayrıca saxlanması istifadəçi tərəfindən tamamlanmalıdır. Supabase backup kataloqunda hazır backup yoxdur, PITR aktiv deyil.
 
-6 noyabr əvvəlki şifrəli dump və rol faylları yenidən açılıb SHA-256 ilə yoxlanıb. Uyğunluq təsdiqindən sonra onların açıq dublikatları silinib. Şifrəli orijinallar saxlanılır. Yeni backup cəhdi lokal Docker mühərriki hazır olmadığı üçün baş tutmayıb. `samcakpeuxwegyzrlrwp-20261106` qovluğunda yalnız şifrəli cəhd diaqnostikası var, bu qovluq yeni etibarlı backup sayılmır.
+6 noyabr əvvəlki şifrəli dump və rol faylları yenidən açılıb SHA-256 ilə yoxlanıb. İlk yeni backup cəhdi Docker xətası səbəbindən alınmayıb. Sonrakı yoxlamada Docker 29.7.2 işlək olub, təzə dump çıxarılıb, şifrələnib və lokal bərpa ilə yoxlanıb. Köhnə və yeni dump-ın açıq dublikatları yalnız şifrəli nüsxə yoxlandıqdan sonra silinib. Şifrəli arxivlər saxlanılır.
 
-Docker jurnalı başlanma səbəbini `sailor-ingest.sock` faylına sistem çıxışı xətası kimi göstərir. Bu sessiyada başlamış nasaz proseslər dayandırılıb. Yalnız müvəqqəti socket fayllarının təmizlənməsi cəhdi də Windows 1920 xətası ilə alınmayıb. Factory reset, WSL reset və ya konteyner məlumatlarının silinməsi edilməyib. Lokal xidmət düzəldilmədən yeni bərpa sınağı başlaya bilməz.
+Əvvəlki Docker başlanma problemi `sailor-ingest.sock` üçün Windows 1920 xətası idi. Factory reset, WSL reset və ya konteyner məlumatlarının silinməsi edilməyib. Hazırkı yoxlamada Docker işlədiyi üçün bu maneə artıq yoxdur.
 
 Bərpa sınağı mənbə PostgreSQL 17.6-dan lokal PostgreSQL 18.6-ya public/Auth/Storage sxemlərini əhatə edib. Vault və Realtime tam xidmət bərpası, Auth sessiyalarının yenidən işləməsi və hosted Supabase-in bütöv fəlakət bərpası ayrıca sınaqdan keçirilməyib.
 
@@ -44,26 +58,26 @@ Keçiddən əvvəl təzə dump çıxarın, şifrələyin, SHA-256 yoxlayın və 
 
 ## Keçidə mane olan ayarlar
 
-1. İstifadəçi Resend üçün domeninin olmadığını bildirib. Tətbiqə alternativ Gmail SMTP dəstəyi əlavə edilib. Vercel production üçün `MAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_FROM_EMAIL` hazırlanıb. `SMTP_PASSWORD` istifadəçi tərəfindən Sensitive dəyişən kimi əlavə edilməlidir. Bu, adi Gmail hesab parolu deyil, həmin SMTP hesabının Google App Password-udur. Açar və parol çata göndərilməməlidir. Supabase-də saxlanan SMTP parolu CLI tərəfindən maskalanır, tətbiqə avtomatik köçürülməyib. Mövcud Resend dəyişənləri silinməyib və standart provider geriyə uyğun saxlanılıb.
-2. Auth email təsdiqi söndürülüb, minimum parol uzunluğu 6-dır. Hazırlanan məhdud dəyişiklik email təsdiqini aktivləşdirir, minimum uzunluğu 12 edir və callback query davamına icazə verir. CLI diff yalnız bu üç declared dəyişikliyi göstərir. SMTP, MFA və digər ayarlar saxlanılır.
+1. Gmail SMTP dəyişənləri artıq tam mövcuddur. Qalan email şərti parolun Gmail tərəfindən qəbul edilməsi və Vercel runtime-dan real göndərişdir. Məxfi parol oxunmadığından bu nəticə hələ təsdiqlənmir.
+2. Auth email təsdiqi söndürülüb, minimum parol uzunluğu 6-dır. Yeni axınla birlikdə email təsdiqi və minimum 12 simvol planlaşdırılıb. Canonical origin və redirect-lər ayrıca dəqiqləşdirilməlidir. SMTP/MFA və digər mövcud ayarlar qorunmalıdır.
 3. Köhnə canlı tətbiq yeni dəvət və upload icazələri ilə işləməyəcək. İlk və üçüncü migration köhnə axınların səlahiyyətlərini bağlayır. Hazır tətbiq, Auth, Edge Function və DB koordinasiyalı keçməlidir.
 4. Mövcud istifadə olunmamış legacy dəvətlər yeni axında qəbul edilmir. Keçiddən sonra superadmin həmin şəxslərə yeni dəvətlər göndərməlidir. Tarixi qeydlər silinmir.
 
 ## İcra sırası
 
-1. SMTP parolunu Vercel-də tamamlayın, production env-in eyni Supabase layihəsinə aid olduğunu yoxlayın. Məxfi dəyərləri terminala çıxarmayın. `.env.local` Git-dən kənarda qalmalıdır. SMTP şəbəkə/auth yoxlaması və nəzarət olunan alıcıya real çatdırılma sınağı olmadan email uğurlu sayılmır.
+1. Canonical tətbiq URL-i ilə Auth Site URL/callback-ləri uyğunlaşdırmaq üçün son planı hazırlayın. SMTP dəyişənləri mövcuddur, Supabase public URL düzgündür. Məxfi dəyərləri terminala çıxarmayın. `.env.local` Git-dən kənarda qalmalıdır. Real göndərmə sınağı üçün nəzarət olunan alıcı müəyyənləşdirin.
 2. Dəqiq yoxlanmış kodu production env ilə domen təyin etmədən qurun. Vercel CLI üçün `deploy --prod --skip-domain` istifadə edin. Staged deployment hazır olmalıdır. `.vercelignore` env, SQL backup, test çıxışları və jurnalları upload-dan çıxarır. Server Supabase modulu paketdə qalır.
 3. Qısa maintenance pəncərəsində köhnə tətbiqin yeni sorğularını dayandırın. Açıq köhnə brauzer sessiyalarının birbaşa Supabase sorğuları yenə gələ bilər. Son yoxlamalar və migration transaction-ları bu riski nəzərə almalıdır. RLS-i söndürməyin.
 4. Backup-ı yeniləyin və yoxlayın. Biznes məlumatı, Storage və istifadəçi sayı üçün keçid öncəsi müqayisə izlərini saxlayın.
 5. `20261105151505_authorization_and_invites.sql`, sonra `20261105151513_scheduling_integrity.sql`, sonra `20261105151520_storage_isolation.sql` tətbiq edin. Yalnız bu üç faylı migration history ilə işlədin. Xəta çıxsa məlumat silərək düzəltməyin və tətbiqi köhnə icazələrlə açmayın.
-6. Yalnız yoxlanmış üç Auth ayarını dəyişin. `send-invite` Edge Function-ı repodakı 410 qaytaran versiya ilə əvəz edin. Yeni tətbiqdə email göndərilməsi `/api/send-invite` vasitəsilə işləyir.
+6. Yalnız yenilənmiş və yenidən diff ilə yoxlanmış Auth planını tətbiq edin. `send-invite` Edge Function-ı repodakı 410 qaytaran versiya ilə əvəz edin. Yeni tətbiqdə email göndərilməsi `/api/send-invite` vasitəsilə işləyir.
 7. Canlı `verify.sql`, RLS rol yoxlamaları, integrity və say/məzmun müqayisəsini işlədin. Qəbul meyarları keçdikdə əvvəl qurulmuş tətbiqi domenlərə keçirin və maintenance-i bitirin.
 8. Real email təsdiqi, recovery, dəvətin qəbul edilməsi və təkrar istifadənin rəddi, upload/signed download və tenant izolyasiyasını yoxlayın. Test üçün yalnız istifadəçinin göstərdiyi nəzarət olunan email ünvanlarından istifadə edin.
 9. READY deployment, əsas domen, HTTP nəticələri və runtime xətalarını yoxlayın. Nəticələri bu sənəddə yeniləyin. GitHub push/merge ayrıca istənilməyənədək etməyin.
 
 ## Manual tamamlanacaq məsələlər
 
-- Vercel production üçün `SMTP_PASSWORD` və real email testinin ünvanı.
+- `NEXT_PUBLIC_APP_URL` ilə Auth Site URL uyğunluğunun təsdiqi, Dashboard email şablonlarının yoxlanması və real email testinin ünvanı. SMTP parolu artıq əlavə edilib.
 - Supabase leaked-password protection plan dəstəyi və aktivləşdirilməsi.
 - Dörd mövcud tələbə profilində qrup seçimi yoxdur. İstifadəçilər onboarding vasitəsilə düzgün qrupu seçməlidir. Qrup uydurulmur.
 - Canlı bazada dərs sayı sıfırdır. Yeni tətbiq boş real cədvəl göstərəcək. Universitetin real cədvəli, semester_start və first_week tədris məsulunun təsdiqi ilə daxil edilməlidir.
