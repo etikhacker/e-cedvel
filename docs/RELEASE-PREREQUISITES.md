@@ -1,5 +1,7 @@
 # Koordinasiyalı production keçidi — 6 noyabr 2026
 
+**Son vəziyyət:** istifadəçinin ayrıca icazəsi ilə Phase 1 tamamlandı: Node 22, All Deployments, qorunan/alias-sız READY build, yeni şifrəli backup və lokal bərpa/migration rehearsal keçdi. [PHASE-1-RESULT.md](PHASE-1-RESULT.md) aktual nəticədir. Aşağıdakı planın artıq tamamlanmış addımlarını təkrarlamayın; Phase 2 ayrıca icazə gözləyir. Canlı DB guard, Auth/Storage dəyişməsi və migration hələ yoxdur.
+
 **Hazırlıq tamamlanıb; canlı icra üçün açıq icazə gözlənilir.** Statik IP maneəsi bağlanıb. Aşağıdakı yoxlama nöqtələri icazəli keçid daxilində məcburidir; onlardan biri keçməsə migration/promote/ictimai açılış dayanır. Canlı uğur və tam Auth E2E hələ iddia edilmir.
 
 Gmail SMTP və ayrıca Supabase Auth recovery Inbox çatdırılması **PASSED**. [Gmail sübutu](SMTP-DELIVERY-TEST.md), [Auth sübutu](AUTH-DELIVERY-TEST.md). Testləri təkrarlamayın. Recovery linki açılmayıb, parol sıfırlanmayıb; adi Auth test hesabı saxlanılır. UI dəyişməyib.

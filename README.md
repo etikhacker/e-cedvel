@@ -1,5 +1,7 @@
 # E-Cədvəl
 
+**Production hazırlığı:** [Phase 1 nəticəsi](docs/PHASE-1-RESULT.md). Vercel maintenance aktivdir, yeni build domenə promote edilməyib; Phase 2 ayrıca icazə gözləyir.
+
 Universitetlər üçün Next.js 16, React 19 və Supabase əsaslı cədvəl tətbiqi. Mövcud dizayn qorunub; autentifikasiya, tenant icazələri və cədvəl bütövlüyü server və PostgreSQL səviyyəsində yoxlanır.
 
 **6 noyabr 2026 qərarı:** mövcud Supabase layihəsi saxlanılır, ayrıca staging layihəsi yaradılmır. Canlı keçidin yoxlanmış nəticələri, backup və açıq məsələlər [LIVE-ROLLOUT.md](docs/LIVE-ROLLOUT.md) sənədindədir. Aşağıdakı staging əmrləri əvvəlki alternativ hazırlıq üçündür, production keçidi üçün istifadə edilməməlidir.
