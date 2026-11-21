@@ -320,7 +320,7 @@ export default function LandingPage() {
             <Pillar
               label="Əlçatanlıq"
               title="Tələbəyə birbaşa çatdırılma"
-              body="Qeydiyyatdan keçən tələbə universitetini, fakültəsini və qrupunu seçir — cədvəl dərhal görünür. Günlük və həftəlik baxış, push bildirişlər, CSV/PDF export dəstəklənir."
+              body="Qeydiyyatdan keçən tələbə universitetini, fakültəsini və qrupunu seçir — mövcud cədvəl görünür. Günlük və həftəlik baxış, tətbiq açıqkən xatırlatmalar, CSV ixracı və brauzerdən çap dəstəklənir."
             />
           </div>
         </div>

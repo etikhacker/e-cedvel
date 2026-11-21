@@ -1,9 +1,9 @@
 // src/app/api/public/catalog/route.ts
 //
 // Public kataloq API — qeydiyyat forması üçün universitet/fakültə/qrup
-// siyahılarını RLS-ə baxmayaraq qaytarır. Yalnız oxumaq üçündür.
+// siyahılarını anonim RLS qaydalarına əsasən qaytarır.
 //
-// Tələb olunur: .env.local-da  SUPABASE_SERVICE_ROLE_KEY  dəyişəni
+// Tələb olunur: .env.local-da  NEXT_PUBLIC_SUPABASE_ANON_KEY  dəyişəni
 //
 // Query nümunələri:
 //   GET /api/public/catalog?type=universities
@@ -11,16 +11,17 @@
 //   GET /api/public/catalog?type=groups&faculty_id=<uuid>
 
 import { NextRequest, NextResponse } from 'next/server';
+import { UUID } from '@/lib/security';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
     throw new Error(
-      'SUPABASE_SERVICE_ROLE_KEY təyin edilməyib. .env.local-ə əlavə edin.'
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY təyin edilməyib. .env.local-ə əlavə edin.'
     );
   }
   return createClient(url, key, {
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === 'faculties') {
-      if (!universityId) {
+      if (!universityId || !UUID.test(universityId)) {
         return NextResponse.json(
           { error: 'university_id tələb olunur' },
           { status: 400 }
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (type === 'groups') {
-      if (!facultyId) {
+      if (!facultyId || !UUID.test(facultyId)) {
         return NextResponse.json(
           { error: 'faculty_id tələb olunur' },
           { status: 400 }
@@ -91,7 +92,8 @@ export async function GET(req: NextRequest) {
       { status: 400 }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Gözlənilməz xəta';
+    void err;
+    const message = 'Kataloq yüklənmədi.';
     console.error('[public/catalog] xəta:', message);
     return NextResponse.json({ error: message }, { status: 500 });
   }

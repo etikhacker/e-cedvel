@@ -22,10 +22,11 @@ export function MuracietlerSection() {
 
   async function fetchData() {
     setLoading(true);
-    const { data } = await supabase
+    const { data,error } = await supabase
       .from("muracietler")
       .select("*")
       .order("created_at", { ascending: false });
+    if(error){setLoading(false);alert('Müraciətlər yüklənmədi.');return;}
     setList((data as Muraciet[]) || []);
     setLoading(false);
   }
@@ -35,7 +36,8 @@ export function MuracietlerSection() {
   }, []);
 
   const updateStatus = async (id: string, status: "qebul" | "red") => {
-    await supabase.from("muracietler").update({ status }).eq("id", id);
+    const {data,error}=await supabase.from("muracietler").update({status}).eq("id",id).select("id");
+    if(error||!data?.length){alert("Müraciət yenilənmədi.");return;}
     setList((prev) =>
       prev.map((m) => (m.id === id ? { ...m, status } : m))
     );

@@ -1,0 +1,21 @@
+{
+  "purpose": "Review-only plan; do not submit this file to an API or config push",
+  "projectRef": "samcakpeuxwegyzrlrwp",
+  "siteURL": "https://e-cedvel.vercel.app",
+  "enableEmailConfirmations": true,
+  "minimumPasswordLength": 12,
+  "canonicalRedirectPatterns": [
+    "https://e-cedvel.vercel.app/auth/callback",
+    "https://e-cedvel.vercel.app/auth/callback\\?type=recovery",
+    "https://e-cedvel.vercel.app/auth/callback\\?next=%2Fadmin%2Fsetup%3Ftoken%3D*",
+    "https://e-cedvel.vercel.app/reset-password"
+  ],
+  "existingRedirectsToRetainDuringTransition": [
+    "https://e-cedvel-etikhackers-projects.vercel.app/",
+    "https://e-cedvel-etikhackers-projects.vercel.app/**",
+    "https://e-*-cedvel-etikhackers-projects.vercel.app",
+    "https://e-*-cedvel-etikhackers-projects.vercel.app/**"
+  ],
+  "checkpoint": "Verify actual encoded callback matching before release. Review and remove legacy wildcards only after canonical sessions are proven.",
+  "preserve": ["SMTP credentials", "MFA", "providers", "rate limits", "existing users", "email template bodies"]
+}

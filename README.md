@@ -1,101 +1,84 @@
-# 📅 E-Cədvəl (QrupTap)
+# E-Cədvəl
 
-> Multi-tenant university scheduling SaaS — built for faculties to generate, manage, and share class schedules without conflicts.
+**Production hazırlığı:** [Phase 1 nəticəsi](docs/PHASE-1-RESULT.md). Vercel maintenance aktivdir, yeni build domenə promote edilməyib; Phase 2 ayrıca icazə gözləyir.
 
-🔗 **Live demo:** [e-cedvel.vercel.app](https://e-cedvel.vercel.app)
+Universitetlər üçün Next.js 16, React 19 və Supabase əsaslı cədvəl tətbiqi. Mövcud dizayn qorunub; autentifikasiya, tenant icazələri və cədvəl bütövlüyü server və PostgreSQL səviyyəsində yoxlanır.
 
-<!-- 📸 Add 2–3 screenshots or a short GIF here: landing page, admin panel, schedule generator in action -->
-<!-- ![screenshot](./docs/screenshot-1.png) -->
+**6 noyabr 2026 qərarı:** mövcud Supabase layihəsi saxlanılır, ayrıca staging layihəsi yaradılmır. Canlı keçidin yoxlanmış nəticələri, backup və açıq məsələlər [LIVE-ROLLOUT.md](docs/LIVE-ROLLOUT.md) sənədindədir. Aşağıdakı staging əmrləri əvvəlki alternativ hazırlıq üçündür, production keçidi üçün istifadə edilməməlidir.
 
----
+Aktual production icra planı: [RELEASE-PREREQUISITES.md](docs/RELEASE-PREREQUISITES.md). Gmail və Supabase Auth Inbox sınaqları PASSED; statik IP əvəzinə Vercel Authentication All Deployments hazırlanıb. Canlı keçid açıq icazə və sənəddəki checkpoint-lərdən sonra mümkündür. Əvvəlki geniş yoxlamanın sübutları: [RELEASE-READINESS.md](docs/RELEASE-READINESS.md).
 
-## 🧩 Problem
+## Quraşdırma
 
-University faculties often build class schedules manually in spreadsheets — a slow process prone to room and instructor conflicts, with no easy way to share updates with students. E-Cədvəl automates this for multiple universities at once, each with its own isolated data and admins.
+Node.js **22 LTS** tələb olunur (engines: 22.x; CI də Node 22 istifadə edir). Repo kökündə:
 
-## ✨ Features
-
-- 🏫 **Multi-tenant architecture** — each university operates in an isolated workspace with its own admins and data
-- 👥 **Role-based access** — superadmin (platform owner) vs. university-admin roles, enforced via Postgres Row Level Security (RLS)
-- ⚡ **Real-time conflict detection** — flags overlapping rooms/instructors/time slots as schedules are built
-- 📤 **Export** — schedules can be exported to CSV and PDF
-- ✉️ **Email invite system** — university admins invite staff via Resend-powered transactional emails
-- 🖥️ **Admin dashboard** — dedicated tabs for managing faculties, groups, courses, and instructors
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐      ┌──────────────────────┐      ┌────────────────┐
-│   Next.js App    │ ───▶ │  Supabase (Postgres)  │ ───▶ │  Row Level      │
-│  (App Router,     │      │  Auth + Database +     │      │  Security per   │
-│   TypeScript)     │      │  Realtime               │      │  tenant         │
-└─────────────────┘      └──────────────────────┘      └────────────────┘
-        │                                                        
-        ▼                                                        
-┌─────────────────┐      ┌──────────────────────┐
-│  Resend (email    │      │  CSV / PDF export     │
-│  invites)          │      │  generation             │
-└─────────────────┘      └──────────────────────┘
-```
-
-- **Frontend:** Next.js (App Router) + TypeScript, deployed on Vercel
-- **Backend/DB:** Supabase (Postgres, Auth, Realtime subscriptions)
-- **Multi-tenancy:** enforced at the database layer via RLS policies keyed on `university_id`, not just in application code
-- **Email:** Resend for admin invite flows
-
-## 🛠️ Tech Stack
-
-![Next.js](https://img.shields.io/badge/-Next.js-000000?style=flat-square&logo=next.js)
-![TypeScript](https://img.shields.io/badge/-TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
-![Supabase](https://img.shields.io/badge/-Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
-![Vercel](https://img.shields.io/badge/-Vercel-000000?style=flat-square&logo=vercel)
-![Resend](https://img.shields.io/badge/-Resend-000000?style=flat-square&logo=resend&logoColor=white)
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- A Supabase project (free tier is enough for local dev)
-- A Resend API key (for email invites)
-
-### Setup
-
-```bash
-# 1. Clone the repo
-git clone https://github.com/etikhacker/e-cedvel.git
-cd e-cedvel
-
-# 2. Install dependencies
-npm install
-
-# 3. Configure environment variables
+```sh
+npm ci
 cp .env.example .env.local
-```
-
-Fill in `.env.local`:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-RESEND_API_KEY=your_resend_api_key
-```
-
-```bash
-# 4. Run database migrations (via Supabase CLI or dashboard SQL editor)
-supabase db push
-
-# 5. Start the dev server
 npm run dev
 ```
 
-App runs at `http://localhost:3000`.
+Windows PowerShell-də ikinci əmr: `Copy-Item .env.example .env.local`. Dəyişənləri öz development Supabase layihənizlə doldurun. İstehsal bazasında test məlumatı yaratmayın.
 
-## 📌 Status
+**Hazırlanmış audit workspace-də `.env.local` artıq mövcuddur; üzərinə kopyalamayın.** Staging layihəsi tapılmadığından açarlar boş, Supabase URL-i `.invalid` kimi saxlanılıb. Orijinal production açarları köçürülməyib. Fayl doldurulana qədər tətbiqin başlamaması gözləniləndir. Layihə yaratma, Dashboard ayarları, migration uyğunluğu və real test planı: [STAGING.md](docs/STAGING.md).
 
-Built and iterated as a real product — submitted to the **ABB Innovation** incubation program. Actively maintained.
+Staging dəyərlərini lokal doldurduqdan sonra `npm run check:staging`, sonra `npm run dev:staging`. Yoxlama şəbəkəyə qoşulmur, açarları göstərmir və tanınan production ref-ini rədd edir. Opaque açarların hansı layihəyə aid olduğunu Dashboard-da yoxlamaq yenə tələb olunur. Normal `npm run dev` bu əlavə yoxlamanı avtomatik çağırmır.
 
-## 📄 License
+Mövcud baza üçün `supabase/migrations/` fayllarını ardıcıllıqla staging-də tətbiq edin. **Boş** Supabase layihəsində əvvəl `supabase/bootstrap.sql` tələb olunur; bu fayl mövcud bazada işlədilməməlidir. Tam addımlar: [yerləşdirmə təlimatı](docs/DEPLOYMENT.md).
 
-MIT
+## Mühit dəyişənləri
+
+| Dəyişən | Təyinat |
+|---|---|
+| STAGING_SUPABASE_PROJECT_REF | Yalnız lokal staging yoxlayıcısı; ayrıca staging layihəsinin ref-i |
+| NEXT_PUBLIC_SUPABASE_URL | Supabase layihəsinin API URL-i |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Brauzer üçün anon/publishable açar |
+| NEXT_PUBLIC_APP_URL | Dəqiq sayt origin-i; production-da HTTPS; dəvət URL-i və CSRF yoxlaması |
+| NEXT_PUBLIC_MATERIALS_BUCKET | Mövcud material bucket-inin böyük/kiçik hərfə həssas adı; standart Materials |
+| SUPABASE_SERVICE_ROLE_KEY | Yalnız server; eyni staging layihəsinin secret key-si və ya legacy service_role; dəyişən adı uyğunluq üçün saxlanılıb |
+| RESEND_API_KEY | Yalnız server; email göndərmə |
+| RESEND_FROM_EMAIL | Resend-də təsdiqlənmiş domenə aid göndərən |
+| MAIL_PROVIDER | `resend` (standart) və ya `smtp`; domen yoxdursa mövcud Gmail SMTP istifadə edilə bilər |
+| SMTP_HOST / SMTP_PORT | SMTP host və TLS portu, Gmail üçün `smtp.gmail.com` və `587` |
+| SMTP_USER / SMTP_PASSWORD | Yalnız server; Gmail ünvanı və tətbiq parolu, adi hesab parolu deyil |
+| SMTP_FROM_EMAIL | SMTP hesabına aid göndərən ünvanı |
+| VERCEL_ENV / VERCEL_URL | Vercel özü təyin edir; preview origin yoxlaması |
+
+Service-role və Resend açarlarını heç vaxt `NEXT_PUBLIC_` adı ilə verməyin. Real sirlər repoda saxlanılmır.
+
+Tətbiq REST/Auth/Storage SDK-larını istifadə edir; `DATABASE_URL`, DB parolu və Supabase management access token-i runtime üçün tələb olunmur. Signup/recovery SMTP ayarları Supabase Dashboard-da ayrıca edilir. Next.js-dəki `RESEND_API_KEY` yalnız tətbiqin admin dəvət emailini göndərir.
+
+## Yoxlamalar
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm audit
+npm run build
+npx playwright install chromium
+npm run test:e2e
+```
+
+E2E üçün build **test** dəyişənləri ilə hazırlanmalıdır:
+`NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54391`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key`,
+`NEXT_PUBLIC_APP_URL=http://127.0.0.1:3100`.
+Bu build-i production-a yerləşdirməyin. Test konfiqurasiyası yalnız yerli Auth/REST stand-in xidmətini başladır. SQL testləri PGlite/PostgreSQL üzərində real RLS və exclusion constraints işlədir; bunlar canlı Supabase Auth/email testinin əvəzi deyil.
+
+GitHub Actions lint, TypeScript, unit/SQL testləri, dependency auditi, build və Chromium testlərini icra edir. Workflow repoya göndərilməyənədək GitHub-da işləməyib.
+
+## İstifadə və məhdudiyyətlər
+
+- Tələbə profili, qeydlər, qiymətlər və davamiyyət Supabase-də saxlanılır.
+- Cədvəl yalnız seçilmiş qrupun bazadakı qeydlərindən yaranır. Yenilənmə: səhifəyə fokus qayıdanda və hər 60 saniyədə.
+- Üst/alt həftə üçün `universities.semester_start` və `first_week` konfiqurasiyası tələb olunur. Hesablamalar Asia/Baku tarixindən istifadə edir.
+- Bildirişlər tətbiq açıq və brauzer icazəsi aktiv olduqda işləyir. Tətbiq bağlı olduqda işləyən push backend yoxdur.
+- İxrac UTF-8 **CSV** və brauzerin **çap pəncərəsidir**. Native XLSX/PDF generatoru yoxdur.
+- Avatar: PNG/JPEG/WebP, 2 MB. Material: PDF, uyğun Office formatları və bu şəkillər, 4 MB. Materiallar şəxsi bucket-dədir, linklər 5 dəqiqəlikdir.
+- Köhnə unscoped localStorage məlumatları avtomatik hesaba birləşdirilmir: onların sahibini müəyyən etmək mümkün deyil. Mövcud bazadakı qiymətlər qorunur.
+- Statik IT24 məlumatı yalnız `schedule-data.ts` demo məlumatıdır; real dashboard onu import edib istifadə etmir.
+
+[Audit hesabatı](docs/AUDIT-AZ.md) · [Baza və icazələr](docs/DATABASE.md) · [Yerləşdirmə](docs/DEPLOYMENT.md)
+
+CSS üçün orijinal shadcn 3.8.5 faylı `src/app/vendor/` daxilində MIT lisenziyası ilə saxlanılıb. CLI tətbiqə lazım olmadığı üçün çıxarılıb.

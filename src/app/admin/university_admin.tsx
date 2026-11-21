@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { findConflicts, timeRange } from '@/lib/scheduling';
 import { exportToExcel, exportToPDF } from '@/lib/exportSchedule';
 
 type Faculty = { id: string; name: string; university_id: string };
@@ -65,6 +66,7 @@ export default function UniversityAdminPage() {
       supabase.from('subjects').select('*').eq('university_id',id),
       supabase.from('schedule_lessons').select('*').eq('university_id',id),
     ]);
+    if ([f,g,s,l].some(result=>result.error)) { setLoading(false); alert('Məlumatlar yüklənmədi. Səhifəni yeniləyin.'); return; }
     setFaculties(f.data??[]); setGroups(g.data??[]);
     setSubjects(s.data??[]); setLessons(l.data??[]);
     setLoading(false);
@@ -75,13 +77,13 @@ export default function UniversityAdminPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.replace('/login'); return; }
       setEmail(session.user.email ?? '');
-      const { data } = await supabase
+      const { data,error } = await supabase
         .from('university_admins')
         .select('university_id, universities(name)')
         .eq('id', session.user.id)
         .single();
       const admin = data as UniversityAdminRecord | null;
-      if (!admin) { router.replace('/'); return; }
+      if (error||!admin) { router.replace('/'); return; }
       setUniId(admin.university_id);
       setUniName(admin.universities?.name ?? '');
       await loadAll(admin.university_id);
@@ -119,7 +121,7 @@ export default function UniversityAdminPage() {
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.35)'}}>{email}</span>
           <button style={btn('#ef4444',true)}
-            onClick={async()=>{await supabase.auth.signOut();router.replace('/login');}}>
+            onClick={async()=>{const {error}=await supabase.auth.signOut();if(error){alert('Çıxış alınmadı.');return;}router.replace('/login');}}>
             Çıx
           </button>
         </div>
@@ -189,11 +191,11 @@ function ScheduleTab({lessons,groups,uniName}:{lessons:Lesson[];groups:Group[];u
         </div>
         <div style={{marginLeft:'auto',display:'flex',gap:8}}>
           <button disabled={!filtered.length||xl} style={btn('#22c55e')}
-            onClick={async()=>{setXl(true);await exportToExcel(expData,title);setXl(false);}}>
-            📊 {xl?'...':'Excel'}
+            onClick={async()=>{setXl(true);try{await exportToExcel(expData,title);}catch{alert('CSV ixracı alınmadı.');}finally{setXl(false);}}}>
+            📊 {xl?'...':'CSV'}
           </button>
           <button disabled={!filtered.length} style={btn('#f87171')}
-            onClick={()=>exportToPDF(expData,title)}>
+            onClick={()=>{try{exportToPDF(expData,title);}catch{alert('Çap pəncərəsinə icazə verin və yenidən cəhd edin.');}}}>
             🖨 PDF/Çap
           </button>
         </div>
@@ -244,9 +246,10 @@ function FacultiesTab({faculties,uniId,reload}:{faculties:Faculty[];uniId:string
   const [saving,setSaving]=useState(false);
   const [delId,setDelId]=useState<string|null>(null);
   const add=async()=>{
-    if(!name.trim())return;
+    if(saving||!name.trim())return;
     setSaving(true);
-    await supabase.from('faculties').insert({name:name.trim(),university_id:uniId});
+    const {error}=await supabase.from('faculties').insert({name:name.trim(),university_id:uniId});
+    if(error){setSaving(false);alert('Fakültə əlavə edilmədi.');return;}
     setName('');setSaving(false);reload();
   };
   return(
@@ -260,7 +263,7 @@ function FacultiesTab({faculties,uniId,reload}:{faculties:Faculty[];uniId:string
       <LT headers={['Fakültə adı','Əməliyyat']}
         rows={faculties.map(f=>({id:f.id,cells:[f.name],onDelete:()=>setDelId(f.id)}))}
         delId={delId}
-        onConfirm={async id=>{await supabase.from('faculties').delete().eq('id',id);setDelId(null);reload();}}
+        onConfirm={async id=>{const {data,error}=await supabase.from('faculties').delete().eq('id',id).select('id');if(error||!data?.length){alert('Silinmədi. Əlaqəli məlumatları və icazələri yoxlayın.');return;}setDelId(null);reload();}}
         onCancel={()=>setDelId(null)}/>
     </div>
   );
@@ -272,9 +275,10 @@ function GroupsTab({groups,faculties,uniId,reload}:{groups:Group[];faculties:Fac
   const [saving,setSaving]=useState(false);
   const [delId,setDelId]=useState<string|null>(null);
   const add=async()=>{
-    if(!form.name.trim())return;
+    if(saving||!form.name.trim()||!form.faculty_id)return;
     setSaving(true);
-    await supabase.from('groups').insert({name:form.name.trim(),faculty_id:form.faculty_id||null,university_id:uniId});
+    const {error}=await supabase.from('groups').insert({name:form.name.trim(),faculty_id:form.faculty_id||null,university_id:uniId});
+    if(error){setSaving(false);alert('Qrup əlavə edilmədi. Fakültə seçin.');return;}
     setForm({name:'',faculty_id:''});setSaving(false);reload();
   };
   return(
@@ -286,7 +290,7 @@ function GroupsTab({groups,faculties,uniId,reload}:{groups:Group[];faculties:Fac
           onKeyDown={e=>e.key==='Enter'&&add()}/>
         <select style={{...sel,flex:'0 0 210px'}} value={form.faculty_id}
           onChange={e=>setForm(p=>({...p,faculty_id:e.target.value}))}>
-          <option value="">Fakültə (ixtiyari)</option>
+          <option value="">Fakültə seçin *</option>
           {faculties.map(f=><option key={f.id} value={f.id}>{f.name}</option>)}
         </select>
         <button style={btn('#3b82f6')} onClick={add} disabled={saving}>{saving?'...':'+ Əlavə et'}</button>
@@ -296,7 +300,7 @@ function GroupsTab({groups,faculties,uniId,reload}:{groups:Group[];faculties:Fac
           cells:[g.name,faculties.find(f=>f.id===g.faculty_id)?.name??'—'],
           onDelete:()=>setDelId(g.id)}))}
         delId={delId}
-        onConfirm={async id=>{await supabase.from('groups').delete().eq('id',id);setDelId(null);reload();}}
+        onConfirm={async id=>{const {data,error}=await supabase.from('groups').delete().eq('id',id).select('id');if(error||!data?.length){alert('Silinmədi. Əlaqəli məlumatları və icazələri yoxlayın.');return;}setDelId(null);reload();}}
         onCancel={()=>setDelId(null)}/>
     </div>
   );
@@ -308,9 +312,10 @@ function SubjectsTab({subjects,uniId,reload}:{subjects:Subject[];uniId:string;re
   const [saving,setSaving]=useState(false);
   const [delId,setDelId]=useState<string|null>(null);
   const add=async()=>{
-    if(!name.trim())return;
+    if(saving||!name.trim())return;
     setSaving(true);
-    await supabase.from('subjects').insert({name:name.trim(),university_id:uniId});
+    const {error}=await supabase.from('subjects').insert({name:name.trim(),university_id:uniId});
+    if(error){setSaving(false);alert('Fənn əlavə edilmədi.');return;}
     setName('');setSaving(false);reload();
   };
   return(
@@ -324,7 +329,7 @@ function SubjectsTab({subjects,uniId,reload}:{subjects:Subject[];uniId:string;re
       <LT headers={['Fənn adı','Əməliyyat']}
         rows={subjects.map(s=>({id:s.id,cells:[s.name],onDelete:()=>setDelId(s.id)}))}
         delId={delId}
-        onConfirm={async id=>{await supabase.from('subjects').delete().eq('id',id);setDelId(null);reload();}}
+        onConfirm={async id=>{const {data,error}=await supabase.from('subjects').delete().eq('id',id).select('id');if(error||!data?.length){alert('Silinmədi. Əlaqəli məlumatları və icazələri yoxlayın.');return;}setDelId(null);reload();}}
         onCancel={()=>setDelId(null)}/>
     </div>
   );
@@ -334,33 +339,7 @@ function SubjectsTab({subjects,uniId,reload}:{subjects:Subject[];uniId:string;re
 const EL={group_id:'',day:'Bazar ertəsi',time:'08:00-09:30',
   subject:'',teacher:'',room:'',week:'hamisi',subgroup:'hamisi'};
 
-// 'hamisi' hər şey ilə üst-üstə düşür; 'ust'/'alt' yalnız özü ilə və 'hamisi' ilə
-function overlaps(a: string, b: string) {
-  if (a === 'hamisi' || b === 'hamisi') return true;
-  return a === b;
-}
-
 type Conflict = { type: 'teacher' | 'room' | 'group'; with: Lesson };
-
-function findConflicts(form: typeof EL, lessons: Lesson[]): Conflict[] {
-  const conflicts: Conflict[] = [];
-  for (const l of lessons) {
-    if (l.day !== form.day || l.time !== form.time) continue;
-    if (!overlaps(l.week, form.week)) continue;
-    if (!overlaps(l.subgroup, form.subgroup)) continue;
-
-    if (form.teacher && l.teacher.trim().toLowerCase() === form.teacher.trim().toLowerCase()) {
-      conflicts.push({ type: 'teacher', with: l });
-    }
-    if (form.room && l.room.trim() && l.room.trim().toLowerCase() === form.room.trim().toLowerCase()) {
-      conflicts.push({ type: 'room', with: l });
-    }
-    if (l.group_id === form.group_id) {
-      conflicts.push({ type: 'group', with: l });
-    }
-  }
-  return conflicts;
-}
 
 function LessonsTab({lessons,groups,subjects,uniId,reload}:{
   lessons:Lesson[];groups:Group[];subjects:Subject[];uniId:string;reload:()=>void;
@@ -370,22 +349,24 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
   const [delId,setDelId]=useState<string|null>(null);
   const [filt,setFilt]=useState('all');
   const [conflicts,setConflicts]=useState<Conflict[]>([]);
-  const [forceAdd,setForceAdd]=useState(false);
-  const s=(k:string,v:string)=>{setForm(p=>({...p,[k]:v}));setConflicts([]);setForceAdd(false);};
+  const s=(k:string,v:string)=>{setForm(p=>({...p,[k]:v}));setConflicts([]);};
 
   const groupName=(id:string)=>groups.find(g=>g.id===id)?.name??'—';
 
   const add=async()=>{
     if(!form.group_id||!form.subject||!form.teacher)return;
 
-    if(!forceAdd){
+    if(saving)return;
+    try {timeRange(form.time);} catch {alert('Düzgün vaxt aralığı daxil edin.');return;}
+    {
       const found=findConflicts(form,lessons);
       if(found.length>0){ setConflicts(found); return; }
     }
 
     setSaving(true);
-    await supabase.from('schedule_lessons').insert({...form,university_id:uniId});
-    setForm({...EL});setConflicts([]);setForceAdd(false);setSaving(false);reload();
+    const {error}=await supabase.from('schedule_lessons').insert({...form,university_id:uniId});
+    if(error){setSaving(false);alert('Dərs əlavə edilmədi. Vaxt toqquşmasını və məlumatları yoxlayın.');return;}
+    setForm({...EL});setConflicts([]);setSaving(false);reload();
   };
 
   const shown=filt==='all'?lessons:lessons.filter(l=>l.group_id===filt);
@@ -434,8 +415,8 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
           <div><label style={lbl}>Yarımqrup</label>
             <select style={sel} value={form.subgroup} onChange={e=>s('subgroup',e.target.value)}>
               <option value="hamisi">Hamısı</option>
-              <option value="1">1-ci yarımqrup</option>
-              <option value="2">2-ci yarımqrup</option>
+              <option value="ust">Üst altqrup</option>
+              <option value="alt">Alt altqrup</option>
             </select></div>
         </div>
         {conflicts.length>0 && (
@@ -454,10 +435,7 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
                 </div>
               ))}
             </div>
-            <button onClick={()=>{setForceAdd(true);}}
-              style={btn('#f59e0b',true)}>
-              Yenə də əlavə et
-            </button>
+
           </div>
         )}
 
@@ -508,7 +486,7 @@ function LessonsTab({lessons,groups,subjects,uniId,reload}:{
                     {delId===l.id?(
                       <span style={{display:'flex',gap:4}}>
                         <button style={btn('#ef4444',true)}
-                          onClick={async()=>{await supabase.from('schedule_lessons').delete().eq('id',l.id);setDelId(null);reload();}}>
+                          onClick={async()=>{const {data,error}=await supabase.from('schedule_lessons').delete().eq('id',l.id).select('id');if(error||!data?.length){alert('Dərs silinmədi.');return;}setDelId(null);reload();}}>
                           Bəli
                         </button>
                         <button style={btn('#6b7280',true)} onClick={()=>setDelId(null)}>Xeyr</button>

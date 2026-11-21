@@ -1,66 +1,54 @@
-// src/app/api/send-invite/route.ts
-
+import { sameOrigin } from '@/lib/request-origin';
+import { readLimitedBody, BodyTooLarge } from '@/lib/request-body';
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
-import { randomUUID } from 'crypto';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!   // ← service role key (public deyil!)
-);
-
-const resend = new Resend(process.env.RESEND_API_KEY!);
+import { mailConfig } from '@/lib/mail-config';
+import { sendInvitationMail } from '@/lib/invitation-mail';
+import { randomBytes, createHash } from 'node:crypto';
+import { serverSupabase, serviceSupabase } from '@/lib/supabase/server';
+import { escapeHtml, inviteInput } from '@/lib/security';
 
 export async function POST(req: NextRequest) {
+  if (!sameOrigin(req)) return NextResponse.json({error:'İcazə yoxdur.'},{status:403});
   try {
-    const { email, university_id, university_name } = await req.json();
-
-    if (!email || !university_id) {
-      return NextResponse.json({ error: 'Email və universitet tələb olunur.' }, { status: 400 });
-    }
-
-    // 1. Token yarat
-    const token = randomUUID();
-    const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 gün
-
-    // 2. university_invites-ə yaz
-    const { error: dbErr } = await supabase.from('university_invites').insert({
-      token,
-      email,
-      university_id,
-      used: false,
-      expires_at: expires_at.toISOString(),
+    const db=await serverSupabase();
+    const {data:{user},error:authError}=await db.auth.getUser();
+    if (authError || !user) return NextResponse.json({error:'Daxil olun.'},{status:401});
+    const {data:admin,error:roleError}=await db.from('university_admins').select('role').eq('id',user.id).maybeSingle();
+    if (roleError || admin?.role!=='superadmin') return NextResponse.json({error:'İcazə yoxdur.'},{status:403});
+    const body=new TextDecoder().decode(await readLimitedBody(req,2048));
+    if (body.length>2048) return NextResponse.json({error:'Sorğu çox böyükdür.'},{status:413});
+    let parsed: unknown;
+    try { parsed=JSON.parse(body); } catch { return NextResponse.json({error:'Yanlış JSON.'},{status:400}); }
+    const input=inviteInput(parsed);
+    if (!input) return NextResponse.json({error:'Düzgün email və universitet seçin.'},{status:400});
+    const mail=mailConfig(process.env), base=process.env.NEXT_PUBLIC_APP_URL;
+    if (!base) throw new Error('configuration');
+    const appUrl=new URL(base);
+    if (process.env.NODE_ENV==='production' && appUrl.protocol!=='https:') throw new Error('configuration');
+    const {data:uni,error:uniError}=await db.from('universities').select('name').eq('id',input.university_id).eq('is_active',true).single();
+    if (uniError || !uni) return NextResponse.json({error:'Universitet tapılmadı.'},{status:400});
+    const service=serviceSupabase();
+    const token=randomBytes(32).toString('hex');
+    const {data:id,error}=await db.rpc('create_invitation',{
+      p_email:input.email,p_university_id:input.university_id,p_hash:createHash('sha256').update(token).digest('hex'),
     });
-
-    if (dbErr) {
-      console.error('DB error:', dbErr);
-      return NextResponse.json({ error: 'Dəvət yaradılmadı: ' + dbErr.message }, { status: 500 });
+    if (error || !id) {
+      const limited=error?.message==='rate_limit';
+      return NextResponse.json({error:limited?'Saatlıq dəvət limitinə çatdınız.':'Dəvət yaradıla bilmədi; aktiv dəvəti və admin hesabını yoxlayın.'},{status:limited?429:409});
     }
-
-    // 3. Dəvət linki
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://e-cedvel.vercel.app';
-    const inviteLink = `${baseUrl}/admin/setup?token=${token}`;
-
-    // 4. Email göndər
-    const { error: emailErr } = await resend.emails.send({
-      from: 'onboarding@resend.dev',  // ← Resend-də verify edilmiş domain
-      to: email,
-      subject: `${university_name} — Admin Dəvəti`,
-      html: emailTemplate({ email, university_name, inviteLink, expires_at }),
-    });
-
-    if (emailErr) {
-      console.error('Email error:', emailErr);
-      return NextResponse.json({ error: 'Email göndərilmədi: ' + emailErr.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, invite_link: inviteLink });
-  } catch (error: unknown) {
-    console.error('Server error:', error);
-    const message = error instanceof Error ? error.message : 'Gözlənilməz server xətası.';
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+    const inviteLink=new URL('/admin/setup',appUrl); inviteLink.searchParams.set('token',token);
+    let sent=false;
+    try {
+      sent=await sendInvitationMail(mail,{
+        to:input.email,subject:uni.name+' — Admin Dəvəti',invitationId:id,
+        html:emailTemplate({email:input.email,university_name:uni.name,inviteLink:inviteLink.href,expires_at:new Date(Date.now()+7*86400000)}),
+      });
+    } catch { sent=false; }
+    const {error:deliveryError}=await service.from('university_invites')
+      .update({delivery_status:sent?'sent':'failed',...(!sent?{expires_at:new Date().toISOString()}:{})}).eq('id',id);
+    if (!sent || deliveryError) return NextResponse.json({error:'Dəvət göndərilməsi tamamlanmadı. Yenidən cəhd etməzdən əvvəl statusu yoxlayın.'},{status:503});
+    return NextResponse.json({success:true,invite_link:inviteLink.href},{headers:{'Cache-Control':'no-store'}});
+  } catch(error) { return NextResponse.json({error:error instanceof BodyTooLarge?'Sorğu çox böyükdür.':'Dəvət xidməti hazırda əlçatan deyil.'},{status:error instanceof BodyTooLarge?413:503}); }
 }
 
 /* ── Email şablonu ─────────────────────────────────────── */
@@ -75,6 +63,9 @@ function emailTemplate({
   inviteLink: string;
   expires_at: Date;
 }) {
+  email = escapeHtml(email);
+  university_name = escapeHtml(university_name);
+  inviteLink = escapeHtml(inviteLink);
   const expiry = expires_at.toLocaleDateString('az-AZ', {
     day: '2-digit', month: 'long', year: 'numeric',
   });

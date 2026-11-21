@@ -1,15 +1,11 @@
-import withPWA from 'next-pwa';
-
-const withPWAConfig = withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-});
-
-const nextConfig = {
-  reactCompiler: true,
-  turbopack: {},
+import type { NextConfig } from 'next';
+const config:NextConfig={
+  reactCompiler:true,
+  async headers() { return [{source:'/:path*',headers:[
+    {key:'X-Content-Type-Options',value:'nosniff'},
+    {key:'Referrer-Policy',value:'same-origin'},
+    {key:'X-Frame-Options',value:'DENY'},
+  ]},{source:'/sw.js',headers:[{key:'Cache-Control',value:'no-cache'}]},
+  {source:'/admin/setup',headers:[{key:'Referrer-Policy',value:'no-referrer'}]}]; },
 };
-
-export default withPWAConfig(nextConfig);
+export default config;

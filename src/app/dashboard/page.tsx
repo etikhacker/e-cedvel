@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LayoutGrid, Bell, Calculator, User, Info, Smartphone, CheckCircle2, Moon, Sun, Settings, Settings2, RotateCcw, LogOut } from 'lucide-react';
 import { UserProfile, WeekType, NotificationSettings } from '@/lib/types';
 import { DailyView, WeeklyView } from '@/components/schedule-views';
 import { Onboarding } from '@/components/onboarding';
-import { getSchedule, type ScheduleItem } from '@/lib/schedule-data';
+import { type ScheduleItem } from '@/lib/schedule-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { loadProfile, saveProfile } from '@/lib/profile';
+import { academicWeek, bakuDate, filterSchedule, DAYS } from '@/lib/scheduling';
 import { supabase } from '@/lib/supabase';
 
 const DEFAULT_NOTIF_SETTINGS: NotificationSettings = {
@@ -29,142 +31,92 @@ const DEFAULT_NOTIF_SETTINGS: NotificationSettings = {
 export default function Home() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [currentWeek, setCurrentWeek] = useState<WeekType>('ust');
+  const [currentWeek, setCurrentWeek] = useState<WeekType | null>(null);
   const [selectedWeeklyWeek, setSelectedWeeklyWeek] = useState<WeekType>('ust');
   const [isReady, setIsReady] = useState(false);
   const [notifPermission, setNotifPermission] = useState<string>('unknown');
+  const [editingSubject,setEditingSubject]=useState('');
   const [activeTab, setActiveTab] = useState('daily');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [dbSchedule, setDbSchedule] = useState<ScheduleItem[]>([]);
 
-  useEffect(() => {
-    // ---- .then() XARICINDƏ olan hər şey ----
+  const [loadError,setLoadError]=useState('');
+  const [scheduleLoading,setScheduleLoading]=useState(true);
+  const [semester,setSemester]=useState<{start:string|null;first:'ust'|'alt'}>({start:null,first:'ust'});
+  const saveQueue=useRef(Promise.resolve());
+  const latestProfile=useRef<UserProfile|null>(null);
+  useEffect(()=>{
+    let active=true;
+    if ('Notification' in window) setNotifPermission(Notification.permission);
+    loadProfile().then(p=>{
+      if (!active) return;
+      if (p) p={...p,notificationSettings:p.notificationSettings?.firstChannel?p.notificationSettings:DEFAULT_NOTIF_SETTINGS};
+      latestProfile.current=p; setProfile(p); setIsReady(true);
+    }).catch(()=>{if(active){setLoadError('Profil yüklənmədi. İnternet bağlantısını yoxlayıb səhifəni yeniləyin.');setIsReady(true);}});
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+      if(event==='SIGNED_OUT'){latestProfile.current=null;setProfile(null);setDbSchedule([]);window.location.replace('/login');}
+    });
+    return ()=>{active=false;subscription.unsubscribe();};
+  },[]);
 
-    // Bildiriş icazəsi
-    if ('Notification' in window) {
-      setNotifPermission(Notification.permission);
-    }
+  useEffect(()=>{
+    let active=true;
+    const refresh=async()=>{
+      if (!profile?.group_id) {if(active){setDbSchedule([]);setScheduleLoading(false);}return;}
+      const [lessons,uni]=await Promise.all([
+        supabase.from('schedule_lessons').select('*').eq('group_id',profile.group_id),
+        supabase.from('universities').select('semester_start,first_week').eq('id',profile.university_id).single(),
+      ]);
+      if (!active) return;
+      if(lessons.error||uni.error){setDbSchedule([]);setLoadError('Cədvəl yüklənmədi. Yenidən cəhd edin.');}
+      else {
+        setDbSchedule(lessons.data||[]);setLoadError('');
+        setSemester({start:uni.data.semester_start,first:uni.data.first_week});
+      }
+      setScheduleLoading(false);
+    };
+    void refresh();
+    const interval=setInterval(()=>void refresh(),60000);
+    window.addEventListener('focus',refresh);
+    return ()=>{active=false;clearInterval(interval);window.removeEventListener('focus',refresh);};
+  },[profile?.group_id,profile?.university_id]);
 
-    // Cari həftə
-    const startDate = new Date('2026-02-16');
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-    const weekIndex = Math.floor(diffInDays / 7);
-    const calculatedWeek = weekIndex % 2 === 0 ? 'ust' : 'alt';
-    setCurrentWeek(calculatedWeek);
-    setSelectedWeeklyWeek(calculatedWeek);
+  useEffect(()=>{
+    const tick=()=>setCurrentWeek(academicWeek(semester.start,semester.first));
+    tick();const interval=setInterval(tick,60000);return()=>clearInterval(interval);
+  },[semester]);
 
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-    }
-
-    // Avtomatik bildiriş — hər dəqiqə
-    const notifInterval = setInterval(() => {
-      if (Notification.permission !== 'granted') return;
-      const savedP = localStorage.getItem('it24_profile');
-      if (!savedP) return;
-      const p = JSON.parse(savedP);
-      if (!p.notificationSettings?.firstChannel?.enabled) return;
-
-      const nowT = new Date();
-      const sched = getSchedule(p.group || 'IT24.1');
-      const dayNames = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
-      const todayName = dayNames[nowT.getDay()];
-      const sd = new Date('2026-02-16');
-      const dd = Math.floor((nowT.getTime() - sd.getTime()) / 86400000);
-      const week = Math.floor(dd / 7) % 2 === 0 ? 'ust' : 'alt';
-
-      const todayClasses = sched.filter(c =>
-        c.day === todayName &&
-        (c.subgroup === 'hamisi' || c.subgroup === p.subgroup) &&
-        (c.week === 'hamisi' || c.week === week)
-      );
-
-      todayClasses.forEach(cls => {
-        const [startTime] = cls.time.split('-');
-        const [h, m] = startTime.split(':').map(Number);
-        const classTime = new Date(nowT);
-        classTime.setHours(h, m, 0, 0);
-        const diffMin = Math.round((classTime.getTime() - nowT.getTime()) / 60000);
-        const settings = p.notificationSettings;
-        const isFirst = todayClasses[0] === cls;
-        const t1 = isFirst ? settings.firstChannel.firstClassMinutes : settings.firstChannel.otherClassesMinutes;
-        const t2 = settings.secondChannel.enabled
-          ? (isFirst ? settings.secondChannel.firstClassMinutes : settings.secondChannel.otherClassesMinutes)
-          : -1;
-        const notifKey = `notif_${cls.day}_${cls.time}_${diffMin}`;
-        if ((diffMin === t1 || diffMin === t2) && !sessionStorage.getItem(notifKey)) {
-          sessionStorage.setItem(notifKey, '1');
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(`📚 ${cls.subject}`, {
-              body: `${diffMin} dəqiqə sonra — ${cls.time}, otaq ${cls.room} (${cls.teacher})`,
-              icon: '/icon-192x192.png',
-              tag: notifKey,
-            });
-          });
+  useEffect(()=>{
+    const notify=async()=>{
+      if (!profile?.id || !currentWeek || !('Notification' in window) || Notification.permission!=='granted'
+        || !('serviceWorker' in navigator) || !profile.notificationSettings
+        || !(profile.notificationSettings.firstChannel.enabled||profile.notificationSettings.secondChannel?.enabled)) return;
+      const now=new Date(), date=bakuDate(now);
+      const weekday=new Date(date+'T12:00:00Z').getUTCDay();
+      const today=filterSchedule(dbSchedule,profile.subgroup,currentWeek).filter(c=>c.day===DAYS[weekday-1]);
+      const reg=await navigator.serviceWorker.getRegistration();
+      if (!reg) return;
+      for (const [index,lesson] of today.entries()) {
+        const start=new Date(date+'T'+lesson.time.split('-')[0]+':00+04:00');
+        const diff=Math.floor((start.getTime()-now.getTime())/60000);
+        const settings=profile.notificationSettings;
+        const channels=[settings.firstChannel,settings.secondChannel];
+        for (const [channel,setting] of channels.entries()) {
+          if(!setting?.enabled || diff<0 || diff!==(index===0?setting.firstClassMinutes:setting.otherClassesMinutes)) continue;
+          const key=['ec-notif',profile.id,date,lesson.id||lesson.subject,lesson.time,channel].join(':');
+          try {
+            if(localStorage.getItem(key)) continue;
+            await reg.showNotification('📚 '+lesson.subject,{body:diff+' dəqiqə sonra — '+lesson.time+', otaq '+lesson.room,tag:key,icon:'/icon-192x192.png'});
+            localStorage.setItem(key,'1');
+          } catch { /* Unsupported or denied notifications must not interrupt scheduling. */ }
         }
-      });
-    }, 60000);
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-  if (!session) {
-    window.location.replace('/login');
-    return;
-  }
-
-  const meta = session.user?.user_metadata;
-
-  // DB-dən profili çək
-  const { data: dbProfile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
-
-  // localStorage-dən çək
-  const savedProfile = localStorage.getItem('it24_profile');
-  let parsed: UserProfile = { name: '', subgroup: 'hamisi', notificationSettings: DEFAULT_NOTIF_SETTINGS };
-  if (savedProfile) {
-    try {
-      parsed = { ...parsed, ...(JSON.parse(savedProfile) as Partial<UserProfile>) };
-    } catch {}
-  }
-
-  // DB data varsa üstünlük ver
-  if (dbProfile) {
-    parsed.savedGrades = dbProfile.saved_grades || parsed.savedGrades || {};
-    parsed.savedDetails = dbProfile.saved_details || parsed.savedDetails || {};
-    parsed.absences = dbProfile.absences || parsed.absences || {};
-    if (dbProfile.photo_url) parsed.photo_url = dbProfile.photo_url;
-    if (dbProfile.photo_url) parsed.photo = dbProfile.photo_url;
-  }
-
-  if (meta?.full_name) parsed.name = meta.full_name;
-  if (meta?.group) parsed.group = meta.group;
-  if (meta?.subgroup) parsed.subgroup = meta.subgroup;
-  if (meta?.faculty) parsed.faculty = meta.faculty;
-
-  if (!parsed.notificationSettings?.firstChannel) {
-    parsed.notificationSettings = DEFAULT_NOTIF_SETTINGS;
-  }
-
-  setProfile(parsed);
-  // DB-dən cədvəl çək
-  if (parsed.group_id) {
-    const { data: lessons } = await supabase
-      .from('schedule_lessons')
-      .select('*')
-      .eq('group_id', parsed.group_id);
-    setDbSchedule(lessons || []);
-  }
-  setIsReady(true);
-});
-
-    return () => clearInterval(notifInterval); // ← useEffect-in ən sonu
-  }, []);
+      }
+    };
+    const interval=setInterval(()=>void notify().catch(()=>{}),30000);
+    return()=>clearInterval(interval);
+  },[profile,dbSchedule,currentWeek]);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
@@ -180,7 +132,9 @@ export default function Home() {
 
   if (!isReady) return <div className="min-h-screen bg-background" />;
 
-  if (!profile) {
+  if (loadError && !profile) return <div role="alert" className="p-8">{loadError}<Button onClick={()=>window.location.reload()}>Yenilə</Button></div>;
+
+  if (!profile?.group_id) {
     return <Onboarding onComplete={async (p) => {
       const newProfile: UserProfile = {
         ...p,
@@ -188,56 +142,33 @@ export default function Home() {
         savedDetails: {},
         notificationSettings: DEFAULT_NOTIF_SETTINGS
       };
-      setProfile(newProfile);
-      localStorage.setItem('it24_profile', JSON.stringify(newProfile));
-      const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    await supabase.from('profiles').upsert({
-      id: session.user.id,
-      name: p.name,
-      group_id: p.group_id || null,
-      university_id: p.university_id || null,
-      subgroup: p.subgroup || null,
-      updated_at: new Date().toISOString(),
-    });}
+      try {
+        const preserved={...profile,...newProfile,savedGrades:profile?.savedGrades??{},savedDetails:profile?.savedDetails??{},absences:profile?.absences??{}};
+        await saveProfile(preserved);
+        const loaded=await loadProfile(); latestProfile.current=loaded; setProfile(loaded);
+      } catch { toast({variant:'destructive',title:'Xəta',description:'Profil saxlanmadı. Yenidən cəhd edin.'}); }
+
     }} />
   }
 
-  const schedule = profile.group_id && dbSchedule.length > 0
-  ? dbSchedule
-  : getSchedule(profile.group || 'IT24.1');
+  const schedule = dbSchedule;
+  const dailyClasses = filterSchedule(schedule,profile.subgroup,currentWeek??'unknown');
+  const weeklyClasses = filterSchedule(schedule,profile.subgroup);
+  const updateProfile = async (updatedProfile: UserProfile):Promise<boolean> => {
+    // Serialize writes and merge only changed fields so rapid independent actions
+    // do not erase grades, attendance or notification preferences.
+    const patch=Object.fromEntries(Object.entries(updatedProfile).filter(([key,value])=>
+      JSON.stringify(value)!==JSON.stringify(profile[key as keyof UserProfile])));
+    let success=false;
+    saveQueue.current=saveQueue.current.catch(()=>{}).then(async()=>{
+      const next={...latestProfile.current,...patch} as UserProfile;
+      try {await saveProfile(next);latestProfile.current=next;setProfile(next);success=true;}
+      catch {toast({variant:'destructive',title:'Xəta',description:'Dəyişiklik saxlanmadı. Yenidən cəhd edin.'});}
+    });
+    await saveQueue.current;return success;
+  };
 
-  const dailyClasses = schedule.filter(c =>
-    (c.subgroup === 'hamisi' || c.subgroup === profile.subgroup) &&
-    (c.week === 'hamisi' || c.week === currentWeek)
-  );
-
-  const weeklyClasses = schedule.filter(c =>
-  c.subgroup === 'hamisi' || c.subgroup === profile.subgroup
-);
-
-  const updateProfile = async (updatedProfile: UserProfile) => {
-  setProfile(updatedProfile);
-  localStorage.setItem('it24_profile', JSON.stringify(updatedProfile));
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  await supabase.from('profiles').upsert({
-  id: session.user.id,
-  name: updatedProfile.name,
-  photo_url: updatedProfile.photo_url || null,
-  absences: updatedProfile.absences || {},
-  saved_grades: updatedProfile.savedGrades || {},
-  saved_details: updatedProfile.savedDetails || {},
-  group_id: updatedProfile.group_id || null,
-  university_id: updatedProfile.university_id || null,
-  subgroup: updatedProfile.subgroup || null,
-  updated_at: new Date().toISOString(),
-});
-};
-
-  const handleSaveGrade = (data: { subject: string; total: number; davamiyyat: number; serbest: number; kollokviumOrta: number; seminarOrta: number; labBal: number }) => {
+  const handleSaveGrade = async (data: { subject: string; total: number; davamiyyat: number; serbest: number; kollokviumOrta: number; seminarOrta: number; labBal: number }) => {
     const updatedProfile = {
       ...profile,
       savedGrades: { ...(profile.savedGrades || {}), [data.subject]: Math.round(data.total) },
@@ -253,37 +184,23 @@ export default function Home() {
         }
       }
     };
-    updateProfile(updatedProfile);
+    if (!await updateProfile(updatedProfile)) return false;
     toast({ title: "Yadda saxlanıldı", description: `${data.subject} balınız kabinetə əlavə edildi.` });
+    return true;
   };
 
   const handleEditGrade = (subject: string) => {
-    void subject;
+    setEditingSubject(subject);
     setIsProfileOpen(false);
     setActiveTab('calculator');
   };
 
-  const resetProfile = () => {
-  // Ballari saxla
-  const savedProfile = localStorage.getItem('it24_profile');
-  let savedGrades = {};
-  let savedDetails = {};
-  if (savedProfile) {
-    try {
-      const p = JSON.parse(savedProfile);
-      savedGrades = p.savedGrades || {};
-      savedDetails = p.savedDetails || {};
-    } catch {}
-  }
-  localStorage.removeItem('it24_profile');
-  // Ballari geri yaz
-  if (Object.keys(savedGrades).length > 0) {
-    localStorage.setItem('it24_saved_grades', JSON.stringify({ savedGrades, savedDetails }));
-  }
-  supabase.auth.signOut().then(() => {
-    window.location.replace('/login');
-  });
-};
+  const resetProfile = async () => {
+    await saveQueue.current;
+    const {error}=await supabase.auth.signOut();
+    if(error){toast({variant:'destructive',title:'Xəta',description:'Çıxış alınmadı.'});return;}
+    setProfile(null);setDbSchedule([]);window.location.replace('/login');
+  };
 
   const requestPermission = async () => {
     if (!('Notification' in window)) {
@@ -304,7 +221,8 @@ export default function Home() {
     }
     try {
       if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.ready;
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) throw new Error('Bildiriş xidməti hazır deyil.');
         await registration.showNotification('İT24 Bildiriş Testi', {
           body: `Salam, ${profile.name}! Bu bir test bildirişidir.`,
           icon: 'https://placehold.co/192x192/4A90E2/ffffff?text=IT24',
@@ -349,7 +267,7 @@ export default function Home() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    if (value === 'weekly') setSelectedWeeklyWeek(currentWeek);
+    if (value === 'weekly') setSelectedWeeklyWeek(currentWeek??'ust');
   };
 
   const logoText = profile.group || 'İT24';
@@ -384,7 +302,7 @@ export default function Home() {
                   <DialogTitle className="flex items-center gap-2 text-primary font-bold">
                     <Settings2 className="h-5 w-5 shrink-0" /> Bildiriş Ayarları
                   </DialogTitle>
-                  <DialogDescription>Bildiriş sayını və göndərilmə vaxtını təyin edin.</DialogDescription>
+                  <DialogDescription>Bildiriş sayını və vaxtını təyin edin. Xatırlatmalar tətbiq açıq olduqda işləyir.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6 py-4">
                   <div className="space-y-4">
@@ -508,7 +426,7 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Cari Həftə:</span>
               <Badge variant="default" className="font-bold text-[10px]">
-                {currentWeek === 'ust' ? 'ÜST' : 'ALT'}
+                {currentWeek ? (currentWeek === 'ust' ? 'ÜST' : 'ALT') : 'TƏYİN EDİLMƏYİB'}
               </Badge>
             </div>
           </div>
@@ -522,7 +440,7 @@ export default function Home() {
               </h2>
               <Button variant="ghost" size="sm" onClick={() => setIsProfileOpen(false)}>Geri Qayıt</Button>
             </div>
-            <ProfileView profile={profile} onUpdate={updateProfile} onEditGrade={handleEditGrade} />
+            <ProfileView subjects={Array.from(new Set(schedule.map(c=>c.subject)))} profile={profile} onUpdate={updateProfile} onEditGrade={handleEditGrade} />
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
@@ -541,7 +459,8 @@ export default function Home() {
             </div>
 
             <TabsContent value="daily" className="min-h-[400px]">
-              <DailyView classes={dailyClasses} />
+              {loadError ? <p role="alert">{loadError}</p> : scheduleLoading ? <p>Yüklənir...</p> : <DailyView classes={dailyClasses} />}
+              {!currentWeek && <p className="text-sm text-muted-foreground">Semestr başlanğıcı təyin edilməyib. Həftəlik görünüşdə üst və alt həftəni seçə bilərsiniz.</p>}
             </TabsContent>
 
             <TabsContent value="weekly" className="min-h-[400px] space-y-6">
@@ -557,7 +476,7 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="calculator">
-              <GradeCalculator onSave={handleSaveGrade} />
+              <GradeCalculator key={editingSubject} initialSubject={editingSubject} subjects={Array.from(new Set([...schedule.map(c=>c.subject),...Object.keys(profile.savedGrades??{})]))} onSave={handleSaveGrade} />
             </TabsContent>
           </Tabs>
         )}

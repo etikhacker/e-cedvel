@@ -21,7 +21,8 @@ export function InviteSection() {
   const [copied, setCopied]       = useState(false);
 
   useEffect(() => {
-    supabase.from("universities").select("id, name").then(({ data }) => {
+    supabase.from("universities").select("id, name").eq('is_active',true).then(({ data,error }) => {
+      if(error){setError('Universitetlər yüklənmədi. Səhifəni yeniləyin.');return;}
       setUnis(data ?? []);
       if (data?.[0]) setForm(p => ({ ...p, university_id: data[0].id }));
     });
@@ -37,19 +38,20 @@ export function InviteSection() {
       return;
     }
 
+    if(sending)return;
     setSending(true);
     setError("");
     setSent(null);
 
     const uniName = unis.find(u => u.id === form.university_id)?.name ?? "";
 
+    try {
     const res = await fetch("/api/send-invite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: form.email,
         university_id: form.university_id,
-        university_name: uniName,
       }),
     });
 
@@ -63,18 +65,20 @@ export function InviteSection() {
 
     setSent({ email: form.email, university_name: uniName, link: data.invite_link });
     setForm(p => ({ ...p, email: "" }));
+    } catch {setError('Dəvət xidməti əlçatan deyil. Yenidən cəhd edin.');}
+    finally {setSending(false);}
   };
 
-  const copyLink = () => {
+  const copyLink = async () => {
     if (!sent?.link) return;
-    navigator.clipboard.writeText(sent.link);
+    try {await navigator.clipboard.writeText(sent.link);}catch{setError('Link kopyalanmadı.');return;}
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <div style={{
-      border: "1px solid rgba(255,255,255,0.08)",
+      border: "1px solid var(--border)",
       borderRadius: 12,
       overflow: "hidden",
       marginBottom: 16,
@@ -86,21 +90,21 @@ export function InviteSection() {
           width: "100%", display: "flex", alignItems: "center",
           justifyContent: "space-between", padding: "16px 20px",
           background: "transparent", border: "none",
-          color: "#fff", cursor: "pointer",
+          color: "var(--foreground)", cursor: "pointer",
           fontSize: 15, fontWeight: 700, fontFamily: "inherit",
         }}
       >
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
           ✉️ Dəvət Göndər
         </span>
-        <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
+        <span style={{ color: "var(--muted-foreground)", fontSize: 13 }}>
           {open ? "∧" : "∨"}
         </span>
       </button>
 
       {open && (
         <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderTop: "1px solid var(--border)",
           padding: "20px",
         }}>
 
@@ -108,18 +112,19 @@ export function InviteSection() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
             {/* University select */}
             <div style={{ flex: "0 0 220px" }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600,
-                color: "rgba(255,255,255,0.5)", marginBottom: 5 }}>
+              <label htmlFor="invite-university" style={{ display: "block", fontSize: "0.72rem", fontWeight: 600,
+                color: "var(--muted-foreground)", marginBottom: 5 }}>
                 Universitet
               </label>
               <select
+                id="invite-university" className="focus-visible:ring-2 focus-visible:ring-primary"
                 value={form.university_id}
                 onChange={e => setForm(p => ({ ...p, university_id: e.target.value }))}
                 style={{
                   width: "100%", padding: "9px 12px",
-                  background: "#161d2a",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8, color: "#fff",
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8, color: "var(--foreground)",
                   fontSize: "0.875rem", fontFamily: "inherit", outline: "none",
                 }}
               >
@@ -134,11 +139,12 @@ export function InviteSection() {
 
             {/* Email */}
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 600,
-                color: "rgba(255,255,255,0.5)", marginBottom: 5 }}>
+              <label htmlFor="invite-email" style={{ display: "block", fontSize: "0.72rem", fontWeight: 600,
+                color: "var(--muted-foreground)", marginBottom: 5 }}>
                 Admin Email
               </label>
               <input
+                id="invite-email" className="focus-visible:ring-2 focus-visible:ring-primary"
                 type="email"
                 placeholder="admin@university.edu.az"
                 value={form.email}
@@ -146,9 +152,9 @@ export function InviteSection() {
                 onKeyDown={e => e.key === "Enter" && handleSend()}
                 style={{
                   width: "100%", padding: "9px 12px",
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8, color: "#fff",
+                  background: "var(--muted)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8, color: "var(--foreground)",
                   fontSize: "0.875rem", fontFamily: "inherit", outline: "none",
                 }}
               />
@@ -198,21 +204,21 @@ export function InviteSection() {
                 marginBottom: 10, fontWeight: 700, fontSize: "0.875rem", color: "#22c55e" }}>
                 ✓ Dəvət emaili göndərildi!
               </div>
-              <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", marginBottom: 10 }}>
-                <span style={{ color: "#fff" }}>{sent.email}</span> ünvanına —{" "}
+              <div style={{ fontSize: "0.8rem", color: "var(--muted-foreground)", marginBottom: 10 }}>
+                <span style={{ color: "var(--foreground)" }}>{sent.email}</span> ünvanına —{" "}
                 <span style={{ color: "#3b82f6" }}>{sent.university_name}</span>
               </div>
 
               {/* Link copy */}
               <div style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--muted)",
+                border: "1px solid var(--border)",
                 borderRadius: 8, padding: "10px 14px",
                 display: "flex", alignItems: "center",
                 justifyContent: "space-between", gap: 10,
               }}>
                 <span style={{
-                  fontSize: "0.72rem", color: "rgba(255,255,255,0.4)",
+                  fontSize: "0.72rem", color: "var(--muted-foreground)",
                   wordBreak: "break-all", flex: 1,
                 }}>
                   {sent.link}
@@ -221,9 +227,9 @@ export function InviteSection() {
                   onClick={copyLink}
                   style={{
                     padding: "5px 12px", flexShrink: 0,
-                    background: copied ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.06)",
-                    border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "rgba(255,255,255,0.1)"}`,
-                    borderRadius: 6, color: copied ? "#22c55e" : "rgba(255,255,255,0.6)",
+                    background: copied ? "rgba(34,197,94,0.15)" : "var(--muted)",
+                    border: `1px solid ${copied ? "rgba(34,197,94,0.3)" : "var(--border)"}`,
+                    borderRadius: 6, color: copied ? "#22c55e" : "var(--muted-foreground)",
                     fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
                     fontFamily: "inherit", transition: "all 0.2s",
                   }}
@@ -234,7 +240,7 @@ export function InviteSection() {
             </div>
           )}
 
-          <p style={{ margin: "10px 0 0", fontSize: "0.72rem", color: "rgba(255,255,255,0.3)" }}>
+          <p style={{ margin: "10px 0 0", fontSize: "0.72rem", color: "var(--muted-foreground)" }}>
             Link 7 gün etibarlıdır. Admin həmin linkdən hesabını yaradacaq.
           </p>
         </div>

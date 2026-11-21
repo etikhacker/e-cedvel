@@ -27,6 +27,7 @@ export interface GradeDetails {
 }
 
 export interface UserProfile {
+  id?: string;
   name: string;
   group?: string;
   faculty?: string;

@@ -33,7 +33,8 @@ export function Onboarding({ onComplete }: { onComplete: (p: OnboardingProfile) 
   const [userName, setUserName] = useState('');
 
   async function loadUniversities() {
-    const { data } = await supabase.from('universities').select('id, name, short_name').eq('is_active', true);
+    const { data, error } = await supabase.from('universities').select('id, name, short_name').eq('is_active', true);
+    if(error){alert('Universitetlər yüklənmədi.');return;}
     setUniversities(data || []);
   }
 
@@ -52,33 +53,23 @@ export function Onboarding({ onComplete }: { onComplete: (p: OnboardingProfile) 
 
   const selectUniversity = async (uni: University) => {
     setSelectedUni(uni);
-    const { data } = await supabase.from('faculties').select('id, name').eq('university_id', uni.id);
+    const { data, error } = await supabase.from('faculties').select('id, name').eq('university_id', uni.id);
+    if(error){alert('Fakültələr yüklənmədi.');return;}
     setFaculties(data || []);
     setStep('faculty');
   };
 
   const selectFaculty = async (faculty: Faculty) => {
     setSelectedFaculty(faculty);
-    const { data } = await supabase.from('groups').select('id, name').eq('faculty_id', faculty.id);
+    const { data, error } = await supabase.from('groups').select('id, name').eq('faculty_id', faculty.id);
+    if(error){alert('Qruplar yüklənmədi.');return;}
     setGroups(data || []);
     setStep('group');
   };
 
   const selectGroup = async (group: Group) => {
     setSelectedGroup(group);
-    // Subqrup var mı yoxla
-    const { data } = await supabase
-      .from('schedule_lessons')
-      .select('subgroup')
-      .eq('group_id', group.id)
-      .neq('subgroup', 'hamisi')
-      .limit(1);
-
-    if (data && data.length > 0) {
-      setStep('subgroup');
-    } else {
-      completeOnboarding(group, 'hamisi');
-    }
+    setStep('subgroup');
   };
 
   const completeOnboarding = (group: Group, subgroup: string) => {
@@ -155,6 +146,7 @@ export function Onboarding({ onComplete }: { onComplete: (p: OnboardingProfile) 
         {step === 'subgroup' && (
           <div className="space-y-3">
             <p className="font-bold text-center">Alt qrup seçin</p>
+            <CardButton onClick={() => completeOnboarding(selectedGroup!, 'hamisi')}>Bütün qrup</CardButton>
             <CardButton onClick={() => completeOnboarding(selectedGroup!, 'ust')}>
               <p className="font-bold">Üst qrup</p>
             </CardButton>
